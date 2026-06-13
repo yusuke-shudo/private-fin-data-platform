@@ -41,10 +41,10 @@ jobs:
       - name: Terraform Init
         run: |
           terraform init \
-            -backend-config="bucket=arn:aws:s3:ap-northeast-1:${{ vars.AWS_ACCOUNT_ID }}:accesspoint/${{ vars.PROJECT_PREFIX }}-dev-tfstate-ap"
+            -backend-config="bucket=arn:aws:s3:ap-northeast-1:${{ vars.AWS_ACCOUNT_ID }}:accesspoint/${{ vars.PROJECT_PREFIX }}-dev-tfstate-ap" \
+            -backend-config="use_s3_express_and_native_locking=true" \
+            -backend-config="encrypt=true"
 
-      # ★変更点：マージを待たずに、PRの段階で即座に現在のコードをdev環境に適用（Apply）します。
-      # これにより、開発ブランチを更新（push）するたびに、リアルタイムでdev環境が上書き更新されます。
       - name: Terraform Apply to Dev
         run: terraform apply -auto-approve -no-color
         env:
