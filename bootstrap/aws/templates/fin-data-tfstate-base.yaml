@@ -59,9 +59,10 @@ Resources:
             Principal:
               AWS: !GetAtt GitHubActionsRole.Arn
             Action:
+              - 's3:ListBucket'
               - 's3:GetObject'
               - 's3:PutObject'
-              - 's3:ListBucket'
+              - 's3:DeleteObject'
             Resource:
               - !Sub 'arn:aws:s3:${AWS::Region}:${AWS::AccountId}:accesspoint/${ProjectPrefix}-${Environment}-tfstate-ap'
               - !Sub 'arn:aws:s3:${AWS::Region}:${AWS::AccountId}:accesspoint/${ProjectPrefix}-${Environment}-tfstate-ap/object/*'
