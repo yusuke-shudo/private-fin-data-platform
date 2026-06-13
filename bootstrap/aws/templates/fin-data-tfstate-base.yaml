@@ -169,7 +169,7 @@ Resources:
                 },
                 "StringLike": {
                   "token.actions.githubusercontent.com:sub": [
-                    "repo:${GitHubOwner}/${GitHubRepository}:environment:${Environment}",
+                    "repo:${GitHubOwner}/${GitHubRepository}:environment:${Environment}*",
                     "repo:${GitHubOwner}/${GitHubRepository}:ref:refs/pull/*"
                   ]
                 }
