@@ -62,20 +62,24 @@
 ---
 
 ### 2. 環境（Environments）と変数（Variables）の作成
-AWSおよびSnowflakeのマルチアカウント構成（dev/prd）を安全に制御するため、2つの環境をリポジトリ内に定義します。
+AWSおよびSnowflakeのマルチアカウント構成において、Snowflake側の「同一Subject登録不可」のセキュリティ制限を回避するため、「環境×役割」で合計4つのEnvironmentを定義します。
 
-- [ ] **9. 開発環境（dev）の作成と変数登録**
-  - `Settings` ➔ `Environments` を開き、右上の `New environment` を押し、Nameに **`dev`** と入力して作成します。
-  - 画面下部の `Environment variables` ➔ `Add variable` を押し、以下の4つの変数を登録します。
+- [ ] **9. 開発環境（dev）用の作成と変数登録**
+  - `Settings` ➔ `Environments` を開き、以下の2つの環境をそれぞれ作成します。
+    1. **`dev-infra`** （Terraformインフラ用）
+    2. **`dev-data`**  （dbtデータ加工用）
+  - 作成後、**`dev-infra`** および **`dev-data`** の両方の環境の画面下部（Environment variables）で、それぞれ以下の4つの変数を同じように登録します。
     - `AWS_ACCOUNT_ID`: `[dev用の12桁のAWSアカウントID]`
     - `PROJECT_PREFIX`: `yskshd-fin-data`
-    - `SF_ORGANIZATION_NAME`: `[Snowflakeの組織名]`
+    - `SF_ORGANIZATION_NAME`: `[Snowflake detour の組織名]`
     - `SF_ACCOUNT_NAME`: `[dev用のSnowflakeアカウント名]`
 
-- [ ] **10. 本番環境（prd）の作成と承認ルールの追加**
-  - 再び `Environments` 画面に戻り、`New environment` を押し、Nameに **`prd`** と入力して作成します。
-  - **Deployment protection rules** セクションの **`Required reviewers`** にチェックを入れ、ご自身のGitHubアカウント（または客先の承認者）を指定します（これにより、本番への自動デプロイ前に人間の承認ボタンが強制されます）。
-  - `dev` と同様に、画面下部で以下の4つの変数を登録します（値は本番用のものに書き換えます）。
+- [ ] **10. 本番環境（prd）用の作成と承認ルールの追加**
+  - 同様に、`Environments` 画面で以下の2つの環境を作成します。
+    1. **`prd-infra`** （Terraformインフラ用）
+    2. **`prd-data`**  （dbtデータ加工用）
+  - **重要（安全弁）**: `prd-infra` と `prd-data` の両方の環境で、**`Required reviewers`** にチェックを入れ、ご自身のGitHubアカウント（または客先の承認者）を指定します。
+  - 作成後、両方の環境の画面下部で以下の4つの変数を登録します（値は本番用のものに書き換えます）。
     - `AWS_ACCOUNT_ID`: `[prd用の12桁のAWSアカウントID]`
     - `PROJECT_PREFIX`: `yskshd-fin-data`
     - `SF_ORGANIZATION_NAME`: `[Snowflakeの組織名]`
