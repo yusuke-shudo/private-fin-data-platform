@@ -50,7 +50,7 @@ CREATE OR REPLACE USER cicd_infra_engineer_user
   WORKLOAD_IDENTITY = (
     TYPE   = OIDC
     ISSUER = 'https://token.actions.githubusercontent.com'
-    SUBJECT = 'repo:yusuke_shudo/private-fin-data-platform:environment:<ENVIRONMENT_NAME>-infra' -- ★devまたはprdに書き換え
+    SUBJECT = 'repo:yusuke-shudo/private-fin-data-platform:environment:<ENVIRONMENT_NAME>-infra' -- ★devまたはprdに書き換え
   )
   ABORT_DETACHED_QUERY = TRUE
   LOCK_TIMEOUT = 0
@@ -66,7 +66,7 @@ CREATE OR REPLACE USER cicd_data_engineer_user
   WORKLOAD_IDENTITY = (
     TYPE   = OIDC
     ISSUER = 'https://token.actions.githubusercontent.com'
-    SUBJECT = 'repo:yusuke_shudo/private-fin-data-platform:environment:<ENVIRONMENT_NAME>-data' -- ★devまたはprdに書き換え
+    SUBJECT = 'repo:yusuke-shudo/private-fin-data-platform:environment:<ENVIRONMENT_NAME>-data' -- ★devまたはprdに書き換え
   )
   ABORT_DETACHED_QUERY = TRUE
   LOCK_TIMEOUT = 10
