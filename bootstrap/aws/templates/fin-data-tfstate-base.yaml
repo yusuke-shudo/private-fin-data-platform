@@ -1,0 +1,187 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Secure Terraform Backend with S3 Bucket-Level Locking, S3 Access Point, Enforced TLS 1.2+, and Stateless IAM Role'
+
+Parameters:
+  Environment:
+    Type: String
+    AllowedValues: ['dev', 'prd']
+    Description: 'Target environment name (e.g., dev, prd)'
+
+  GitHubOwner:
+    Type: String
+    Default: 'yusuke-shudo'
+    Description: 'GitHub Organization or Username'
+
+  GitHubRepository:
+    Type: String
+    Default: 'private-fin-data-platform'
+    Description: 'GitHub Repository Name'
+
+  ProjectPrefix:
+    Type: String
+    Default: 'yskshd-fin-data'
+    Description: 'Unique prefix for S3 to avoid naming conflicts'
+
+Resources:
+  # =========================================================================
+  # 1. S3 Bucket for Terraform State
+  # =========================================================================
+  TerraformStateBucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !Sub '${ProjectPrefix}-${Environment}-tfstate'
+      ObjectLockEnabled: true
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: 'AES256'
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  # =========================================================================
+  # 2. S3 Access Point
+  # =========================================================================
+  TerraformStateAccessPoint:
+    Type: 'AWS::S3::AccessPoint'
+    Properties:
+      Bucket: !Ref TerraformStateBucket
+      Name: !Sub '${ProjectPrefix}-${Environment}-tfstate-ap'
+      Policy:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowGitHubActionsAccess
+            Effect: Allow
+            Principal:
+              AWS: !GetAtt GitHubActionsRole.Arn
+            Action:
+              - 's3:ListBucket'
+              - 's3:GetObject'
+              - 's3:PutObject'
+              - 's3:DeleteObject'
+            Resource:
+              - !Sub 'arn:aws:s3:${AWS::Region}:${AWS::AccountId}:accesspoint/${ProjectPrefix}-${Environment}-tfstate-ap'
+              - !Sub 'arn:aws:s3:${AWS::Region}:${AWS::AccountId}:accesspoint/${ProjectPrefix}-${Environment}-tfstate-ap/object/*'
+          - Sid: DenyAllDataOpsExceptGitHubActions
+            Effect: Deny
+            Principal: '*'
+            Action:
+              - 's3:GetObject'
+              - 's3:PutObject'
+              - 's3:DeleteObject'
+            Resource:
+              - !Sub 'arn:aws:s3:${AWS::Region}:${AWS::AccountId}:accesspoint/${ProjectPrefix}-${Environment}-tfstate-ap/object/*'
+            Condition:
+              ArnNotEquals:
+                'aws:PrincipalArn':
+                  - !GetAtt GitHubActionsRole.Arn
+
+  # =========================================================================
+  # 3. S3 Bucket Policy
+  # =========================================================================
+  TerraformStateBucketPolicy:
+    Type: 'AWS::S3::BucketPolicy'
+    Properties:
+      Bucket: !Ref TerraformStateBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: DenyDirectAccessExceptAccessPointAndBootstrap
+            Effect: Deny
+            Principal: '*'
+            Action: 's3:*'
+            Resource:
+              - !Sub 'arn:aws:s3:::${TerraformStateBucket}'
+              - !Sub 'arn:aws:s3:::${TerraformStateBucket}/*'
+            Condition:
+              StringNotEquals:
+                's3:DataAccessPointArn': !Sub 'arn:aws:s3:${AWS::Region}:${AWS::AccountId}:accesspoint/${ProjectPrefix}-${Environment}-tfstate-ap'
+              ArnNotEquals:
+                'aws:PrincipalArn':
+                  - !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+          - Sid: AllowAccessFromAccessPoint
+            Effect: Allow
+            Principal: '*'
+            Action: 's3:*'
+            Resource:
+              - !Sub 'arn:aws:s3:::${TerraformStateBucket}'
+              - !Sub 'arn:aws:s3:::${TerraformStateBucket}/*'
+            Condition:
+              StringEquals:
+                's3:DataAccessPointArn': !Sub 'arn:aws:s3:${AWS::Region}:${AWS::AccountId}:accesspoint/${ProjectPrefix}-${Environment}-tfstate-ap'
+          - Sid: DenyNonTLSRequests
+            Effect: Deny
+            Principal: '*'
+            Action: 's3:*'
+            Resource:
+              - !Sub 'arn:aws:s3:::${TerraformStateBucket}'
+              - !Sub 'arn:aws:s3:::${TerraformStateBucket}/*'
+            Condition:
+              Bool:
+                'aws:SecureTransport': 'false'
+          - Sid: EnforceModernTLS
+            Effect: Deny
+            Principal: '*'
+            Action: 's3:*'
+            Resource:
+              - !Sub 'arn:aws:s3:::${TerraformStateBucket}'
+              - !Sub 'arn:aws:s3:::${TerraformStateBucket}/*'
+            Condition:
+              NumericLessThan:
+                's3:TlsVersion': 1.2
+
+  # =========================================================================
+  # 4. IAM OIDC Provider for GitHub Actions
+  # =========================================================================
+  GitHubOIDCProvider:
+    Type: 'AWS::IAM::OIDCProvider'
+    Properties:
+      Url: 'https://token.actions.githubusercontent.com'
+      ClientIdList:
+        - 'sts.amazonaws.com'
+      ThumbprintList:
+        - '1c587635c3ec8c82d732b3d31e6243d63e832318'
+
+  # =========================================================================
+  # 5. IAM Role for GitHub Actions
+  # =========================================================================
+  GitHubActionsRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: 'github-actions-tfstate-access-role'
+      AssumeRolePolicyDocument: !Sub |
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Federated": "${GitHubOIDCProvider}"
+              },
+              "Action": "sts:AssumeRoleWithWebIdentity",
+              "Condition": {
+                "StringEquals": {
+                  "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
+                },
+                "StringLike": {
+                  "token.actions.githubusercontent.com:sub": [
+                    "repo:${GitHubOwner}/${GitHubRepository}:environment:${Environment}*",
+                    "repo:${GitHubOwner}/${GitHubRepository}:ref:refs/pull/*"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+
+Outputs:
+  S3BucketName:
+    Value: !Ref TerraformStateBucket
+  S3AccessPointArn:
+    Value: !Ref TerraformStateAccessPoint
+  GitHubActionsRoleArn:
+    Value: !GetAtt GitHubActionsRole.Arn
