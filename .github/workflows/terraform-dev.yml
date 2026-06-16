@@ -1,14 +1,11 @@
 name: Terraform Deployment (Dev)
 
 on:
-  # ★修正：mainへのマージ（push）時ではなく、
-  # mainに向けた「プルリクエスト（PR）」の作成・更新時を本番反映のトリガーにします。
   pull_request:
     types: [opened, synchronize, reopened]
     branches: [ main ]
     paths:
       - 'terraform/dev/**'
-      - 'terraform/modules/**'
 
 permissions:
   id-token: write

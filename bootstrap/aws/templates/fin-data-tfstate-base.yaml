@@ -100,9 +100,12 @@ Resources:
             Condition:
               StringNotEquals:
                 's3:DataAccessPointArn': !Sub 'arn:aws:s3:${AWS::Region}:${AWS::AccountId}:accesspoint/${ProjectPrefix}-${Environment}-tfstate-ap'
-              ArnNotEquals:
+              StringNotLike:
                 'aws:PrincipalArn':
                   - !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+                  - !Sub 'arn:aws:iam::${AWS::AccountId}:role/aws-reserved/sso.amazonaws.com/*/AWSReservedSSO_AdministratorAccess_*'
+
+
           - Sid: AllowAccessFromAccessPoint
             Effect: Allow
             Principal: '*'
