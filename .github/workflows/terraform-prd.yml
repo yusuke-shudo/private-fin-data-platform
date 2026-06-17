@@ -57,6 +57,8 @@ jobs:
         run: terraform plan -no-color
         env:
           TF_VAR_env: ${{ env.TARGET_ENV }}
+          TF_VAR_sf_user_arn:    ""
+          TF_VAR_sf_external_id: ""
 
   aws_prd_apply:
     name: AWS Prd Apply
@@ -91,6 +93,8 @@ jobs:
         run: terraform apply -auto-approve -no-color
         env:
           TF_VAR_env: ${{ env.TARGET_ENV }}
+          TF_VAR_sf_user_arn:    ""
+          TF_VAR_sf_external_id: ""
 
 
   # =========================================================================
