@@ -208,7 +208,7 @@ Resources:
           ]
         }
       ManagedPolicyArns:
-        - 'arn:aws:iam::aws:policy/PowerUserAccess'
+        - 'arn:aws:iam::aws:policy/AdministratorAccess'
 
 Outputs:
   S3BucketName:

@@ -54,18 +54,22 @@ resource "aws_iam_role" "sf_role" {
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
-      {
-        Action    = "sts:AssumeRole"
-        Effect    = "Allow"
-        Principal = {
-          AWS = var.sf_user_arn != "" ? var.sf_user_arn : "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
-        }
-        Condition = var.sf_external_id != "" ? {
-          StringEquals = {
-            "sts:ExternalId" = var.sf_external_id
+      merge(
+        {
+          Action    = "sts:AssumeRole"
+          Effect    = "Allow"
+          Principal = {
+            AWS = var.sf_user_arn != "" ? var.sf_user_arn : "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
           }
-        } : null
-      }
+        },
+        var.sf_external_id != "" ? {
+          Condition = {
+            StringEquals = {
+              "sts:ExternalId" = var.sf_external_id
+            }
+          }
+        } : {}
+      )
     ]
   })
   tags = {
@@ -83,7 +87,8 @@ resource "aws_iam_policy" "sf_s3_policy" {
     Version = "2012-10-17"
     Statement = [
       {
-        Effect = [
+        Effect = "Allow"
+        Action = [
           "s3:GetObject",
           "s3:GetObjectVersion",
           "s3:PutObject",
