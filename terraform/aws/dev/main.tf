@@ -108,12 +108,3 @@ resource "aws_iam_role_policy_attachment" "sf_role_attach" {
   role       = aws_iam_role.sf_role.name
   policy_arn = aws_iam_policy.sf_s3_policy.arn
 }
-
-# =========================================================================
-# Outputs
-# =========================================================================
-
-output "sf_integration_aws_role_arn" {
-  value       = aws_iam_role.sf_role.arn
-  description = "SnowflakeのStorage Integrationに設定するためのIAMロールARN"
-}

@@ -1,17 +1,18 @@
 name: Terraform Deployment (Prd)
 
 on:
-  # プルリク作成・更新時は「Plan（検証）」を実行
-  pull_request:
-    types: [opened, synchronize, reopened]
-    branches: [ main ]
-    paths:
-      - 'terraform/prd/**'
-  # mainブランチへのマージ（Push）時は「Apply（本番反映）」を実行
-  push:
-    branches: [ main ]
-    paths:
-      - 'terraform/prd/**'
+  workflow_dispatch:
+#  # プルリク作成・更新時は「Plan（検証）」を実行
+#  pull_request:
+#    types: [opened, synchronize, reopened]
+#    branches: [ main ]
+#    paths:
+#      - 'terraform/prd/**'
+#  # mainブランチへのマージ（Push）時は「Apply（本番反映）」を実行
+#  push:
+#    branches: [ main ]
+#    paths:
+#      - 'terraform/prd/**'
 
 permissions:
   id-token: write
