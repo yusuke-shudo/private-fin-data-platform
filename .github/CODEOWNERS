@@ -1,1 +1,4 @@
-* @yusuke-shudo @yusuke-shudo-member
+# AWS側ののコードオーナー
+/terraform/aws/             @yusuke-shudo @yusuke-shudo-member
+# Snowflake側のコードオーナー
+/terraform/snowflake/       @yusuke-shudo @yusuke-shudo-member
