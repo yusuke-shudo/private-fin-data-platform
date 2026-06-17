@@ -51,6 +51,7 @@ jobs:
       - name: Terraform Apply to Dev
         run: terraform apply -auto-approve -no-color
         env:
+          TF_VAR_env:                           "dev"
           TF_VAR_sf_organization_name:          ${{ vars.SF_ORGANIZATION_NAME }}
           TF_VAR_sf_account_name:               ${{ vars.SF_ACCOUNT_NAME }}
           SNOWFLAKE_USER:                       "cicd_infra_engineer_user"
