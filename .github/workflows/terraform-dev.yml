@@ -7,6 +7,8 @@ name: Terraform Deployment (Dev)
 #    paths:
 #      - 'terraform/aws/dev/**'
 #      - 'terraform/snowflake/dev/**'
+on:
+  workflow_dispatch:
 
 env:
   TARGET_ENV: "dev"
