@@ -1,7 +1,9 @@
 name: "⚠️ One-time State Migration"
 
 on:
-  workflow_dispatch: # 💡 これを書くと、GitHubの画面に「実行ボタン」が出現します
+  push:
+    branches:
+      - 'make_si' # 👈 ここを今のブランチ名に変えてください！on:
 
 permissions:
   id-token: write
