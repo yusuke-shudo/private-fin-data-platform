@@ -170,7 +170,7 @@ resource "aws_iam_role" "sf_role" {
 # =========================================================================
 # S3 Access Point Policy
 # =========================================================================
-resource "aws_s3_access_point_policy" "sf_ap_policy" {
+resource "aws_s3control_access_point_policy" "sf_ap_policy" {
   provider         = aws.resource_creation
   access_point_arn = aws_s3_access_point.sf_ap.arn
   policy = jsonencode({
