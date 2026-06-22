@@ -51,6 +51,48 @@ resource "aws_s3_access_point" "sf_ap" {
   provider = aws.resource_creation
   bucket   = aws_s3_bucket.data_lake.id
   name     = "private-fin-sf-ap" 
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid       = "AllowSnowflakeAccess"
+        Effect    = "Allow"
+        Principal = {
+          AWS = aws_iam_role.sf_role.arn
+        }
+        Action = [
+          "s3:ListBucket",
+          "s3:GetBucketLocation",
+          "s3:GetObject",
+          "s3:GetObjectVersion",
+          "s3:PutObject",
+          "s3:DeleteObject"
+        ]
+        Resource = [
+          "arn:aws:s3:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:accesspoint/private-fin-sf-ap",
+          "arn:aws:s3:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:accesspoint/private-fin-sf-ap/object/*"
+        ]
+      },
+      {
+        Sid       = "DenyAllDataOpsExceptSnowflake"
+        Effect    = "Deny"
+        Principal = "*"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject"
+        ]
+        Resource = "arn:aws:s3:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:accesspoint/private-fin-sf-ap/object/*"
+        Condition = {
+          ArnNotEquals = {
+            "aws:PrincipalArn" = [
+              aws_iam_role.sf_role.arn
+            ]
+          }
+        }
+      }
+    ]
+  })
 }
 
 # =========================================================================
@@ -165,54 +207,4 @@ resource "aws_iam_role" "sf_role" {
     Environment = var.env
     ManagedBy   = "Terraform"
   }
-}
-
-# =========================================================================
-# S3 Access Point Policy
-# =========================================================================
-resource "aws_s3control_access_point_policy" "sf_ap_policy" {
-  provider         = aws.resource_creation
-  access_point_arn = aws_s3_access_point.sf_ap.arn
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Sid       = "AllowSnowflakeAccess"
-        Effect    = "Allow"
-        Principal = {
-          AWS = aws_iam_role.sf_role.arn
-        }
-        Action = [
-          "s3:ListBucket",
-          "s3:GetBucketLocation",
-          "s3:GetObject",
-          "s3:GetObjectVersion",
-          "s3:PutObject",
-          "s3:DeleteObject"
-        ]
-        Resource = [
-          aws_s3_access_point.sf_ap.arn,
-          "${aws_s3_access_point.sf_ap.arn}/object/*"
-        ]
-      },
-      {
-        Sid       = "DenyAllDataOpsExceptSnowflake"
-        Effect    = "Deny"
-        Principal = "*"
-        Action = [
-          "s3:GetObject",
-          "s3:PutObject",
-          "s3:DeleteObject"
-        ]
-        Resource = "${aws_s3_access_point.sf_ap.arn}/object/*"
-        Condition = {
-          ArnNotEquals = {
-            "aws:PrincipalArn" = [
-              aws_iam_role.sf_role.arn
-            ]
-          }
-        }
-      }
-    ]
-  })
 }
