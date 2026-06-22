@@ -23,8 +23,3 @@ provider "aws" {
     session_name = "TerraformDeployment"
   }
 }
-
-data "aws_region" "current" {
-  provider = aws.resource_creation
-}
-

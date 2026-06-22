@@ -69,8 +69,8 @@ resource "aws_s3_access_point" "sf_ap" {
           "s3:DeleteObject"
         ]
         Resource = [
-          "arn:aws:s3:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:accesspoint/private-fin-sf-ap",
-          "arn:aws:s3:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:accesspoint/private-fin-sf-ap/object/*"
+          "arn:aws:s3:ap-northeast-1:${data.aws_caller_identity.current.account_id}:accesspoint/private-fin-sf-ap",
+          "arn:aws:s3:ap-northeast-1:${data.aws_caller_identity.current.account_id}:accesspoint/private-fin-sf-ap/object/*"
         ]
       },
       {
@@ -82,7 +82,7 @@ resource "aws_s3_access_point" "sf_ap" {
           "s3:PutObject",
           "s3:DeleteObject"
         ]
-        Resource = "arn:aws:s3:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:accesspoint/private-fin-sf-ap/object/*"
+        Resource = "arn:aws:s3:ap-northeast-1:${data.aws_caller_identity.current.account_id}:accesspoint/private-fin-sf-ap/object/*"
         Condition = {
           ArnNotEquals = {
             "aws:PrincipalArn" = [
