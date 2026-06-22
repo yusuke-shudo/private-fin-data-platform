@@ -167,37 +167,52 @@ resource "aws_iam_role" "sf_role" {
   }
 }
 
-resource "aws_iam_policy" "sf_s3_policy" {
-  provider    = aws.resource_creation
-  name        = "private-fin-sf-s3-policy"
-  description = "Policy for Snowflake to access S3 data lake via Access Point"
+# =========================================================================
+# S3 Access Point Policy
+# =========================================================================
+resource "aws_s3_access_point_policy" "sf_ap_policy" {
+  provider         = aws.resource_creation
+  access_point_arn = aws_s3_access_point.sf_ap.arn
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
-        Effect   = "Allow"
-        Action   = [
+        Sid       = "AllowSnowflakeAccess"
+        Effect    = "Allow"
+        Principal = {
+          AWS = aws_iam_role.sf_role.arn
+        }
+        Action = [
+          "s3:ListBucket",
+          "s3:GetBucketLocation",
           "s3:GetObject",
           "s3:GetObjectVersion",
           "s3:PutObject",
           "s3:DeleteObject"
         ]
-        Resource = "${aws_s3_access_point.sf_ap.arn}/object/*"
+        Resource = [
+          aws_s3_access_point.sf_ap.arn,
+          "${aws_s3_access_point.sf_ap.arn}/object/*"
+        ]
       },
       {
-        Effect   = "Allow"
-        Action   = [
-          "s3:ListBucket",
-          "s3:GetBucketLocation"
+        Sid       = "DenyAllDataOpsExceptSnowflake"
+        Effect    = "Deny"
+        Principal = "*"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject"
         ]
-        Resource = aws_s3_access_point.sf_ap.arn
+        Resource = "${aws_s3_access_point.sf_ap.arn}/object/*"
+        Condition = {
+          ArnNotEquals = {
+            "aws:PrincipalArn" = [
+              aws_iam_role.sf_role.arn
+            ]
+          }
+        }
       }
     ]
   })
-}
-
-resource "aws_iam_role_policy_attachment" "sf_role_attach" {
-  provider   = aws.resource_creation
-  role       = aws_iam_role.sf_role.name
-  policy_arn = aws_iam_policy.sf_s3_policy.arn
 }
