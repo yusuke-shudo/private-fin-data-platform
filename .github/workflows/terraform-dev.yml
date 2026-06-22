@@ -89,7 +89,7 @@ jobs:
             -backend-config="encrypt=true"
 
       - name: Terraform Apply to Snowflake Dev
-        run: terraform apply -auto-approve -no-color
+        run: terraform force-unlock -force 0fa3d4dd-cb1f-d5ff-776d-c1c0086eaaa1
         env:
           TF_VAR_env:                           ${{ env.TARGET_ENV }}
           TF_VAR_sf_organization_name:          ${{ vars.SF_ORGANIZATION_NAME }}
