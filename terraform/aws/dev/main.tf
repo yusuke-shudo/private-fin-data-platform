@@ -50,7 +50,7 @@ resource "aws_s3_bucket_versioning" "data_lake" {
 resource "aws_s3_access_point" "sf_ap" {
   provider = aws.resource_creation
   bucket   = aws_s3_bucket.data_lake.id
-  name     = "private-fin-sf-ap" 
+  name     = "private-fin-sf-ap"
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -62,7 +62,6 @@ resource "aws_s3_access_point" "sf_ap" {
         }
         Action = [
           "s3:ListBucket",
-          "s3:GetBucketLocation",
           "s3:GetObject",
           "s3:GetObjectVersion",
           "s3:PutObject",
