@@ -27,3 +27,4 @@ provider "aws" {
 data "aws_region" "current" {
   provider = aws.resource_creation
 }
+
