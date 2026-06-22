@@ -5,6 +5,6 @@ resource "snowflake_storage_integration_aws" "s3_integration" {
   storage_provider = "S3"
   storage_aws_role_arn = "arn:aws:iam::${var.aws_account_id}:role/private-fin-sf-s3-role"  
   storage_allowed_locations = [
-    var.sf_ap_alias != "" ? "s3://${var.sf_ap_alias}/" : "s3://dummy-bootstrap-accesspoint-bucket/"
+    var.aws_s3_ap_alias != "" ? "s3://${var.aws_s3_ap_alias}/" : "s3://dummy-bootstrap-accesspoint-bucket/"
   ]
 }

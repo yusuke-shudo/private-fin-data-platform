@@ -14,8 +14,8 @@ variable "aws_account_id" {
   type        = string
 }
 
-variable "sf_ap_alias" {
+variable "aws_s3_ap_alias" {
   type        = string
-  description = "GitHubのEnvironment変数（SF_AP_ALIAS）から注入されるAWSアクセスポイントのエイリアス"
+  description = "GitHubのEnvironment変数（AWS_S3_AP_ALIAS）から注入されるAWSアクセスポイントのエイリアス"
   default     = ""
 }
