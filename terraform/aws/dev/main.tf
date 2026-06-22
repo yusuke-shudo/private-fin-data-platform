@@ -78,7 +78,8 @@ resource "aws_s3_bucket_policy" "data_lake_policy" {
           StringNotLike = {
             "aws:PrincipalArn" = [
               "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root",
-              "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-reserved/sso.amazonaws.com/*/*"
+              "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-reserved/sso.amazonaws.com/*/*",
+              "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/github-actions-resource-creation-role"
             ]
           }
         }
