@@ -1,12 +1,13 @@
 name: Terraform Deployment (Dev)
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
-    branches: [ main ]
-    paths:
-      - 'terraform/aws/dev/**'
-      - 'terraform/snowflake/dev/**'
+  workflow_dispatch:
+#  pull_request:
+#    types: [opened, synchronize, reopened]
+#    branches: [ main ]
+#    paths:
+#      - 'terraform/aws/dev/**'
+#      - 'terraform/snowflake/dev/**'
 
 env:
   TARGET_ENV: "dev"
