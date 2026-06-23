@@ -16,8 +16,8 @@ resource "aws_s3_bucket" "data_lake" {
 
 # 2. パブリックアクセスの完全ブロック
 resource "aws_s3_bucket_public_access_block" "data_lake" {
-  provider = aws.resource_creation
-  bucket   = aws_s3_bucket.data_lake.id
+  provider                = aws.resource_creation
+  bucket                  = aws_s3_bucket.data_lake.id
   block_public_acls       = true
   block_public_policy     = true
   ignore_public_acls      = true
@@ -44,15 +44,144 @@ resource "aws_s3_bucket_versioning" "data_lake" {
   }
 }
 
+# =========================================================================
+# 外部システム（Snowflake）専用のアクセスポイント
+# =========================================================================
+resource "aws_s3_access_point" "sf_ap" {
+  provider = aws.resource_creation
+  bucket   = aws_s3_bucket.data_lake.id
+  name     = "private-fin-sf-ap"
+  policy   = jsonencode({
+    Version   = "2012-10-17"
+    Statement = [
+      {
+        Sid       = "AllowSnowflakeAccess"
+        Effect    = "Allow"
+        Principal = {
+          AWS = aws_iam_role.sf_role.arn
+        }
+        Action = [
+          "s3:ListBucket",
+          "s3:GetObject",
+          "s3:GetObjectVersion",
+          "s3:PutObject",
+          "s3:DeleteObject"
+        ]
+        Resource = [
+          "arn:aws:s3:ap-northeast-1:${data.aws_caller_identity.current.account_id}:accesspoint/private-fin-sf-ap",
+          "arn:aws:s3:ap-northeast-1:${data.aws_caller_identity.current.account_id}:accesspoint/private-fin-sf-ap/object/*"
+        ]
+      },
+      {
+        Sid       = "DenyAllDataOpsExceptSnowflake"
+        Effect    = "Deny"
+        Principal = "*"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject"
+        ]
+        Resource  = "arn:aws:s3:ap-northeast-1:${data.aws_caller_identity.current.account_id}:accesspoint/private-fin-sf-ap/object/*"
+        Condition = {
+          ArnNotEquals = {
+            "aws:PrincipalArn" = [
+              aws_iam_role.sf_role.arn
+            ]
+          }
+        }
+      }
+    ]
+  })
+}
+
+# =========================================================================
+# バケットポリシー
+# =========================================================================
+resource "aws_s3_bucket_policy" "data_lake_policy" {
+  provider = aws.resource_creation
+  bucket   = aws_s3_bucket.data_lake.id
+  policy   = jsonencode({
+    Version   = "2012-10-17"
+    Statement = [
+      {
+        Sid       = "DenyDirectAccessExceptAccessPointAndBootstrap"
+        Effect    = "Deny"
+        Principal = "*"
+        Action    = "s3:*"
+        Resource  = [
+          aws_s3_bucket.data_lake.arn,
+          "${aws_s3_bucket.data_lake.arn}/*"
+        ]
+        Condition = {
+          StringNotEquals = {
+            "s3:DataAccessPointArn" = aws_s3_access_point.sf_ap.arn
+          }
+          StringNotLike = {
+            "aws:PrincipalArn" = [
+              "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root",
+              "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-reserved/sso.amazonaws.com/*/*",
+              "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/github-actions-resource-creation-role"
+            ]
+          }
+        }
+      },
+      {
+        Sid       = "AllowAccessFromAccessPoint"
+        Effect    = "Allow"
+        Principal = "*"
+        Action    = "s3:*"
+        Resource  = [
+          aws_s3_bucket.data_lake.arn,
+          "${aws_s3_bucket.data_lake.arn}/*"
+        ]
+        Condition = {
+          StringEquals = {
+            "s3:DataAccessPointArn" = aws_s3_access_point.sf_ap.arn
+          }
+        }
+      },
+      {
+        Sid       = "DenyNonTLSRequests"
+        Effect    = "Deny"
+        Principal = "*"
+        Action    = "s3:*"
+        Resource  = [
+          aws_s3_bucket.data_lake.arn,
+          "${aws_s3_bucket.data_lake.arn}/*"
+        ]
+        Condition = {
+          Bool = {
+            "aws:SecureTransport" = "false"
+          }
+        }
+      },
+      {
+        Sid       = "EnforceModernTLS"
+        Effect    = "Deny"
+        Principal = "*"
+        Action    = "s3:*"
+        Resource  = [
+          aws_s3_bucket.data_lake.arn,
+          "${aws_s3_bucket.data_lake.arn}/*"
+        ]
+        Condition = {
+          NumericLessThan = {
+            "s3:TlsVersion" = "1.2"
+          }
+        }
+      }
+    ]
+  })
+}
 
 # =========================================================================
 # Snowflake連携用 IAM定義
 # =========================================================================
 resource "aws_iam_role" "sf_role" {
-  provider = aws.resource_creation
-  name     = "private-fin-sf-s3-role-${var.env}"
+  provider           = aws.resource_creation
+  name               = "private-fin-sf-s3-role"
   assume_role_policy = jsonencode({
-    Version = "2012-10-17"
+    Version   = "2012-10-17"
     Statement = [
       merge(
         {
@@ -73,43 +202,8 @@ resource "aws_iam_role" "sf_role" {
     ]
   })
   tags = {
-    Name        = "private-fin-sf-s3-role-${var.env}"
+    Name        = "private-fin-sf-s3-role"
     Environment = var.env
     ManagedBy   = "Terraform"
   }
-}
-
-resource "aws_iam_policy" "sf_s3_policy" {
-  provider    = aws.resource_creation
-  name        = "private-fin-sf-s3-policy-${var.env}"
-  description = "Policy for Snowflake to access S3 data lake"
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "s3:GetObject",
-          "s3:GetObjectVersion",
-          "s3:PutObject",
-          "s3:DeleteObject"
-        ]
-        Resource = "${aws_s3_bucket.data_lake.arn}/*"
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "s3:ListBucket",
-          "s3:GetBucketLocation"
-        ]
-        Resource = aws_s3_bucket.data_lake.arn
-      }
-    ]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "sf_role_attach" {
-  provider   = aws.resource_creation
-  role       = aws_iam_role.sf_role.name
-  policy_arn = aws_iam_policy.sf_s3_policy.arn
 }

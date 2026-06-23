@@ -1,26 +1,31 @@
-name: Terraform Deployment (Dev)
+name: Terraform Deployment (AWS Dev)
 
 on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [ main ]
+    paths:
+      - 'terraform/aws/prd/**'
+      - '.github/workflows/tf-aws-prd.yml'
+  push:
+    branches: [ main ]
+    paths:
+      - 'terraform/aws/prd/**'
   workflow_dispatch:
-#  pull_request:
-#    types: [opened, synchronize, reopened]
-#    branches: [ main ]
-#    paths:
-#      - 'terraform/aws/dev/**'
-#      - 'terraform/snowflake/dev/**'
 
 env:
-  TARGET_ENV: "dev"
+  TARGET_ENV: "prd"
 
 permissions:
   id-token: write
   contents: read
 
 jobs:
-  terraform_aws_dev:
-    name: Terraform AWS Dev Apply
+  terraform_aws_prd_plan:
+    name: Terraform AWS Prd Plan
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
-    environment: dev-infra
+    environment: prd-infra
     defaults:
       run:
         working-directory: ./terraform/aws/${{ env.TARGET_ENV }}
@@ -45,39 +50,31 @@ jobs:
             -backend-config="use_lockfile=true" \
             -backend-config="encrypt=true"
 
-      - name: Terraform Apply to AWS Dev
-        run: terraform apply -auto-approve -no-color
+      - name: Terraform Plan to AWS Prd
+        run: terraform plan -no-color
         env:
           TF_VAR_env:            ${{ env.TARGET_ENV }}
-          TF_VAR_sf_user_arn:    ""
-          TF_VAR_sf_external_id: ""
+          TF_VAR_sf_user_arn:    ${{ vars.SF_USER_ARN }}
+          TF_VAR_sf_external_id: ${{ vars.SF_EXTERNAL_ID }}
 
-  terraform_sf_dev:
-    name: Terraform Snowflake Dev Apply
+  terraform_aws_prd_apply:
+    name: Terraform AWS Prd Apply
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
-    environment: dev-infra
-    needs: terraform_aws_dev
+    environment: prd-infra
     defaults:
       run:
-        working-directory: ./terraform/snowflake/${{ env.TARGET_ENV }}
+        working-directory: ./terraform/aws/${{ env.TARGET_ENV }}
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Configure AWS Credentials via OIDC (For S3 Backend)
+      - name: Configure AWS Credentials via OIDC
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/github-actions-tfstate-access-role
           aws-region: ap-northeast-1
-
-      - name: Mint Snowflake OIDC Token
-        run: |
-          OIDC_TOKEN=$(curl -sLS \
-            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
-            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=snowflakecomputing.com" \
-            | jq -r '.value')
-          echo "SNOWFLAKE_TOKEN=$OIDC_TOKEN" >> $GITHUB_ENV
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v4
@@ -89,13 +86,9 @@ jobs:
             -backend-config="use_lockfile=true" \
             -backend-config="encrypt=true"
 
-      - name: Terraform Apply to Snowflake Dev
+      - name: Terraform Apply to AWS Prd
         run: terraform apply -auto-approve -no-color
         env:
-          TF_VAR_env:                           ${{ env.TARGET_ENV }}
-          TF_VAR_sf_organization_name:          ${{ vars.SF_ORGANIZATION_NAME }}
-          TF_VAR_sf_account_name:               ${{ vars.SF_ACCOUNT_NAME }}
-          TF_VAR_aws_account_id:                ${{ vars.AWS_ACCOUNT_ID }}
-          SNOWFLAKE_USER:                       "cicd_infra_engineer_user"
-          SNOWFLAKE_AUTHENTICATOR:              "WORKLOAD_IDENTITY"
-          SNOWFLAKE_WORKLOAD_IDENTITY_PROVIDER: "OIDC"
+          TF_VAR_env:            ${{ env.TARGET_ENV }}
+          TF_VAR_sf_user_arn:    ${{ vars.SF_USER_ARN }}
+          TF_VAR_sf_external_id: ${{ vars.SF_EXTERNAL_ID }}

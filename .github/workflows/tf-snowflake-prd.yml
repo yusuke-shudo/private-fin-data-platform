@@ -1,62 +1,31 @@
-name: Terraform Deployment (Dev)
+name: Terraform Snowflake (Snowflake Prd)
 
 on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [ main ]
+    paths:
+      - 'terraform/snowflake/prd/**'
+      - '.github/workflows/tf-snowflake-prd.yml'
+  push:
+    branches: [ main ]
+    paths:
+      - 'terraform/snowflake/prd/**'
   workflow_dispatch:
-#  pull_request:
-#    types: [opened, synchronize, reopened]
-#    branches: [ main ]
-#    paths:
-#      - 'terraform/aws/dev/**'
-#      - 'terraform/snowflake/dev/**'
 
 env:
-  TARGET_ENV: "dev"
+  TARGET_ENV: "prd"
 
 permissions:
   id-token: write
   contents: read
 
 jobs:
-  terraform_aws_dev:
-    name: Terraform AWS Dev Apply
+  terraform_sf_prd_plan:
+    name: Terraform Snowflake Prd Plan
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
-    environment: dev-infra
-    defaults:
-      run:
-        working-directory: ./terraform/aws/${{ env.TARGET_ENV }}
-
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Configure AWS Credentials via OIDC
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/github-actions-tfstate-access-role
-          aws-region: ap-northeast-1
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v4
-
-      - name: Terraform Init
-        run: |
-          terraform init \
-            -backend-config="bucket=arn:aws:s3:ap-northeast-1:${{ vars.AWS_ACCOUNT_ID }}:accesspoint/${{ vars.PROJECT_PREFIX }}-${{ env.TARGET_ENV }}-tfstate-ap" \
-            -backend-config="use_lockfile=true" \
-            -backend-config="encrypt=true"
-
-      - name: Terraform Apply to AWS Dev
-        run: terraform apply -auto-approve -no-color
-        env:
-          TF_VAR_env:            ${{ env.TARGET_ENV }}
-          TF_VAR_sf_user_arn:    ""
-          TF_VAR_sf_external_id: ""
-
-  terraform_sf_dev:
-    name: Terraform Snowflake Dev Apply
-    runs-on: ubuntu-latest
-    environment: dev-infra
-    needs: terraform_aws_dev
+    environment: prd-infra
     defaults:
       run:
         working-directory: ./terraform/snowflake/${{ env.TARGET_ENV }}
@@ -89,13 +58,63 @@ jobs:
             -backend-config="use_lockfile=true" \
             -backend-config="encrypt=true"
 
-      - name: Terraform Apply to Snowflake Dev
+      - name: Terraform Plan to Snowflake Prd
+        run: terraform plan -no-color
+        env:
+          TF_VAR_env:                           ${{ env.TARGET_ENV }}
+          TF_VAR_sf_organization_name:          ${{ vars.SF_ORGANIZATION_NAME }}
+          TF_VAR_sf_account_name:               ${{ vars.SF_ACCOUNT_NAME }}
+          TF_VAR_aws_account_id:                ${{ vars.AWS_ACCOUNT_ID }}
+          TF_VAR_aws_s3_ap_alias:               ${{ vars.AWS_S3_AP_ALIAS }}
+          SNOWFLAKE_USER:                       "cicd_infra_engineer_user"
+          SNOWFLAKE_AUTHENTICATOR:              "WORKLOAD_IDENTITY"
+          SNOWFLAKE_WORKLOAD_IDENTITY_PROVIDER: "OIDC"
+
+  terraform_sf_prd_apply:
+    name: Terraform Snowflake Prd Apply
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment: prd-infra
+    defaults:
+      run:
+        working-directory: ./terraform/snowflake/${{ env.TARGET_ENV }}
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials via OIDC (For S3 Backend)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/github-actions-tfstate-access-role
+          aws-region: ap-northeast-1
+
+      - name: Mint Snowflake OIDC Token
+        run: |
+          OIDC_TOKEN=$(curl -sLS \
+            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=snowflakecomputing.com" \
+            | jq -r '.value')
+          echo "SNOWFLAKE_TOKEN=$OIDC_TOKEN" >> $GITHUB_ENV
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v4
+
+      - name: Terraform Init
+        run: |
+          terraform init \
+            -backend-config="bucket=arn:aws:s3:ap-northeast-1:${{ vars.AWS_ACCOUNT_ID }}:accesspoint/${{ vars.PROJECT_PREFIX }}-${{ env.TARGET_ENV }}-tfstate-ap" \
+            -backend-config="use_lockfile=true" \
+            -backend-config="encrypt=true"
+
+      - name: Terraform Apply to Snowflake Prd
         run: terraform apply -auto-approve -no-color
         env:
           TF_VAR_env:                           ${{ env.TARGET_ENV }}
           TF_VAR_sf_organization_name:          ${{ vars.SF_ORGANIZATION_NAME }}
           TF_VAR_sf_account_name:               ${{ vars.SF_ACCOUNT_NAME }}
           TF_VAR_aws_account_id:                ${{ vars.AWS_ACCOUNT_ID }}
+          TF_VAR_aws_s3_ap_alias:               ${{ vars.AWS_S3_AP_ALIAS }}
           SNOWFLAKE_USER:                       "cicd_infra_engineer_user"
           SNOWFLAKE_AUTHENTICATOR:              "WORKLOAD_IDENTITY"
           SNOWFLAKE_WORKLOAD_IDENTITY_PROVIDER: "OIDC"
