@@ -1,5 +1,5 @@
 variable "env" {
-  type        = string
+  type = string
 }
 
 variable "sf_organization_name" {
@@ -11,7 +11,7 @@ variable "sf_account_name" {
 }
 
 variable "aws_account_id" {
-  type        = string
+  type = string
 }
 
 variable "aws_s3_ap_alias" {

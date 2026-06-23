@@ -1,5 +1,5 @@
 variable "env" {
-  type    = string
+  type        = string
   description = "実行環境(dev または prd)"
 }
 

@@ -1,18 +1,17 @@
-name: Terraform Deployment (Prd)
+name: Terraform Snowflake (Snowflake Prd)
 
 on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [ main ]
+    paths:
+      - 'terraform/snowflake/prd/**'
+      - '.github/workflows/tf-snowflake-prd.yml'
+  push:
+    branches: [ main ]
+    paths:
+      - 'terraform/snowflake/prd/**'
   workflow_dispatch:
-#  pull_request:
-#    types: [opened, synchronize, reopened]
-#    branches: [ main ]
-#    paths:
-#      - 'terraform/aws/prd/**'
-#      - 'terraform/snowflake/prd/**'
-#  push:
-#    branches: [ main ]
-#    paths:
-#      - 'terraform/aws/prd/**'
-#      - 'terraform/snowflake/prd/**'
 
 env:
   TARGET_ENV: "prd"
@@ -22,91 +21,11 @@ permissions:
   contents: read
 
 jobs:
-  # =========================================================================
-  # AWS：Plan & Apply
-  # =========================================================================
-  aws_prd_plan:
-    name: AWS Prd Plan
+  terraform_sf_prd_plan:
+    name: Terraform Snowflake Prd Plan
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     environment: prd-infra
-    defaults:
-      run:
-        working-directory: ./terraform/aws/${{ env.TARGET_ENV }}
-
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Configure AWS Credentials via OIDC
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/github-actions-tfstate-access-role
-          aws-region: ap-northeast-1
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v4
-
-      - name: Terraform Init
-        run: |
-          terraform init \
-            -backend-config="bucket=arn:aws:s3:ap-northeast-1:${{ vars.AWS_ACCOUNT_ID }}:accesspoint/${{ vars.PROJECT_PREFIX }}-${{ env.TARGET_ENV }}-tfstate-ap" \
-            -backend-config="use_lockfile=true" \
-            -backend-config="encrypt=true"
-
-      - name: Terraform Plan to AWS Prd
-        run: terraform plan -no-color
-        env:
-          TF_VAR_env: ${{ env.TARGET_ENV }}
-          TF_VAR_sf_user_arn:    ""
-          TF_VAR_sf_external_id: ""
-
-  aws_prd_apply:
-    name: AWS Prd Apply
-    if: github.event_name == 'push'
-    runs-on: ubuntu-latest
-    environment: prd-infra
-    defaults:
-      run:
-        working-directory: ./terraform/aws/${{ env.TARGET_ENV }}
-
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Configure AWS Credentials via OIDC
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/github-actions-tfstate-access-role
-          aws-region: ap-northeast-1
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v4
-
-      - name: Terraform Init
-        run: |
-          terraform init \
-            -backend-config="bucket=arn:aws:s3:ap-northeast-1:${{ vars.AWS_ACCOUNT_ID }}:accesspoint/${{ vars.PROJECT_PREFIX }}-${{ env.TARGET_ENV }}-tfstate-ap" \
-            -backend-config="use_lockfile=true" \
-            -backend-config="encrypt=true"
-
-      - name: Terraform Apply to AWS Prd
-        run: terraform apply -auto-approve -no-color
-        env:
-          TF_VAR_env: ${{ env.TARGET_ENV }}
-          TF_VAR_sf_user_arn:    ""
-          TF_VAR_sf_external_id: ""
-
-
-  # =========================================================================
-  # Snowflake：Plan & Apply
-  # =========================================================================
-  sf_prd_plan:
-    name: Snowflake Prd Plan
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    environment: prd-infra
-    needs: aws_prd_plan
     defaults:
       run:
         working-directory: ./terraform/snowflake/${{ env.TARGET_ENV }}
@@ -115,7 +34,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Configure AWS Credentials via OIDC
+      - name: Configure AWS Credentials via OIDC (For S3 Backend)
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/github-actions-tfstate-access-role
@@ -145,16 +64,17 @@ jobs:
           TF_VAR_env:                           ${{ env.TARGET_ENV }}
           TF_VAR_sf_organization_name:          ${{ vars.SF_ORGANIZATION_NAME }}
           TF_VAR_sf_account_name:               ${{ vars.SF_ACCOUNT_NAME }}
+          TF_VAR_aws_account_id:                ${{ vars.AWS_ACCOUNT_ID }}
+          TF_VAR_aws_s3_ap_alias:               ${{ vars.AWS_S3_AP_ALIAS }}
           SNOWFLAKE_USER:                       "cicd_infra_engineer_user"
           SNOWFLAKE_AUTHENTICATOR:              "WORKLOAD_IDENTITY"
           SNOWFLAKE_WORKLOAD_IDENTITY_PROVIDER: "OIDC"
 
-  sf_prd_apply:
-    name: Snowflake Prd Apply
+  terraform_sf_prd_apply:
+    name: Terraform Snowflake Prd Apply
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     environment: prd-infra
-    needs: aws_prd_apply
     defaults:
       run:
         working-directory: ./terraform/snowflake/${{ env.TARGET_ENV }}
@@ -163,7 +83,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Configure AWS Credentials via OIDC
+      - name: Configure AWS Credentials via OIDC (For S3 Backend)
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/github-actions-tfstate-access-role
@@ -193,6 +113,8 @@ jobs:
           TF_VAR_env:                           ${{ env.TARGET_ENV }}
           TF_VAR_sf_organization_name:          ${{ vars.SF_ORGANIZATION_NAME }}
           TF_VAR_sf_account_name:               ${{ vars.SF_ACCOUNT_NAME }}
+          TF_VAR_aws_account_id:                ${{ vars.AWS_ACCOUNT_ID }}
+          TF_VAR_aws_s3_ap_alias:               ${{ vars.AWS_S3_AP_ALIAS }}
           SNOWFLAKE_USER:                       "cicd_infra_engineer_user"
           SNOWFLAKE_AUTHENTICATOR:              "WORKLOAD_IDENTITY"
           SNOWFLAKE_WORKLOAD_IDENTITY_PROVIDER: "OIDC"

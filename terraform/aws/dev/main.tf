@@ -16,8 +16,8 @@ resource "aws_s3_bucket" "data_lake" {
 
 # 2. パブリックアクセスの完全ブロック
 resource "aws_s3_bucket_public_access_block" "data_lake" {
-  provider = aws.resource_creation
-  bucket   = aws_s3_bucket.data_lake.id
+  provider                = aws.resource_creation
+  bucket                  = aws_s3_bucket.data_lake.id
   block_public_acls       = true
   block_public_policy     = true
   ignore_public_acls      = true
@@ -51,8 +51,8 @@ resource "aws_s3_access_point" "sf_ap" {
   provider = aws.resource_creation
   bucket   = aws_s3_bucket.data_lake.id
   name     = "private-fin-sf-ap"
-  policy = jsonencode({
-    Version = "2012-10-17"
+  policyvv = jsonencode({
+    Version   = "2012-10-17"
     Statement = [
       {
         Sid       = "AllowSnowflakeAccess"
@@ -81,7 +81,7 @@ resource "aws_s3_access_point" "sf_ap" {
           "s3:PutObject",
           "s3:DeleteObject"
         ]
-        Resource = "arn:aws:s3:ap-northeast-1:${data.aws_caller_identity.current.account_id}:accesspoint/private-fin-sf-ap/object/*"
+        Resource  = "arn:aws:s3:ap-northeast-1:${data.aws_caller_identity.current.account_id}:accesspoint/private-fin-sf-ap/object/*"
         Condition = {
           ArnNotEquals = {
             "aws:PrincipalArn" = [
@@ -100,8 +100,8 @@ resource "aws_s3_access_point" "sf_ap" {
 resource "aws_s3_bucket_policy" "data_lake_policy" {
   provider = aws.resource_creation
   bucket   = aws_s3_bucket.data_lake.id
-  policy = jsonencode({
-    Version = "2012-10-17"
+  policy   = jsonencode({
+    Version   = "2012-10-17"
     Statement = [
       {
         Sid       = "DenyDirectAccessExceptAccessPointAndBootstrap"
@@ -178,10 +178,10 @@ resource "aws_s3_bucket_policy" "data_lake_policy" {
 # Snowflake連携用 IAM定義
 # =========================================================================
 resource "aws_iam_role" "sf_role" {
-  provider = aws.resource_creation
-  name     = "private-fin-sf-s3-role"
+  provider           = aws.resource_creation
+  name               = "private-fin-sf-s3-role"
   assume_role_policy = jsonencode({
-    Version = "2012-10-17"
+    Version   = "2012-10-17"
     Statement = [
       merge(
         {
