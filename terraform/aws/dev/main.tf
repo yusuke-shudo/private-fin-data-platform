@@ -51,7 +51,7 @@ resource "aws_s3_access_point" "sf_ap" {
   provider = aws.resource_creation
   bucket   = aws_s3_bucket.data_lake.id
   name     = "private-fin-sf-ap"
-  policyvv = jsonencode({
+  policy   = jsonencode({
     Version   = "2012-10-17"
     Statement = [
       {
