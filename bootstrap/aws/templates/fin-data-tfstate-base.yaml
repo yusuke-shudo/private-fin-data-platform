@@ -24,7 +24,82 @@ Parameters:
 
 Resources:
   # =========================================================================
-  # 1. S3 Bucket for Terraform State
+  # 1. IAM OIDC Provider for GitHub Actions
+  # =========================================================================
+  GitHubOIDCProvider:
+    Type: 'AWS::IAM::OIDCProvider'
+    Properties:
+      Url: 'https://token.actions.githubusercontent.com'
+      ClientIdList:
+        - 'sts.amazonaws.com'
+      ThumbprintList:
+        - '1c587635c3ec8c82d732b3d31e6243d63e832318'
+
+  # =========================================================================
+  # 2. IAM Role for GitHub Actions
+  # =========================================================================
+  GitHubActionsTfstateAccessRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: 'github-actions-tfstate-access-role'
+      AssumeRolePolicyDocument: !Sub |
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Federated": "${GitHubOIDCProvider}"
+              },
+              "Action": "sts:AssumeRoleWithWebIdentity",
+              "Condition": {
+                "StringEquals": {
+                  "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
+                },
+                "StringLike": {
+                  "token.actions.githubusercontent.com:sub": [
+                    "repo:${GitHubOwner}/${GitHubRepository}:environment:${Environment}*",
+                    "repo:${GitHubOwner}/${GitHubRepository}:ref:refs/pull/*"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      Policies:
+        - PolicyName: 'AllowAssumeResourceCreationRole'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: 'sts:AssumeRole'
+                Resource: !Sub 'arn:aws:iam::${AWS::AccountId}:role/github-actions-resource-creation-role'
+
+  # =========================================================================
+  # 3. IAM Role for Resource Creation
+  # =========================================================================
+  GitHubActionsResourceCreationRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: 'github-actions-resource-creation-role'
+      AssumeRolePolicyDocument: !Sub |
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": "${GitHubActionsTfstateAccessRole.Arn}"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        }
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/AdministratorAccess'
+
+  # =========================================================================
+  # 4. S3 Bucket for Terraform State
   # =========================================================================
   TerraformStateBucket:
     Type: 'AWS::S3::Bucket'
@@ -44,7 +119,7 @@ Resources:
         RestrictPublicBuckets: true
 
   # =========================================================================
-  # 2. S3 Access Point
+  # 5. S3 Access Point
   # =========================================================================
   TerraformStateAccessPoint:
     Type: 'AWS::S3::AccessPoint'
@@ -57,7 +132,7 @@ Resources:
           - Sid: AllowGitHubActionsAccess
             Effect: Allow
             Principal:
-              AWS: !GetAtt GitHubActionsTfstateAccessRole.Arn
+              AWS: !GetAtt GitHubActionsTfstateAccessRole.Arn # 💡すでに上で登場しているのでスッと読める
             Action:
               - 's3:ListBucket'
               - 's3:GetObject'
@@ -81,7 +156,7 @@ Resources:
                   - !GetAtt GitHubActionsTfstateAccessRole.Arn
 
   # =========================================================================
-  # 3. S3 Bucket Policy
+  # 6. S3 Bucket Policy
   # =========================================================================
   TerraformStateBucketPolicy:
     Type: 'AWS::S3::BucketPolicy'
@@ -135,87 +210,12 @@ Resources:
               NumericLessThan:
                 's3:TlsVersion': 1.2
 
-  # =========================================================================
-  # 4. IAM OIDC Provider for GitHub Actions
-  # =========================================================================
-  GitHubOIDCProvider:
-    Type: 'AWS::IAM::OIDCProvider'
-    Properties:
-      Url: 'https://token.actions.githubusercontent.com'
-      ClientIdList:
-        - 'sts.amazonaws.com'
-      ThumbprintList:
-        - '1c587635c3ec8c82d732b3d31e6243d63e832318'
-
-  # =========================================================================
-  # 5. IAM Role for GitHub Actions (tfstate access only)
-  # =========================================================================
-  GitHubActionsTfstateAccessRole:
-    Type: 'AWS::IAM::Role'
-    Properties:
-      RoleName: 'github-actions-tfstate-access-role'
-      AssumeRolePolicyDocument: !Sub |
-        {
-          "Version": "2012-10-17",
-          "Statement": [
-            {
-              "Effect": "Allow",
-              "Principal": {
-                "Federated": "${GitHubOIDCProvider}"
-              },
-              "Action": "sts:AssumeRoleWithWebIdentity",
-              "Condition": {
-                "StringEquals": {
-                  "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
-                },
-                "StringLike": {
-                  "token.actions.githubusercontent.com:sub": [
-                    "repo:${GitHubOwner}/${GitHubRepository}:environment:${Environment}*",
-                    "repo:${GitHubOwner}/${GitHubRepository}:ref:refs/pull/*"
-                  ]
-                }
-              }
-            }
-          ]
-        }
-      Policies:
-        - PolicyName: 'AllowAssumeResourceCreationRole'
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action: 'sts:AssumeRole'
-                Resource: !Sub 'arn:aws:iam::${AWS::AccountId}:role/github-actions-resource-creation-role'
-
-  # =========================================================================
-  # 6. IAM Role for Resource Creation (AWS Resource Deployment)
-  # =========================================================================
-  GitHubActionsResourceCreationRole:
-    Type: 'AWS::IAM::Role'
-    Properties:
-      RoleName: 'github-actions-resource-creation-role'
-      AssumeRolePolicyDocument: !Sub |
-        {
-          "Version": "2012-10-17",
-          "Statement": [
-            {
-              "Effect": "Allow",
-              "Principal": {
-                "AWS": "${GitHubActionsTfstateAccessRole.Arn}"
-              },
-              "Action": "sts:AssumeRole"
-            }
-          ]
-        }
-      ManagedPolicyArns:
-        - 'arn:aws:iam::aws:policy/AdministratorAccess'
-
 Outputs:
-  S3BucketName:
-    Value: !Ref TerraformStateBucket
-  S3AccessPointArn:
-    Value: !Ref TerraformStateAccessPoint
   GitHubActionsRoleArn:
     Value: !GetAtt GitHubActionsTfstateAccessRole.Arn
   GitHubActionsResourceCreationRoleArn:
     Value: !GetAtt GitHubActionsResourceCreationRole.Arn
+  S3BucketName:
+    Value: !Ref TerraformStateBucket
+  S3AccessPointArn:
+    Value: !Ref TerraformStateAccessPoint

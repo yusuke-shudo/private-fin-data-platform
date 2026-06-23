@@ -5,6 +5,10 @@ terraform {
       source  = "snowflakedb/snowflake"
       version = "~> 2.17.0"
     }
+    time = {
+      source  = "hashicorp/time"
+      version = "~> 0.14.0"
+    }
   }
 }
 
