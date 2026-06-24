@@ -1,5 +1,5 @@
 # =========================================================================
-# データ配置用 S3バケット定義
+# データ配置用 S3バケット本体と基本設定
 # =========================================================================
 
 # 1. バケット本体
@@ -45,12 +45,52 @@ resource "aws_s3_bucket_versioning" "data_lake" {
 }
 
 # =========================================================================
+# Snowflake連携用 IAM定義
+# =========================================================================
+resource "aws_iam_role" "sf_role" {
+  provider           = aws.resource_creation
+  name               = "private-fin-sf-s3-role"
+  assume_role_policy = jsonencode({
+    Version   = "2012-10-17"
+    Statement = [
+      merge(
+        {
+          Action    = "sts:AssumeRole"
+          Effect    = "Allow"
+          Principal = {
+            AWS = var.sf_user_arn != "" ? var.sf_user_arn : "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
+          }
+        },
+        var.sf_external_id != "" ? {
+          Condition = {
+            StringEquals = {
+              "sts:ExternalId" = var.sf_external_id
+            }
+          }
+        } : {}
+      )
+    ]
+  })
+  tags = {
+    Name        = "private-fin-sf-s3-role"
+    Environment = var.env
+    ManagedBy   = "Terraform"
+  }
+}
+
+resource "time_sleep" "wait_30_seconds" {
+  depends_on = [aws_iam_role.sf_role]
+  create_duration = "30s"
+}
+
+# =========================================================================
 # 外部システム（Snowflake）専用のアクセスポイント
 # =========================================================================
 resource "aws_s3_access_point" "sf_ap" {
   provider = aws.resource_creation
   bucket   = aws_s3_bucket.data_lake.id
   name     = "private-fin-sf-ap"
+  depends_on = [time_sleep.wait_30_seconds]
   policy   = jsonencode({
     Version   = "2012-10-17"
     Statement = [
@@ -172,38 +212,4 @@ resource "aws_s3_bucket_policy" "data_lake_policy" {
       }
     ]
   })
-}
-
-# =========================================================================
-# Snowflake連携用 IAM定義
-# =========================================================================
-resource "aws_iam_role" "sf_role" {
-  provider           = aws.resource_creation
-  name               = "private-fin-sf-s3-role"
-  assume_role_policy = jsonencode({
-    Version   = "2012-10-17"
-    Statement = [
-      merge(
-        {
-          Action    = "sts:AssumeRole"
-          Effect    = "Allow"
-          Principal = {
-            AWS = var.sf_user_arn != "" ? var.sf_user_arn : "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
-          }
-        },
-        var.sf_external_id != "" ? {
-          Condition = {
-            StringEquals = {
-              "sts:ExternalId" = var.sf_external_id
-            }
-          }
-        } : {}
-      )
-    ]
-  })
-  tags = {
-    Name        = "private-fin-sf-s3-role"
-    Environment = var.env
-    ManagedBy   = "Terraform"
-  }
 }
