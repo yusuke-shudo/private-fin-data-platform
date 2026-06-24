@@ -1,4 +1,4 @@
-name: Terraform Deployment (AWS Dev)
+name: Terraform Deployment (AWS Prd)
 
 on:
   pull_request:
