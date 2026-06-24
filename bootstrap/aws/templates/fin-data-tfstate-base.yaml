@@ -132,7 +132,7 @@ Resources:
           - Sid: AllowGitHubActionsAccess
             Effect: Allow
             Principal:
-              AWS: !GetAtt GitHubActionsTfstateAccessRole.Arn # 💡すでに上で登場しているのでスッと読める
+              AWS: !GetAtt GitHubActionsTfstateAccessRole.Arn
             Action:
               - 's3:ListBucket'
               - 's3:GetObject'
