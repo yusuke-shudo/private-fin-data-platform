@@ -1,0 +1,7 @@
+migration_table_name: SCHEMACHANGE_MIGRATIONS
+sql_file_suffix: .sql
+error_if_not_initialized: false
+
+# DATALAKE_DB configuration
+database: DATALAKE_DB
+schema: SCHEMACHANGE
