@@ -1,0 +1,126 @@
+name: Schemachange Snowflake (Prd)
+
+on:
+  workflow_dispatch:
+
+env:
+  TARGET_ENV: "prd"
+  PYTHON_VERSION: "3.11"
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  schemachange_datalake:
+    name: Schemachange Datalake Prd
+    runs-on: ubuntu-latest
+    environment: prd-infra
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install schemachange
+        run: pip install schemachange
+
+      - name: Mint Snowflake OIDC Token
+        run: |
+          OIDC_TOKEN=$(curl -sLS \
+            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=snowflakecomputing.com" \
+            | jq -r '.value')
+          echo "SNOWFLAKE_TOKEN=$OIDC_TOKEN" >> $GITHUB_ENV
+
+      - name: Run schemachange for Datalake
+        run: |
+          schemachange \
+            --config-path ./schemachange/datalake/${{ env.TARGET_ENV }}/schemachange.yml \
+            --change-history-table SCHEMACHANGE_MIGRATIONS
+        env:
+          SNOWFLAKE_ACCOUNT:   ${{ vars.SF_ACCOUNT_NAME }}
+          SNOWFLAKE_USER:      "cicd_infra_engineer_user"
+          SNOWFLAKE_TOKEN:     ${{ env.SNOWFLAKE_TOKEN }}
+          SNOWFLAKE_ROLE:      "ACCOUNTADMIN"
+          SNOWFLAKE_DATABASE: "DATALAKE_DB"
+          SNOWFLAKE_WAREHOUSE: "COMPUTE_WH"
+
+  schemachange_datawarehouse:
+    name: Schemachange Datawarehouse Prd
+    runs-on: ubuntu-latest
+    environment: prd-infra
+    needs: schemachange_datalake
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install schemachange
+        run: pip install schemachange
+
+      - name: Mint Snowflake OIDC Token
+        run: |
+          OIDC_TOKEN=$(curl -sLS \
+            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=snowflakecomputing.com" \
+            | jq -r '.value')
+          echo "SNOWFLAKE_TOKEN=$OIDC_TOKEN" >> $GITHUB_ENV
+
+      - name: Run schemachange for Datawarehouse
+        run: |
+          schemachange \
+            --config-path ./schemachange/datawarehouse/${{ env.TARGET_ENV }}/schemachange.yml \
+            --change-history-table SCHEMACHANGE_MIGRATIONS
+        env:
+          SNOWFLAKE_ACCOUNT:   ${{ vars.SF_ACCOUNT_NAME }}
+          SNOWFLAKE_USER:      "cicd_infra_engineer_user"
+          SNOWFLAKE_TOKEN:     ${{ env.SNOWFLAKE_TOKEN }}
+          SNOWFLAKE_ROLE:      "ACCOUNTADMIN"
+          SNOWFLAKE_DATABASE: "DATAWAREHOUSE_DB"
+          SNOWFLAKE_WAREHOUSE: "COMPUTE_WH"
+
+  schemachange_datamart:
+    name: Schemachange Datamart Prd
+    runs-on: ubuntu-latest
+    environment: prd-infra
+    needs: schemachange_datawarehouse
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install schemachange
+        run: pip install schemachange
+
+      - name: Mint Snowflake OIDC Token
+        run: |
+          OIDC_TOKEN=$(curl -sLS \
+            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=snowflakecomputing.com" \
+            | jq -r '.value')
+          echo "SNOWFLAKE_TOKEN=$OIDC_TOKEN" >> $GITHUB_ENV
+
+      - name: Run schemachange for Datamart
+        run: |
+          schemachange \
+            --config-path ./schemachange/datamart/${{ env.TARGET_ENV }}/schemachange.yml \
+            --change-history-table SCHEMACHANGE_MIGRATIONS
+        env:
+          SNOWFLAKE_ACCOUNT:   ${{ vars.SF_ACCOUNT_NAME }}
+          SNOWFLAKE_USER:      "cicd_infra_engineer_user"
+          SNOWFLAKE_TOKEN:     ${{ env.SNOWFLAKE_TOKEN }}
+          SNOWFLAKE_ROLE:      "ACCOUNTADMIN"
+          SNOWFLAKE_DATABASE: "DATAMART_DB"
+          SNOWFLAKE_WAREHOUSE: "COMPUTE_WH"

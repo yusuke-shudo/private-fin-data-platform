@@ -6,7 +6,7 @@ on:
     branches: [ main ]
     paths:
       - 'terraform/aws/prd/**'
-      - '.github/workflows/tf-aws-prd.yml'
+      - '.github/workflows/terraform-aws-prd.yml'
   push:
     branches: [ main ]
     paths:

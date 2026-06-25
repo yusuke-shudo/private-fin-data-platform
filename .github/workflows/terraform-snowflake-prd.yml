@@ -6,7 +6,7 @@ on:
     branches: [ main ]
     paths:
       - 'terraform/snowflake/prd/**'
-      - '.github/workflows/tf-snowflake-prd.yml'
+      - '.github/workflows/terraform-snowflake-prd.yml'
   push:
     branches: [ main ]
     paths:

@@ -6,7 +6,7 @@ on:
     branches: [ main ]
     paths:
       - 'terraform/aws/dev/**'
-      - '.github/workflows/tf-aws-dev.yml'
+      - '.github/workflows/terraform-aws-dev.yml'
   workflow_dispatch:
 
 env:
