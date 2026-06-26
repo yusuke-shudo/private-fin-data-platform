@@ -1,6 +1,21 @@
 name: Schemachange Deployment (Snowflake Prd)
 
 on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [ main ]
+    paths:
+      - 'schemachange/datalake/prd/**'
+      - 'schemachange/datawarehouse/prd/**'
+      - 'schemachange/datamart/prd/**'
+      - '.github/workflows/schemachange-prd.yml'
+  push:
+    branches: [ main ]
+    paths:
+      - 'schemachange/datalake/prd/**'
+      - 'schemachange/datawarehouse/prd/**'
+      - 'schemachange/datamart/prd/**'
+      - '.github/workflows/schemachange-prd.yml'
   workflow_dispatch:
 
 env:
@@ -36,7 +51,28 @@ jobs:
             | jq -r '.value')
           echo "SNOWFLAKE_TOKEN=$OIDC_TOKEN" >> $GITHUB_ENV
 
-      - name: Run schemachange for Datalake
+      - name: Verify schemachange for Datalake
+        if: github.event_name == 'pull_request'
+        run: |
+          schemachange verify \
+            --root-folder ./schemachange/datalake/${{ env.TARGET_ENV }}/migrations \
+            --config-folder ./schemachange/datalake/${{ env.TARGET_ENV }}
+        env:
+          SNOWFLAKE_ACCOUNT: ${{ format('{0}-{1}', vars.SF_ORGANIZATION_NAME, vars.SF_ACCOUNT_NAME) }}
+          SNOWFLAKE_TOKEN: ${{ env.SNOWFLAKE_TOKEN }}
+
+      - name: Dry-run schemachange for Datalake
+        if: github.event_name == 'pull_request'
+        run: |
+          schemachange deploy --dry-run \
+            --root-folder ./schemachange/datalake/${{ env.TARGET_ENV }}/migrations \
+            --config-folder ./schemachange/datalake/${{ env.TARGET_ENV }}
+        env:
+          SNOWFLAKE_ACCOUNT: ${{ format('{0}-{1}', vars.SF_ORGANIZATION_NAME, vars.SF_ACCOUNT_NAME) }}
+          SNOWFLAKE_TOKEN: ${{ env.SNOWFLAKE_TOKEN }}
+
+      - name: Deploy schemachange for Datalake
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         run: |
           schemachange \
             --root-folder ./schemachange/datalake/${{ env.TARGET_ENV }}/migrations \
@@ -70,7 +106,28 @@ jobs:
             | jq -r '.value')
           echo "SNOWFLAKE_TOKEN=$OIDC_TOKEN" >> $GITHUB_ENV
 
-      - name: Run schemachange for Datawarehouse
+      - name: Verify schemachange for Datawarehouse
+        if: github.event_name == 'pull_request'
+        run: |
+          schemachange verify \
+            --root-folder ./schemachange/datawarehouse/${{ env.TARGET_ENV }}/migrations \
+            --config-folder ./schemachange/datawarehouse/${{ env.TARGET_ENV }}
+        env:
+          SNOWFLAKE_ACCOUNT: ${{ format('{0}-{1}', vars.SF_ORGANIZATION_NAME, vars.SF_ACCOUNT_NAME) }}
+          SNOWFLAKE_TOKEN: ${{ env.SNOWFLAKE_TOKEN }}
+
+      - name: Dry-run schemachange for Datawarehouse
+        if: github.event_name == 'pull_request'
+        run: |
+          schemachange deploy --dry-run \
+            --root-folder ./schemachange/datawarehouse/${{ env.TARGET_ENV }}/migrations \
+            --config-folder ./schemachange/datawarehouse/${{ env.TARGET_ENV }}
+        env:
+          SNOWFLAKE_ACCOUNT: ${{ format('{0}-{1}', vars.SF_ORGANIZATION_NAME, vars.SF_ACCOUNT_NAME) }}
+          SNOWFLAKE_TOKEN: ${{ env.SNOWFLAKE_TOKEN }}
+
+      - name: Deploy schemachange for Datawarehouse
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         run: |
           schemachange \
             --root-folder ./schemachange/datawarehouse/${{ env.TARGET_ENV }}/migrations \
@@ -104,7 +161,28 @@ jobs:
             | jq -r '.value')
           echo "SNOWFLAKE_TOKEN=$OIDC_TOKEN" >> $GITHUB_ENV
 
-      - name: Run schemachange for Datamart
+      - name: Verify schemachange for Datamart
+        if: github.event_name == 'pull_request'
+        run: |
+          schemachange verify \
+            --root-folder ./schemachange/datamart/${{ env.TARGET_ENV }}/migrations \
+            --config-folder ./schemachange/datamart/${{ env.TARGET_ENV }}
+        env:
+          SNOWFLAKE_ACCOUNT: ${{ format('{0}-{1}', vars.SF_ORGANIZATION_NAME, vars.SF_ACCOUNT_NAME) }}
+          SNOWFLAKE_TOKEN: ${{ env.SNOWFLAKE_TOKEN }}
+
+      - name: Dry-run schemachange for Datamart
+        if: github.event_name == 'pull_request'
+        run: |
+          schemachange deploy --dry-run \
+            --root-folder ./schemachange/datamart/${{ env.TARGET_ENV }}/migrations \
+            --config-folder ./schemachange/datamart/${{ env.TARGET_ENV }}
+        env:
+          SNOWFLAKE_ACCOUNT: ${{ format('{0}-{1}', vars.SF_ORGANIZATION_NAME, vars.SF_ACCOUNT_NAME) }}
+          SNOWFLAKE_TOKEN: ${{ env.SNOWFLAKE_TOKEN }}
+
+      - name: Deploy schemachange for Datamart
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         run: |
           schemachange \
             --root-folder ./schemachange/datamart/${{ env.TARGET_ENV }}/migrations \
