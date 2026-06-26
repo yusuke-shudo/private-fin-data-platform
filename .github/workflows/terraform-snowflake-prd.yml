@@ -1,4 +1,4 @@
-name: Terraform Snowflake (Snowflake Prd)
+name: Terraform Deployment (Snowflake Prd)
 
 on:
   pull_request:

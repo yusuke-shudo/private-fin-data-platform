@@ -1,4 +1,4 @@
-name: Schemachange Snowflake (Prd)
+name: Schemachange Deployment (Snowflake Prd)
 
 on:
   workflow_dispatch:

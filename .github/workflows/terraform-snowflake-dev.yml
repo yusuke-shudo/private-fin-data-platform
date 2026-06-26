@@ -1,4 +1,4 @@
-name: Terraform Snowflake (Snowflake Dev)
+name: Terraform Deployment (Snowflake Dev)
 
 on:
   pull_request:

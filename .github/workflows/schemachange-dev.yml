@@ -1,4 +1,4 @@
-name: Schemachange Snowflake (Dev)
+name: Schemachange Deployment (Snowflake Dev)
 
 on:
   pull_request:
