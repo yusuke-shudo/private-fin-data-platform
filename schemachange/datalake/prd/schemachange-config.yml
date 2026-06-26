@@ -2,6 +2,7 @@ config-version: 2
 
 schemachange:
   create-change-history-table: false
+  change-history-table: DATALAKE_DB.SCHEMACHANGE.SCHEMACHANGE_MIGRATIONS
 
 snowflake:
   user: cicd_infra_engineer_user
