@@ -20,8 +20,8 @@ permissions:
   contents: read
 
 jobs:
-  schemachange_datalake:
-    name: Schemachange Datalake Dev
+  schemachange_all:
+    name: Schemachange Dev (All Databases)
     runs-on: ubuntu-latest
     environment: dev-infra
     steps:
@@ -53,31 +53,6 @@ jobs:
           SNOWFLAKE_ACCOUNT: ${{ format('{0}-{1}', vars.SF_ORGANIZATION_NAME, vars.SF_ACCOUNT_NAME) }}
           SNOWFLAKE_TOKEN: ${{ env.SNOWFLAKE_TOKEN }}
 
-  schemachange_datawarehouse:
-    name: Schemachange Datawarehouse Dev
-    runs-on: ubuntu-latest
-    environment: dev-infra
-    needs: schemachange_datalake
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install schemachange
-        run: pip install schemachange
-
-      - name: Mint Snowflake OIDC Token
-        run: |
-          OIDC_TOKEN=$(curl -sLS \
-            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
-            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=snowflakecomputing.com" \
-            | jq -r '.value')
-          echo "SNOWFLAKE_TOKEN=$OIDC_TOKEN" >> $GITHUB_ENV
-
       - name: Run schemachange for Datawarehouse
         run: |
           schemachange \
@@ -86,31 +61,6 @@ jobs:
         env:
           SNOWFLAKE_ACCOUNT: ${{ format('{0}-{1}', vars.SF_ORGANIZATION_NAME, vars.SF_ACCOUNT_NAME) }}
           SNOWFLAKE_TOKEN: ${{ env.SNOWFLAKE_TOKEN }}
-
-  schemachange_datamart:
-    name: Schemachange Datamart Dev
-    runs-on: ubuntu-latest
-    environment: dev-infra
-    needs: schemachange_datawarehouse
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install schemachange
-        run: pip install schemachange
-
-      - name: Mint Snowflake OIDC Token
-        run: |
-          OIDC_TOKEN=$(curl -sLS \
-            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
-            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=snowflakecomputing.com" \
-            | jq -r '.value')
-          echo "SNOWFLAKE_TOKEN=$OIDC_TOKEN" >> $GITHUB_ENV
 
       - name: Run schemachange for Datamart
         run: |
