@@ -39,7 +39,8 @@ jobs:
       - name: Run schemachange for Datalake
         run: |
           schemachange \
-            --config-path ./schemachange/datalake/${{ env.TARGET_ENV }}/schemachange.yml \
+            --config-folder ./schemachange/datalake/${{ env.TARGET_ENV }} \
+            --config-file-name schemachange.yml \
             --change-history-table SCHEMACHANGE_MIGRATIONS
         env:
           SNOWFLAKE_ACCOUNT:   ${{ vars.SF_ACCOUNT_NAME }}
@@ -77,7 +78,8 @@ jobs:
       - name: Run schemachange for Datawarehouse
         run: |
           schemachange \
-            --config-path ./schemachange/datawarehouse/${{ env.TARGET_ENV }}/schemachange.yml \
+            --config-folder ./schemachange/datawarehouse/${{ env.TARGET_ENV }} \
+            --config-file-name schemachange.yml \
             --change-history-table SCHEMACHANGE_MIGRATIONS
         env:
           SNOWFLAKE_ACCOUNT:   ${{ vars.SF_ACCOUNT_NAME }}
@@ -115,7 +117,8 @@ jobs:
       - name: Run schemachange for Datamart
         run: |
           schemachange \
-            --config-path ./schemachange/datamart/${{ env.TARGET_ENV }}/schemachange.yml \
+            --config-folder ./schemachange/datamart/${{ env.TARGET_ENV }} \
+            --config-file-name schemachange.yml \
             --change-history-table SCHEMACHANGE_MIGRATIONS
         env:
           SNOWFLAKE_ACCOUNT:   ${{ vars.SF_ACCOUNT_NAME }}
