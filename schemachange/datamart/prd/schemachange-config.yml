@@ -1,0 +1,14 @@
+config-version: 2
+
+schemachange:
+  create-change-history-table: true
+  change-history-table: DATAMART_DB.SCHEMACHANGE.SCHEMACHANGE_MIGRATIONS
+
+snowflake:
+  user: cicd_infra_engineer_user
+  role: cicd_infra_engineer_role
+  warehouse: cicd_infra_wh
+  authenticator: WORKLOAD_IDENTITY
+  workload_identity_provider: OIDC
+  database: DATAMART_DB
+  schema: SCHEMACHANGE

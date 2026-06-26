@@ -1,0 +1,188 @@
+name: Schemachange Deployment (Snowflake Prd)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [ main ]
+    paths:
+      - 'schemachange/**/prd/**'
+      - '.github/workflows/schemachange-prd.yml'
+  push:
+    branches: [ main ]
+    paths:
+      - 'schemachange/**/prd/**'
+      - '.github/workflows/schemachange-prd.yml'
+  workflow_dispatch:
+
+env:
+  TARGET_ENV: "prd"
+  PYTHON_VERSION: "3.11"
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  schemachange_datalake:
+    name: Schemachange Datalake Prd
+    runs-on: ubuntu-latest
+    environment: prd-infra
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install schemachange
+        run: pip install schemachange
+
+      - name: Mint Snowflake OIDC Token
+        run: |
+          OIDC_TOKEN=$(curl -sLS \
+            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=snowflakecomputing.com" \
+            | jq -r '.value')
+          echo "SNOWFLAKE_TOKEN=$OIDC_TOKEN" >> $GITHUB_ENV
+
+      - name: Verify schemachange for Datalake
+        if: github.event_name == 'pull_request'
+        run: |
+          schemachange verify \
+            --root-folder ./schemachange/datalake/${{ env.TARGET_ENV }}/migrations \
+            --config-folder ./schemachange/datalake/${{ env.TARGET_ENV }}
+        env:
+          SNOWFLAKE_ACCOUNT: ${{ format('{0}-{1}', vars.SF_ORGANIZATION_NAME, vars.SF_ACCOUNT_NAME) }}
+          SNOWFLAKE_TOKEN: ${{ env.SNOWFLAKE_TOKEN }}
+
+      - name: Dry-run schemachange for Datalake
+        if: github.event_name == 'pull_request'
+        run: |
+          schemachange deploy --dry-run \
+            --root-folder ./schemachange/datalake/${{ env.TARGET_ENV }}/migrations \
+            --config-folder ./schemachange/datalake/${{ env.TARGET_ENV }}
+        env:
+          SNOWFLAKE_ACCOUNT: ${{ format('{0}-{1}', vars.SF_ORGANIZATION_NAME, vars.SF_ACCOUNT_NAME) }}
+          SNOWFLAKE_TOKEN: ${{ env.SNOWFLAKE_TOKEN }}
+
+      - name: Deploy schemachange for Datalake
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        run: |
+          schemachange \
+            --root-folder ./schemachange/datalake/${{ env.TARGET_ENV }}/migrations \
+            --config-folder ./schemachange/datalake/${{ env.TARGET_ENV }}
+        env:
+          SNOWFLAKE_ACCOUNT: ${{ format('{0}-{1}', vars.SF_ORGANIZATION_NAME, vars.SF_ACCOUNT_NAME) }}
+          SNOWFLAKE_TOKEN: ${{ env.SNOWFLAKE_TOKEN }}
+
+  schemachange_datawarehouse:
+    name: Schemachange Datawarehouse Prd
+    runs-on: ubuntu-latest
+    environment: prd-infra
+    needs: schemachange_datalake
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install schemachange
+        run: pip install schemachange
+
+      - name: Mint Snowflake OIDC Token
+        run: |
+          OIDC_TOKEN=$(curl -sLS \
+            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=snowflakecomputing.com" \
+            | jq -r '.value')
+          echo "SNOWFLAKE_TOKEN=$OIDC_TOKEN" >> $GITHUB_ENV
+
+      - name: Verify schemachange for Datawarehouse
+        if: github.event_name == 'pull_request'
+        run: |
+          schemachange verify \
+            --root-folder ./schemachange/datawarehouse/${{ env.TARGET_ENV }}/migrations \
+            --config-folder ./schemachange/datawarehouse/${{ env.TARGET_ENV }}
+        env:
+          SNOWFLAKE_ACCOUNT: ${{ format('{0}-{1}', vars.SF_ORGANIZATION_NAME, vars.SF_ACCOUNT_NAME) }}
+          SNOWFLAKE_TOKEN: ${{ env.SNOWFLAKE_TOKEN }}
+
+      - name: Dry-run schemachange for Datawarehouse
+        if: github.event_name == 'pull_request'
+        run: |
+          schemachange deploy --dry-run \
+            --root-folder ./schemachange/datawarehouse/${{ env.TARGET_ENV }}/migrations \
+            --config-folder ./schemachange/datawarehouse/${{ env.TARGET_ENV }}
+        env:
+          SNOWFLAKE_ACCOUNT: ${{ format('{0}-{1}', vars.SF_ORGANIZATION_NAME, vars.SF_ACCOUNT_NAME) }}
+          SNOWFLAKE_TOKEN: ${{ env.SNOWFLAKE_TOKEN }}
+
+      - name: Deploy schemachange for Datawarehouse
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        run: |
+          schemachange \
+            --root-folder ./schemachange/datawarehouse/${{ env.TARGET_ENV }}/migrations \
+            --config-folder ./schemachange/datawarehouse/${{ env.TARGET_ENV }}
+        env:
+          SNOWFLAKE_ACCOUNT: ${{ format('{0}-{1}', vars.SF_ORGANIZATION_NAME, vars.SF_ACCOUNT_NAME) }}
+          SNOWFLAKE_TOKEN: ${{ env.SNOWFLAKE_TOKEN }}
+
+  schemachange_datamart:
+    name: Schemachange Datamart Prd
+    runs-on: ubuntu-latest
+    environment: prd-infra
+    needs: schemachange_datawarehouse
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install schemachange
+        run: pip install schemachange
+
+      - name: Mint Snowflake OIDC Token
+        run: |
+          OIDC_TOKEN=$(curl -sLS \
+            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=snowflakecomputing.com" \
+            | jq -r '.value')
+          echo "SNOWFLAKE_TOKEN=$OIDC_TOKEN" >> $GITHUB_ENV
+
+      - name: Verify schemachange for Datamart
+        if: github.event_name == 'pull_request'
+        run: |
+          schemachange verify \
+            --root-folder ./schemachange/datamart/${{ env.TARGET_ENV }}/migrations \
+            --config-folder ./schemachange/datamart/${{ env.TARGET_ENV }}
+        env:
+          SNOWFLAKE_ACCOUNT: ${{ format('{0}-{1}', vars.SF_ORGANIZATION_NAME, vars.SF_ACCOUNT_NAME) }}
+          SNOWFLAKE_TOKEN: ${{ env.SNOWFLAKE_TOKEN }}
+
+      - name: Dry-run schemachange for Datamart
+        if: github.event_name == 'pull_request'
+        run: |
+          schemachange deploy --dry-run \
+            --root-folder ./schemachange/datamart/${{ env.TARGET_ENV }}/migrations \
+            --config-folder ./schemachange/datamart/${{ env.TARGET_ENV }}
+        env:
+          SNOWFLAKE_ACCOUNT: ${{ format('{0}-{1}', vars.SF_ORGANIZATION_NAME, vars.SF_ACCOUNT_NAME) }}
+          SNOWFLAKE_TOKEN: ${{ env.SNOWFLAKE_TOKEN }}
+
+      - name: Deploy schemachange for Datamart
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        run: |
+          schemachange \
+            --root-folder ./schemachange/datamart/${{ env.TARGET_ENV }}/migrations \
+            --config-folder ./schemachange/datamart/${{ env.TARGET_ENV }}
+        env:
+          SNOWFLAKE_ACCOUNT: ${{ format('{0}-{1}', vars.SF_ORGANIZATION_NAME, vars.SF_ACCOUNT_NAME) }}
+          SNOWFLAKE_TOKEN: ${{ env.SNOWFLAKE_TOKEN }}

@@ -6,7 +6,7 @@ AWSおよびSnowflakeを組み合わせたデータプラットフォームの�
 
 ## 🗺️ 1. ディレクトリ構造
 
-本リポジトリは、環境の初期構築を行う「bootstrap」と、継続的なインフラ管理を行う「terraform」の2つのディレクトリで構成されている。
+本リポジトリは、環境の初期構築を行う「bootstrap」、schemachange 用の「schemachange」、継続的なインフラ管理を行う「terraform」の3つのディレクトリで構成されている。
 
 ```text
 ├── .github/workflows/       # CI/CD ワークフロー定義（環境・プロバイダー別）
@@ -20,6 +20,7 @@ AWSおよびSnowflakeを組み合わせたデータプラットフォームの�
 │   ├── aws/                 # S3バックエンド、CloudFormationテンプレート等
 │   ├── github/              # 環境変数の初期登録・管理ルール
 │   └── snowflake/           # 組織管理者・CICD用ユーザー初期セットアップSQL
+├── schemachange/           # schemachange 管理（検証用、dev/prd、マイグレーション）
 └── terraform/               # 2. 継続管理フェーズ（自動デプロイ対象）
     ├── aws/                 # AWSリソース管理（ネットワーク、IAM、S3等）
     │   ├── dev/

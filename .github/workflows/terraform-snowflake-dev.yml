@@ -1,4 +1,4 @@
-name: Terraform Snowflake (Snowflake Dev)
+name: Terraform Deployment (Snowflake Dev)
 
 on:
   pull_request:
@@ -6,7 +6,7 @@ on:
     branches: [ main ]
     paths:
       - 'terraform/snowflake/dev/**'
-      - '.github/workflows/tf-snowflake-dev.yml'
+      - '.github/workflows/terraform-snowflake-dev.yml'
   workflow_dispatch:
 
 env:
