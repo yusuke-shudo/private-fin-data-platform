@@ -12,6 +12,7 @@ on:
     paths:
       - 'schemachange/**/prd/**'
       - '.github/workflows/schemachange-prd.yml'
+  workflow_dispatch:
 
 env:
   TARGET_ENV: "prd"
@@ -67,7 +68,7 @@ jobs:
           SNOWFLAKE_TOKEN: ${{ env.SNOWFLAKE_TOKEN }}
 
       - name: Deploy schemachange for Datalake
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         run: |
           schemachange \
             --root-folder ./schemachange/datalake/${{ env.TARGET_ENV }}/migrations \
@@ -122,7 +123,7 @@ jobs:
           SNOWFLAKE_TOKEN: ${{ env.SNOWFLAKE_TOKEN }}
 
       - name: Deploy schemachange for Datawarehouse
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         run: |
           schemachange \
             --root-folder ./schemachange/datawarehouse/${{ env.TARGET_ENV }}/migrations \
@@ -177,7 +178,7 @@ jobs:
           SNOWFLAKE_TOKEN: ${{ env.SNOWFLAKE_TOKEN }}
 
       - name: Deploy schemachange for Datamart
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         run: |
           schemachange \
             --root-folder ./schemachange/datamart/${{ env.TARGET_ENV }}/migrations \
