@@ -1,8 +1,0 @@
-config-version: 2
-
-schemachange:
-  create-change-history-table: false
-
-snowflake:
-  database: DATAMART_DB
-  schema: SCHEMACHANGE

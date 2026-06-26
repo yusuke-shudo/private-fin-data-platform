@@ -1,0 +1,13 @@
+config-version: 2
+
+schemachange:
+  create-change-history-table: false
+
+snowflake:
+  user: cicd_infra_engineer_user
+  role: cicd_infra_engineer_role
+  warehouse: COMPUTE_WH
+  authenticator: WORKLOAD_IDENTITY
+  workload_identity_provider: OIDC
+  database: DATAMART_DB
+  schema: SCHEMACHANGE
