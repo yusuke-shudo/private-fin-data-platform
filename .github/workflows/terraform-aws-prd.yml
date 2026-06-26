@@ -1,26 +1,30 @@
-name: Terraform Deployment (AWS Dev)
+name: Terraform Deployment (AWS Prd)
 
 on:
   pull_request:
     types: [opened, synchronize, reopened]
     branches: [ main ]
     paths:
-      - 'terraform/aws/dev/**'
-      - '.github/workflows/tf-aws-dev.yml'
+      - 'terraform/aws/prd/**'
+      - '.github/workflows/terraform-aws-prd.yml'
+  push:
+    branches: [ main ]
+    paths:
+      - 'terraform/aws/prd/**'
   workflow_dispatch:
 
 env:
-  TARGET_ENV: "dev"
+  TARGET_ENV: "prd"
 
 permissions:
   id-token: write
   contents: read
 
 jobs:
-  terraform_aws_dev:
-    name: Terraform AWS Dev Apply
+  terraform_aws_prd:
+    name: Terraform AWS Prd
     runs-on: ubuntu-latest
-    environment: dev-infra
+    environment: prd-infra
     defaults:
       run:
         working-directory: ./terraform/aws/${{ env.TARGET_ENV }}
@@ -45,7 +49,16 @@ jobs:
             -backend-config="use_lockfile=true" \
             -backend-config="encrypt=true"
 
-      - name: Terraform Apply to AWS Dev
+      - name: Terraform Plan to AWS Prd
+        if: github.event_name == 'pull_request'
+        run: terraform plan -no-color
+        env:
+          TF_VAR_env:            ${{ env.TARGET_ENV }}
+          TF_VAR_sf_user_arn:    ${{ vars.SF_USER_ARN }}
+          TF_VAR_sf_external_id: ${{ vars.SF_EXTERNAL_ID }}
+
+      - name: Terraform Apply to AWS Prd
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         run: terraform apply -auto-approve -no-color
         env:
           TF_VAR_env:            ${{ env.TARGET_ENV }}
