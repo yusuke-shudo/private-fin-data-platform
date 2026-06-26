@@ -20,6 +20,7 @@ provider "snowflake" {
   authenticator              = "WORKLOAD_IDENTITY"
   workload_identity_provider = "OIDC"
   preview_features_enabled = [
+    "snowflake_stage_resource",
     "snowflake_storage_integration_aws_resource"
   ]
 }

@@ -11,6 +11,7 @@ on:
     branches: [ main ]
     paths:
       - 'terraform/aws/prd/**'
+      - '.github/workflows/terraform-aws-prd.yml'
   workflow_dispatch:
 
 env:
