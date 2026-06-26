@@ -48,7 +48,7 @@ jobs:
           echo "SNOWFLAKE_TOKEN=$OIDC_TOKEN" >> $GITHUB_ENV
 
       - name: Verify schemachange for Datalake
-        if: github.event_name == 'pull_request' && vars.ENABLE_PRD_SCHEMACHANGE_PR_CHECKS == 'true'
+        if: github.event_name == 'pull_request'
         run: |
           schemachange verify \
             --root-folder ./schemachange/datalake/${{ env.TARGET_ENV }}/migrations \
@@ -58,7 +58,7 @@ jobs:
           SNOWFLAKE_TOKEN: ${{ env.SNOWFLAKE_TOKEN }}
 
       - name: Dry-run schemachange for Datalake
-        if: github.event_name == 'pull_request' && vars.ENABLE_PRD_SCHEMACHANGE_PR_CHECKS == 'true'
+        if: github.event_name == 'pull_request'
         run: |
           schemachange deploy --dry-run \
             --root-folder ./schemachange/datalake/${{ env.TARGET_ENV }}/migrations \
@@ -103,7 +103,7 @@ jobs:
           echo "SNOWFLAKE_TOKEN=$OIDC_TOKEN" >> $GITHUB_ENV
 
       - name: Verify schemachange for Datawarehouse
-        if: github.event_name == 'pull_request' && vars.ENABLE_PRD_SCHEMACHANGE_PR_CHECKS == 'true'
+        if: github.event_name == 'pull_request'
         run: |
           schemachange verify \
             --root-folder ./schemachange/datawarehouse/${{ env.TARGET_ENV }}/migrations \
@@ -113,7 +113,7 @@ jobs:
           SNOWFLAKE_TOKEN: ${{ env.SNOWFLAKE_TOKEN }}
 
       - name: Dry-run schemachange for Datawarehouse
-        if: github.event_name == 'pull_request' && vars.ENABLE_PRD_SCHEMACHANGE_PR_CHECKS == 'true'
+        if: github.event_name == 'pull_request'
         run: |
           schemachange deploy --dry-run \
             --root-folder ./schemachange/datawarehouse/${{ env.TARGET_ENV }}/migrations \
@@ -158,7 +158,7 @@ jobs:
           echo "SNOWFLAKE_TOKEN=$OIDC_TOKEN" >> $GITHUB_ENV
 
       - name: Verify schemachange for Datamart
-        if: github.event_name == 'pull_request' && vars.ENABLE_PRD_SCHEMACHANGE_PR_CHECKS == 'true'
+        if: github.event_name == 'pull_request'
         run: |
           schemachange verify \
             --root-folder ./schemachange/datamart/${{ env.TARGET_ENV }}/migrations \
@@ -168,7 +168,7 @@ jobs:
           SNOWFLAKE_TOKEN: ${{ env.SNOWFLAKE_TOKEN }}
 
       - name: Dry-run schemachange for Datamart
-        if: github.event_name == 'pull_request' && vars.ENABLE_PRD_SCHEMACHANGE_PR_CHECKS == 'true'
+        if: github.event_name == 'pull_request'
         run: |
           schemachange deploy --dry-run \
             --root-folder ./schemachange/datamart/${{ env.TARGET_ENV }}/migrations \
