@@ -6,7 +6,7 @@ schemachange:
 snowflake:
   user: cicd_infra_engineer_user
   role: cicd_infra_engineer_role
-  warehouse: COMPUTE_WH
+  warehouse: cicd_infra_wh
   authenticator: WORKLOAD_IDENTITY
   workload_identity_provider: OIDC
   database: DATALAKE_DB

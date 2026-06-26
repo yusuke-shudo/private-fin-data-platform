@@ -43,8 +43,8 @@ jobs:
             --config-folder ./schemachange/datalake/${{ env.TARGET_ENV }} \
             --change-history-table SCHEMACHANGE_MIGRATIONS
         env:
-          SNOWFLAKE_ACCOUNT:                    ${{ format('{0}-{1}', vars.SF_ORGANIZATION_NAME, vars.SF_ACCOUNT_NAME) }}
-          SNOWFLAKE_TOKEN:                      ${{ env.SNOWFLAKE_TOKEN }}
+          SNOWFLAKE_ACCOUNT: ${{ format('{0}-{1}', vars.SF_ORGANIZATION_NAME, vars.SF_ACCOUNT_NAME) }}
+          SNOWFLAKE_TOKEN: ${{ env.SNOWFLAKE_TOKEN }}
 
   schemachange_datawarehouse:
     name: Schemachange Datawarehouse Prd
@@ -78,8 +78,8 @@ jobs:
             --config-folder ./schemachange/datawarehouse/${{ env.TARGET_ENV }} \
             --change-history-table SCHEMACHANGE_MIGRATIONS
         env:
-          SNOWFLAKE_ACCOUNT:                    ${{ format('{0}-{1}', vars.SF_ORGANIZATION_NAME, vars.SF_ACCOUNT_NAME) }}
-          SNOWFLAKE_TOKEN:                      ${{ env.SNOWFLAKE_TOKEN }}
+          SNOWFLAKE_ACCOUNT: ${{ format('{0}-{1}', vars.SF_ORGANIZATION_NAME, vars.SF_ACCOUNT_NAME) }}
+          SNOWFLAKE_TOKEN: ${{ env.SNOWFLAKE_TOKEN }}
 
   schemachange_datamart:
     name: Schemachange Datamart Prd
@@ -113,5 +113,5 @@ jobs:
             --config-folder ./schemachange/datamart/${{ env.TARGET_ENV }} \
             --change-history-table SCHEMACHANGE_MIGRATIONS
         env:
-          SNOWFLAKE_ACCOUNT:                    ${{ format('{0}-{1}', vars.SF_ORGANIZATION_NAME, vars.SF_ACCOUNT_NAME) }}
-          SNOWFLAKE_TOKEN:                      ${{ env.SNOWFLAKE_TOKEN }}
+          SNOWFLAKE_ACCOUNT: ${{ format('{0}-{1}', vars.SF_ORGANIZATION_NAME, vars.SF_ACCOUNT_NAME) }}
+          SNOWFLAKE_TOKEN: ${{ env.SNOWFLAKE_TOKEN }}
