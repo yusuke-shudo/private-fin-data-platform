@@ -39,16 +39,19 @@ jobs:
       - name: Run schemachange for Datalake
         run: |
           schemachange \
+            --root-folder ./schemachange/datalake/${{ env.TARGET_ENV }}/migrations \
             --config-folder ./schemachange/datalake/${{ env.TARGET_ENV }} \
             --config-file-name schemachange.yml \
             --change-history-table SCHEMACHANGE_MIGRATIONS
         env:
-          SNOWFLAKE_ACCOUNT:   ${{ vars.SF_ACCOUNT_NAME }}
-          SNOWFLAKE_USER:      "cicd_infra_engineer_user"
-          SNOWFLAKE_TOKEN:     ${{ env.SNOWFLAKE_TOKEN }}
-          SNOWFLAKE_ROLE:      "ACCOUNTADMIN"
-          SNOWFLAKE_DATABASE: "DATALAKE_DB"
-          SNOWFLAKE_WAREHOUSE: "COMPUTE_WH"
+          SNOWFLAKE_ACCOUNT:                    ${{ vars.SF_ACCOUNT_NAME }}
+          SNOWFLAKE_USER:                       "cicd_infra_engineer_user"
+          SNOWFLAKE_TOKEN:                      ${{ env.SNOWFLAKE_TOKEN }}
+          SNOWFLAKE_AUTHENTICATOR:              "WORKLOAD_IDENTITY"
+          SNOWFLAKE_WORKLOAD_IDENTITY_PROVIDER: "OIDC"
+          SNOWFLAKE_ROLE:                       "cicd_infra_engineer_role"
+          SNOWFLAKE_DATABASE:                   "DATALAKE_DB"
+          SNOWFLAKE_WAREHOUSE:                  "COMPUTE_WH"
 
   schemachange_datawarehouse:
     name: Schemachange Datawarehouse Prd
@@ -78,16 +81,19 @@ jobs:
       - name: Run schemachange for Datawarehouse
         run: |
           schemachange \
+            --root-folder ./schemachange/datawarehouse/${{ env.TARGET_ENV }}/migrations \
             --config-folder ./schemachange/datawarehouse/${{ env.TARGET_ENV }} \
             --config-file-name schemachange.yml \
             --change-history-table SCHEMACHANGE_MIGRATIONS
         env:
-          SNOWFLAKE_ACCOUNT:   ${{ vars.SF_ACCOUNT_NAME }}
-          SNOWFLAKE_USER:      "cicd_infra_engineer_user"
-          SNOWFLAKE_TOKEN:     ${{ env.SNOWFLAKE_TOKEN }}
-          SNOWFLAKE_ROLE:      "ACCOUNTADMIN"
-          SNOWFLAKE_DATABASE: "DATAWAREHOUSE_DB"
-          SNOWFLAKE_WAREHOUSE: "COMPUTE_WH"
+          SNOWFLAKE_ACCOUNT:                    ${{ vars.SF_ACCOUNT_NAME }}
+          SNOWFLAKE_USER:                       "cicd_infra_engineer_user"
+          SNOWFLAKE_TOKEN:                      ${{ env.SNOWFLAKE_TOKEN }}
+          SNOWFLAKE_AUTHENTICATOR:              "WORKLOAD_IDENTITY"
+          SNOWFLAKE_WORKLOAD_IDENTITY_PROVIDER: "OIDC"
+          SNOWFLAKE_ROLE:                       "cicd_infra_engineer_role"
+          SNOWFLAKE_DATABASE:                   "DATAWAREHOUSE_DB"
+          SNOWFLAKE_WAREHOUSE:                  "COMPUTE_WH"
 
   schemachange_datamart:
     name: Schemachange Datamart Prd
@@ -117,13 +123,16 @@ jobs:
       - name: Run schemachange for Datamart
         run: |
           schemachange \
+            --root-folder ./schemachange/datamart/${{ env.TARGET_ENV }}/migrations \
             --config-folder ./schemachange/datamart/${{ env.TARGET_ENV }} \
             --config-file-name schemachange.yml \
             --change-history-table SCHEMACHANGE_MIGRATIONS
         env:
-          SNOWFLAKE_ACCOUNT:   ${{ vars.SF_ACCOUNT_NAME }}
-          SNOWFLAKE_USER:      "cicd_infra_engineer_user"
-          SNOWFLAKE_TOKEN:     ${{ env.SNOWFLAKE_TOKEN }}
-          SNOWFLAKE_ROLE:      "ACCOUNTADMIN"
-          SNOWFLAKE_DATABASE: "DATAMART_DB"
-          SNOWFLAKE_WAREHOUSE: "COMPUTE_WH"
+          SNOWFLAKE_ACCOUNT:                    ${{ vars.SF_ACCOUNT_NAME }}
+          SNOWFLAKE_USER:                       "cicd_infra_engineer_user"
+          SNOWFLAKE_TOKEN:                      ${{ env.SNOWFLAKE_TOKEN }}
+          SNOWFLAKE_AUTHENTICATOR:              "WORKLOAD_IDENTITY"
+          SNOWFLAKE_WORKLOAD_IDENTITY_PROVIDER: "OIDC"
+          SNOWFLAKE_ROLE:                       "cicd_infra_engineer_role"
+          SNOWFLAKE_DATABASE:                   "DATAMART_DB"
+          SNOWFLAKE_WAREHOUSE:                  "COMPUTE_WH"

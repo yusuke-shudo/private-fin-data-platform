@@ -1,7 +1,8 @@
-migration_table_name: SCHEMACHANGE_MIGRATIONS
-sql_file_suffix: .sql
-error_if_not_initialized: false
+config-version: 2
 
-# DATAMART_DB configuration
-database: DATAMART_DB
-schema: SCHEMACHANGE
+schemachange:
+  create-change-history-table: false
+
+snowflake:
+  database: DATAMART_DB
+  schema: SCHEMACHANGE
