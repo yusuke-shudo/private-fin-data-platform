@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS DATALAKE_DB.PAYPAY_BANK.home_loan_schedule_raw (
   file_path    STRING         NOT NULL,
   line_number  NUMBER         NOT NULL,
   raw_payload  VARIANT        NOT NULL,
-  PRIMARY KEY (file_path) CONSTRAINT PK_home_loan_schedule_raw
+  CONSTRAINT PK_home_loan_schedule_raw PRIMARY KEY (file_path) RELY
 );
 
 CREATE TABLE IF NOT EXISTS DATALAKE_DB.SBI_SECURITIES.sbi_tokutei_profit_loss_report_raw (
@@ -14,5 +14,5 @@ CREATE TABLE IF NOT EXISTS DATALAKE_DB.SBI_SECURITIES.sbi_tokutei_profit_loss_re
   file_path    STRING         NOT NULL,
   line_number  NUMBER         NOT NULL,
   raw_payload  VARIANT        NOT NULL,
-  PRIMARY KEY (file_path) CONSTRAINT PK_sbi_tokutei_profit_loss_report_raw
+  CONSTRAINT PK_sbi_tokutei_profit_loss_report_raw PRIMARY KEY (file_path) RELY
 );
