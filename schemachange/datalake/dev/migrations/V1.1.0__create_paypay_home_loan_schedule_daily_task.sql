@@ -32,11 +32,9 @@ BEGIN
       METADATA$FILE_ROW_NUMBER                                  AS line_number,
       TO_VARIANT($1)                                            AS raw_payload
     FROM @IDENTIFIER(:P_STAGE_PATH)
-      (
-        FILE_FORMAT => (FORMAT_NAME => IDENTIFIER(:P_FILE_FORMAT_FQN)),
-        PATTERN => :P_FILE_PATTERN
-      )
   )
+  FILE_FORMAT = (FORMAT_NAME = IDENTIFIER(:P_FILE_FORMAT_FQN))
+  PATTERN = :P_FILE_PATTERN
   FORCE = TRUE
   ON_ERROR = 'ABORT_STATEMENT';
 
