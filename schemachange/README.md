@@ -1,6 +1,6 @@
 # Schemachange Conventions
 
-Japanese version: [README.ja.md](README.ja.md)
+- 日本語版: [README.ja.md](README.ja.md)
 
 This directory contains schemachange migrations for DATALAKE, DATAWAREHOUSE, and DATAMART.
 

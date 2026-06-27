@@ -1,5 +1,7 @@
 # Sample Data
 
+- 日本語版: [README.ja.md](README.ja.md)
+
 This directory contains sample files used to understand source data formats and validate transformation logic.
 
 ## Directory Structure
