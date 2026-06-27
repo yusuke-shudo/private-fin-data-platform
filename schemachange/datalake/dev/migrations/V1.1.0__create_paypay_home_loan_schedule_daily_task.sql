@@ -34,7 +34,7 @@ BEGIN
     FROM
       @IDENTIFIER(:p_stage_path)
   )
-  FILE_FORMAT = (FORMAT_NAME = :p_file_format_fqn)
+  FILE_FORMAT = (FORMAT_NAME = IDENTIFIER(:p_file_format_fqn))
   PATTERN = :p_file_pattern
   FORCE = TRUE
   ON_ERROR = 'ABORT_STATEMENT'
