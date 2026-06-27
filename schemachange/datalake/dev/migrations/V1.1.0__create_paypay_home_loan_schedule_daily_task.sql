@@ -10,10 +10,10 @@ CREATE OR REPLACE FILE FORMAT DATALAKE_DB.COMMON.FF_NODELIMITER
   ENCODING = 'UTF8';
 
 CREATE OR REPLACE PROCEDURE DATALAKE_DB.COMMON.SP_LOAD_RAW_FULL_REFRESH(
-  P_TARGET_TABLE_FQN  STRING,
-  P_STAGE_PATH        STRING,
-  P_FILE_FORMAT_FQN   STRING,
-  P_FILE_PATTERN      STRING
+  p_target_table_fqn  STRING,
+  p_stage_path        STRING,
+  p_file_format_fqn   STRING,
+  p_file_pattern      STRING
 )
   RETURNS STRING
   LANGUAGE SQL
@@ -21,22 +21,24 @@ CREATE OR REPLACE PROCEDURE DATALAKE_DB.COMMON.SP_LOAD_RAW_FULL_REFRESH(
 AS
 $$
 BEGIN
-  TRUNCATE TABLE IDENTIFIER(:P_TARGET_TABLE_FQN);
+  TRUNCATE TABLE IDENTIFIER(:p_target_table_fqn);
 
-  COPY INTO IDENTIFIER(:P_TARGET_TABLE_FQN)
-    (ingest_at, file_path, line_number, raw_payload)
+  COPY INTO
+    IDENTIFIER(:p_target_table_fqn)
   FROM (
     SELECT
-      CURRENT_TIMESTAMP()                                       AS ingest_at,
-      METADATA$FILENAME                                         AS file_path,
-      METADATA$FILE_ROW_NUMBER                                  AS line_number,
-      TO_VARIANT($1)                                            AS raw_payload
-    FROM @IDENTIFIER(:P_STAGE_PATH)
+      CURRENT_TIMESTAMP() AS ingest_at,
+      METADATA$FILENAME AS file_path,
+      METADATA$FILE_ROW_NUMBER AS line_number,
+      TO_VARIANT($1) AS raw_payload
+    FROM
+      @IDENTIFIER(:p_stage_path)
   )
-  FILE_FORMAT = (FORMAT_NAME = 'DATALAKE_DB.COMMON.FF_NODELIMITER')
-  PATTERN = :P_FILE_PATTERN
+  FILE_FORMAT = (FORMAT_NAME = :p_file_format_fqn)
+  PATTERN = :p_file_pattern
   FORCE = TRUE
-  ON_ERROR = 'ABORT_STATEMENT';
+  ON_ERROR = 'ABORT_STATEMENT'
+  ;
 
   RETURN 'SUCCESS';
 END;
