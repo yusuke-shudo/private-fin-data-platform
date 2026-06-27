@@ -1,35 +1,36 @@
-# Snowflake 初期ブートストラップ手順
+﻿# Snowflake Bootstrap Guide
 
-本手順は、CI/CD（GitHub Actions）を稼働させる前に、Snowflake の Web 画面（Snowsight）から手作業で実行する必要がある初期設定マニュアルである。
+- 日本語版: [README.ja.md](README.ja.md)
 
----
+This guide describes manual Snowflake setup steps that must be completed in Snowsight before CI/CD (GitHub Actions) can run.
 
-## 🏃‍♂️ 手作業での初期構築フロー
+## Manual bootstrap flow
 
-### 1. 組織（Organization）アカウントでの作業
+### 1. Work in the Organization account
 
-1. **組織管理アカウントへのログイン**
-   * 組織の管理アカウント（親アカウント）にログインする。
-2. **アカウント作成スクリプトの実行**
-   * ワークシートで `01_org_admin_setup.sql` を開く。
-   * **⚠️ 必須の実行ロール**: `ORGADMIN`
-   * スクリプト内のパスワード部分を安全な任意の文字列に書き換えた後、すべての SQL を実行する。
-   * *※ 本操作により、環境分離された子アカウント（`_dev` および `_prd`）が自動で作成・払い出される。*
+1. Sign in to org admin account
+- Sign in to the organization management (parent) account.
 
----
+2. Run account creation script
+- Open worksheet `01_org_admin_setup.sql`.
+- Required role: `ORGADMIN`.
+- Replace password placeholders with secure values, then execute all SQL.
+- This creates child accounts for separated environments (`_dev` and `_prd`).
 
-### 2. 子アカウントでの作業（DEV / PRD 共通）
+### 2. Work in child accounts (for both DEV and PRD)
 
-作成された **DEV アカウント**、および **PRD アカウント** のそれぞれに個別でログインし、以下のステップを各環境で実行する。
+For each child account (DEV and PRD), run the following steps independently.
 
-1. **ワークシートの準備**
-   * 対象子アカウントのコンソールから `Worksheets` を開く。
-   * **⚠️ 必須の実行ロール**: `ACCOUNTADMIN`
-   * `02_child_account_cicd_setup.sql` の内容をすべてコピー＆ペーストする。
-2. **環境変数の個別書き換え**
-   * 貼り付けたスクリプトの下部にある `SUBJECT` の `<ENVIRONMENT_NAME>` 部分を、現在作業しているアカウントの環境名に合わせて書き換える。
-   * **DEV アカウントで作業中の場合**: `dev`
-   * **PRD アカウントで作業中の場合**: `prd`
-3. **CI/CD 設定スクリプトの実行**
-   * 修正が完了したら、ワークシート内のすべての SQL を選択して実行する。
-   * *※ これにより、後続のTerraform自動デプロイを受け入れるための、ベースとなる「専用ユーザー」および「専用ロール」が子アカウント側に整備される。*
+1. Prepare worksheet
+- Open `Worksheets` in the target child account.
+- Required role: `ACCOUNTADMIN`.
+- Copy and paste `02_child_account_cicd_setup.sql`.
+
+2. Update environment-specific value
+- In the script, replace `<ENVIRONMENT_NAME>` in `SUBJECT` based on current account:
+- `dev` when in DEV account
+- `prd` when in PRD account
+
+3. Execute CI/CD setup SQL
+- Execute all SQL in the worksheet after edits.
+- This prepares base deployment objects including dedicated users and roles required by downstream Terraform automation.

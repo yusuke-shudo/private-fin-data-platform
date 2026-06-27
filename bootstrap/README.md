@@ -1,33 +1,37 @@
-# データプラットフォーム 初期ブートストラップ手順（総合マニュアル）
+# Data Platform Initial Bootstrap Guide (Master Manual)
 
-本手順は、CI/CD パイプライン（Terraform / schemachange / dbt）を稼働させる前に、各クラウドプラットフォーム側で一度だけ実行する必要がある手作業の全体フローである。
-各プラットフォーム間で設定値（アカウント ID 等）の依存関係があるため、**必ず以下の順序（AWS ➔ Snowflake ➔ GitHub）で実施すること。**
+- 日本語版: [README.ja.md](README.ja.md)
 
----
-
-## 🚀 セットアップの実行順序・各詳細マニュアル
-
-Bootstrapは必ず以下の順番で実施すること。リンクをクリックすると各プラットフォームの詳細手順（マニュアルTOP）へ移動する。
-
-1. [👉 Step 1: AWSの初期構築](./aws/README.md) — S3バックエンド・DynamoDBの作成など
-2. [👉 Step 2: Snowflakeの初期構築](./snowflake/README.md) — 組織・環境分離（DEV/PRD）とCICD用オブジェクト作成
-3. [👉 Step 3: GitHubの環境変数登録](./github/README.md) — 環境（Environments）定義と確定した変数のマッピング
+This guide explains the one-time manual bootstrap flow required on each cloud platform before running CI/CD pipelines (Terraform / schemachange / dbt).
+Because some configuration values (such as account IDs) are dependent across platforms, **follow the exact order below (AWS -> Snowflake -> GitHub).**
 
 ---
 
-## 🏃‍♂️ 各プラットフォーム構築の概要
+## 🚀 Setup Order and Detailed Manuals
 
-### 1. AWS の初期セットアップ
-* Terraform の状態管理（`tfstate`）を安全に保存するための S3 バケット、および排他制御用の DynamoDB テーブル（State Lock 用）等を、提供された CloudFormation テンプレートから展開する。
+Always execute bootstrap in the order below. Each link points to the detailed manual for that platform.
 
-### 2. Snowflake の初期セットアップ
-* 組織（Organization）アカウントから環境分離された子アカウント（DEV / PRD）を SQL で手動発行する。その後、各子アカウントにログインし、GitHub Actions と OIDC 連携を行うためのセキュリティ統合（Security Integration）やデプロイ用オブジェクト群を整備する。
-
-### 3. GitHub Actions の初期セットアップ
-* リポジトリ側に「環境（Environments）」および「変数（Variables）」を定義し、前段のステップで取得した AWS/Snowflake の識別子をマッピングする。また、本番環境への不正デプロイを防ぐための厳格な保護ルール（自己承認の禁止、管理者バイパスの無効化）を構成する。
+1. [Step 1: AWS bootstrap](./aws/README.md) - Create S3 backend, DynamoDB, and related resources
+2. [Step 2: Snowflake bootstrap](./snowflake/README.md) - Environment/account split (DEV/PRD) and CI/CD objects
+3. [Step 3: GitHub environment setup](./github/README.md) - Define environments and map confirmed variables
 
 ---
 
-## 🏁 構築完了の確認
+## 🏃‍♂️ Platform Setup Overview
 
-すべてのプラットフォームの手作業ステップが完了し、必要な環境変数やブランチ保護が GitHub 側に反映された段階で、`main` ブランチへのコードプッシュ（およびプルリクエストのマージ）による全自動デプロイパイプラインの準備が完了する。
+### 1. AWS Initial Setup
+* Deploy an S3 bucket for Terraform state (`tfstate`) and a DynamoDB table for state locking via the provided CloudFormation template.
+
+### 2. Snowflake Initial Setup
+* From the organization account, manually create environment-separated child accounts (DEV/PRD) via SQL.
+* Then sign in to each child account and prepare deployment resources including security integration for GitHub Actions OIDC.
+
+### 3. GitHub Actions Initial Setup
+* Define GitHub Environments and Variables, then map AWS/Snowflake identifiers obtained in earlier steps.
+* Configure strict production protection rules (no self-approval, no admin bypass) to prevent unsafe deployments.
+
+---
+
+## 🏁 Completion Check
+
+When all manual platform steps are complete and required GitHub variables/branch protection are in place, the repository is ready for fully automated deployment via pushes and PR merges to `main`.

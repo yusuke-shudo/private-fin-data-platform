@@ -1,77 +1,138 @@
 # private-fin-data-platform
 
-AWSおよびSnowflakeを組み合わせたデータプラットフォームのインフラ・オブジェクト群を、Terraformを用いて一元管理するモノリポ（Monorepo）リポジトリである。
+- 日本語版: [README.ja.md](README.ja.md)
+
+This monorepo centrally manages infrastructure and data-platform-related objects built on AWS and Snowflake using Terraform.
 
 ---
 
-## 🗺️ 1. ディレクトリ構造
+## 📘 0. Design Philosophy
 
-本リポジトリは、環境の初期構築を行う「bootstrap」、schemachange 用の「schemachange」、継続的なインフラ管理を行う「terraform」の3つのディレクトリで構成されている。
+If you want to understand the architecture philosophy and design principles first, refer to:
+
+- [Architecture and Design Philosophy](docs/architecture-and-philosophy.md)
+- [Architecture and Philosophy (Japanese)](docs/architecture-and-philosophy.ja.md)
+
+---
+
+## 🗺️ 1. Directory Structure
+
+This repository is composed of three main directories:
+
+- `bootstrap`: one-time initial setup
+- `schemachange`: database migration management
+- `terraform`: continuous infrastructure management
 
 ```text
-├── .github/workflows/       # CI/CD ワークフロー定義（環境・プロバイダー別）
+├── .github/workflows/       # CI/CD workflows (by environment/provider)
 │   ├── tf-aws-dev.yml
 │   ├── tf-aws-prd.yml
 │   ├── tf-snowflake-dev.yml
 │   ├── tf-snowflake-prd.yml
-│   └── tf-unlock.yml        # 状態ロック解除用
-├── CODEOWNERS               # コード変更の承認責任者定義
-├── bootstrap/               # 1. 初期構築フェーズ（各環境変数等の作成手順）
-│   ├── aws/                 # S3バックエンド、CloudFormationテンプレート等
-│   ├── github/              # 環境変数の初期登録・管理ルール
-│   └── snowflake/           # 組織管理者・CICD用ユーザー初期セットアップSQL
-├── schemachange/           # schemachange 管理（検証用、dev/prd、マイグレーション）
-└── terraform/               # 2. 継続管理フェーズ（自動デプロイ対象）
-    ├── aws/                 # AWSリソース管理（ネットワーク、IAM、S3等）
+│   └── tf-unlock.yml        # State lock release
+├── CODEOWNERS               # Code owner definitions for approvals
+├── bootstrap/               # 1. Initial setup phase
+│   ├── aws/                 # S3 backend, CloudFormation templates, etc.
+│   ├── github/              # Initial environment variable setup and rules
+│   └── snowflake/           # Org admin / CI-CD user bootstrap SQL
+├── schemachange/            # schemachange assets (dev/prd migrations)
+└── terraform/               # 2. Continuous management phase
+   ├── aws/                 # AWS resources (network, IAM, S3, etc.)
     │   ├── dev/
     │   └── prd/
-    └── snowflake/           # Snowflakeリソース管理（統合、DB、ロール等）
+   └── snowflake/           # Snowflake resources (integrations, DB, roles)
         ├── dev/
         └── prd/
 ```
 
 ---
 
-## ⚙️ 2. コンポーネントと管理環境
+## ⚙️ 2. Components and Environments
 
-プロバイダー（対象クラウド）と環境（dev / prd）ごとにワークフローおよびTerraform実行ディレクトリが完全に分離されている。
+Workflows and Terraform execution directories are fully separated by provider (target cloud) and environment (dev/prd).
 
-| ディレクトリ | 対象プラットフォーム | 管理環境 | 主要ファイル構成 |
+| Directory | Target Platform | Environments | Main Files |
 | :--- | :--- | :--- | :--- |
 | **`terraform/aws/`** | Amazon Web Services | `dev` / `prd` | main, providers, backend, variables, outputs.tf |
 | **`terraform/snowflake/`** | Snowflake | `dev` / `prd` | main, providers, backend, variables, outputs, integration.tf |
 
-> 💡 **環境間の対称性について**
-> 現在、`dev` 和 `prd` のディレクトリ構造および構成ファイル（`variables.tf` 等）は完全に一致した対称性を保っている。環境固有のパラメータ差分は、GitHub Environmentsの変数機能等を通じて制御される。
+> 💡 **Symmetry Between Environments**
+> The `dev` and `prd` directory structures and core configuration files (`variables.tf`, etc.) are intentionally symmetrical. Environment-specific differences are controlled via GitHub Environment variables.
 
 ---
 
-## 🔐 3. GitHub Environments（環境）の設定
+## 🔐 3. GitHub Environment Settings
 
-GitHubの **Settings > Environments** で定義された以下の環境を利用して、デプロイ対象や権限を制御している。
+The following environments are defined in **Settings > Environments** on GitHub and used to control deployment targets and permissions.
 
-* **`dev-infra` / `prd-infra`**: 主に `terraform/aws/` 側のインフラ土台用環境
-* **`dev-data` / `prd-data`**: 主に `terraform/snowflake/` 側および、将来的な **schemachange / dbt** によるデータオブジェクト・ELT構築用環境
+* **`dev-infra` / `prd-infra`**: Primarily for base infrastructure on `terraform/aws/`
+* **`dev-data` / `prd-data`**: Primarily for `terraform/snowflake/`, and for future data-object/ELT work via **schemachange / dbt**
 
 ---
 
-## 🚀 4. 初期構築（Bootstrap）からTerraform完了までの実行フロー
+## 🚀 4. Bootstrap-to-Terraform Execution Flow
 
-環境を新しく立ち上げる際は、依存関係（鶏と卵）を解消するために、以下の順序に沿って初期構築とワークフローの **2段階実行** を行う。
+When setting up a new environment, use the following sequence to resolve dependency order (chicken-and-egg problems) and execute bootstrap plus workflow setup in two stages.
 
-### 🔄 管理する合計7つの環境変数
-* **Bootstrap手順内で登録する変数 (4つ)**: `AWS_ACCOUNT_ID`, `PROJECT_PREFIX`, `SF_ORGANIZATION_NAME`, `SF_ACCOUNT_NAME`
-* **中間手動追記する変数 (3つ)**: `AWS_S3_AP_ALIAS`, `SF_USER_ARN`, `SF_EXTERNAL_ID`
+### 🔄 Total 7 Managed Variables
+* **Variables registered during bootstrap (4)**: `AWS_ACCOUNT_ID`, `PROJECT_PREFIX`, `SF_ORGANIZATION_NAME`, `SF_ACCOUNT_NAME`
+* **Variables added manually in the middle (3)**: `AWS_S3_AP_ALIAS`, `SF_USER_ARN`, `SF_EXTERNAL_ID`
 
-### 📋 セットアップ手順
+### 📋 Setup Steps
 
-1. **Bootstrapの実施 ＆ 初期4変数の登録**
-   * `bootstrap/` 配下の手順（CloudFormationの適用、Snowflakeでの初期SQL実行など）を順に実施する。
-   * **この手順の中で確定した「初期4変数」** を、GitHubの対象環境（例: `dev-infra`）の画面から登録する。
-2. **【1回目】ワークフロー実行（動的値の確定）**
-   * 対象のインフラワークフロー（例: `tf-aws-dev.yml`）を1回実行する。
-3. **Outputsの目視確認 ＆ 3変数の手動追記**
-   * 1回目のワークフロー完了後、**ログに出力された Outputs を目視確認**する。
-   * 表示された動的なパラメータ（S3別名や外部IDなど）を、人間が手動で残りの「中間手動追記（3つ）」としてGitHubの環境変数画面にコピペする。
-4. **【2回目】ワークフロー実行（接続・インテグレーションの完了）**
-   * 追記した変数をTerraformに正しくインプットさせるため、**もう1回同じワークフローを実行**する。これにより、環境変数として注入された動的パラメータを用いて、裏側の連携処理（`integration.tf` 等）を含むすべてのインフラデプロイが正常に完了する。
+1. **Run bootstrap and register the initial 4 variables**
+   * Execute steps under `bootstrap/` in order (CloudFormation deployment, Snowflake initial SQL, etc.).
+   * Register the confirmed initial 4 variables in the target GitHub environment (e.g., `dev-infra`).
+2. **First workflow run (to determine dynamic values)**
+   * Run the target infrastructure workflow once (e.g., `tf-aws-dev.yml`).
+3. **Review outputs and manually add the remaining 3 variables**
+   * After the first run, manually check output values in logs.
+   * Copy dynamic parameters (e.g., S3 alias, external ID) into GitHub environment variables.
+4. **Second workflow run (to complete integrations)**
+   * Run the same workflow again so Terraform receives the newly added values.
+   * This finalizes infrastructure deployment including integration-related resources such as `integration.tf`.
+
+### ✅ First-Time Manual Run Order (DEV/PRD)
+
+For a brand-new environment, the flow is the same for DEV and PRD. Run workflows manually (`workflow_dispatch`) in this order:
+
+1. Terraform AWS workflow (first run)
+2. Terraform Snowflake workflow (first run)
+3. Add the 3 intermediate variables:
+    * `AWS_S3_AP_ALIAS`
+    * `SF_USER_ARN`
+    * `SF_EXTERNAL_ID`
+4. Terraform AWS workflow (second run)
+5. Terraform Snowflake workflow (second run)
+6. schemachange workflow
+
+Workflow file mapping by environment:
+
+- DEV:
+   * `terraform-aws-dev.yml`
+   * `terraform-snowflake-dev.yml`
+   * `schemachange-dev.yml`
+- PRD:
+   * `terraform-aws-prd.yml`
+   * `terraform-snowflake-prd.yml`
+   * `schemachange-prd.yml`
+
+Run schemachange only after Terraform setup is completed.
+
+### 🔁 Post-Bootstrap Workflow Behavior
+
+After first-time bootstrap is complete, workflows run based on changed file scope.
+
+- On `pull_request` / `push`, only workflows whose `paths` conditions match changed files are triggered.
+- If changed files do not match a workflow path filter, that workflow does not run automatically.
+- `workflow_dispatch` remains available for manual execution (retry, exception handling, or ad-hoc checks).
+
+### 🔄 Why the Same Workflow Runs Multiple Times During a PR
+
+Before a PR is merged into `main`, the same workflow can run multiple times for the same PR.
+
+- `opened`: when the PR is created
+- `synchronize`: when additional commits are pushed to the PR branch
+- `reopened`: when a closed PR is reopened
+
+In practice, this means relevant workflows are re-run as the PR is updated until merge completion.

@@ -1,6 +1,6 @@
 # Schemachange の運用ルール
 
-英語版: [README.md](README.md)
+- English version: [README.md](README.md)
 
 このディレクトリには、DATALAKE、DATAWAREHOUSE、DATAMART 向けの schemachange migration を配置する。
 
