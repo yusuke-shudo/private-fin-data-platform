@@ -12,6 +12,18 @@ The goal is not to provide a one-click production template. The goal is to make 
 - How to keep deployment repeatable and observable
 - How to design for low-cost personal operation without losing production-level discipline
 
+When there is no strong external constraint, this repository uses the design and implementation choices I believe are the most practical. In that sense, it should be read as a working example rather than a generic template.
+
+Concrete examples of that approach include:
+
+- Both AWS and Snowflake use organization-level account separation, with dedicated accounts for `dev` and `prd`.
+	In Snowflake especially, many companies still run dev/prd inside a single account, so this repository intentionally adopts a stricter split model.
+- Terraform uses Snowflake provider preview features such as `snowflake_stage_resource` and `snowflake_storage_integration_aws_resource`.
+- AWS and Snowflake setup live in a single monorepo, so approval responsibilities may belong to either AWS administrators or Snowflake administrators depending on the change area.
+- The default CI/CD flow is `main`-branch PR-driven DEV automation; branch styles such as `dev` or `next` are not part of the intended normal flow.
+- Snowflake ingestion is intentionally centralized into `DATALAKE_DB`.
+- Raw datalake tables are intentionally simple and usually follow a 4-column layout (`ingest_at`, `file_path`, `line_number`, `raw_payload`) for ELT-oriented ingestion.
+
 ## 2. Design Principles
 
 ### 2.1 Separation of Responsibilities
@@ -63,7 +75,8 @@ The system follows a layered lifecycle:
 2. Normalize and model data into datawarehouse
 3. Publish analytics-oriented structures in datamart
 
-Raw ingestion is append-friendly. Deterministic business-state updates are handled downstream by transformation logic.
+Raw ingestion is not append-only by default. Depending on data characteristics, it can be append, full refresh, or slice-based reload (DELETE+INSERT or MERGE).
+For yearly files such as transfer profit/loss reports, `year` is used as the slice key to rebuild only the affected slice.
 
 ## 5. Why Terraform + schemachange + dbt
 

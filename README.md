@@ -136,3 +136,12 @@ Before a PR is merged into `main`, the same workflow can run multiple times for 
 - `reopened`: when a closed PR is reopened
 
 In practice, this means relevant workflows are re-run as the PR is updated until merge completion.
+
+### 🔓 Terraform Backend Lock Recovery
+
+If a Terraform workflow is interrupted mid-run, the backend lock may remain.
+This can affect both AWS and Snowflake Terraform workflows because both use the same S3 backend locking mechanism.
+
+To avoid manually signing in to AWS and deleting lock artifacts, use:
+
+- `.github/workflows/terraform-unlock.yml`

@@ -12,6 +12,18 @@
 - デプロイをどう再現可能・可観測にするか
 - 個人運用のコスト制約の中で、商用品質の設計規律をどう維持するか
 
+特別な制約がない限り、自分が最善だと思う設計・実装を採用している。つまり、一般的なテンプレートというより、実際に動く形の実例として読むのが適している。
+
+具体例は次のとおりである。
+
+- AWS と Snowflake の双方で Organization の機能を利用し、`dev` と `prd` を別アカウントとして分離している。
+	特に Snowflake では、企業によっては開発環境と本番環境を同一アカウントで運用するケースも多いため、本リポジトリではより厳格な分離モデルを採用している。
+- Terraform では、`snowflake_stage_resource` や `snowflake_storage_integration_aws_resource` のような Snowflake provider の preview 機能を使っている。
+- AWS と Snowflake の構築処理は 1 つの monorepo に同居しており、変更箇所に応じて AWS 管理者または Snowflake 管理者のいずれかが承認責任を持つ形になっている。
+- 既定の CI/CD は `main` ブランチへの PR を起点にした DEV 自動化であり、`dev` や `next` のようなブランチ運用は想定していない。
+- Snowflake への取り込み先は意図的に `DATALAKE_DB` に集約している。
+- raw の datalake テーブルは、ELT 前提で基本的に 4 カラム構成（`ingest_at`, `file_path`, `line_number`, `raw_payload`）の単純な形を採っている。
+
 ## 2. 設計原則
 
 ### 2.1 責務分離
@@ -63,7 +75,8 @@
 2. datawarehouse で正規化・モデル化する
 3. datamart で分析向けの提供形に仕上げる
 
-raw 取り込みは append を前提とし、業務状態としての確定は下流の変換で扱う。
+raw 取り込みは append 固定ではなく、データ特性に応じて append / 全件入れ替え / スライス単位の再取込（DELETE+INSERT または MERGE）を使い分ける。
+特定口座譲渡損益履歴のような年次ファイルでは、`year` をスライスキーとして対象年のみを再構築する。
 
 ## 5. Terraform + schemachange + dbt を併用する理由
 

@@ -131,3 +131,12 @@ PR が `main` にマージされる前は、同じワークフローが複数回
 - `reopened`: 一度閉じた PR を再オープンした時
 
 実運用上は、PR の更新に応じて関連ワークフローが再実行され、マージ完了まで検証が繰り返される。
+
+### 🔓 Terraform Backend Lock の復旧
+
+Terraform ワークフローが途中停止した場合、backend lock が残ることがある。
+この lock は S3 backend のロック機構に由来するため、AWS 側だけでなく Snowflake 側の Terraform 実行にも影響する。
+
+AWS へログインして lock ファイルを手作業で削除しなくて済むように、次のワークフローを用意している。
+
+- `.github/workflows/terraform-unlock.yml`
