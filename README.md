@@ -13,6 +13,11 @@ If you want to understand the architecture philosophy and design principles firs
 - [Architecture and Design Philosophy](docs/architecture-and-philosophy.md)
 - [Architecture and Philosophy (Japanese)](docs/architecture-and-philosophy.ja.md)
 
+## 🖼️ Architecture Diagram
+
+- View (browser): [Platform Overview (SVG)](docs/diagrams/platform-overview.svg)
+- Edit source: [Platform Overview (draw.io)](docs/diagrams/platform-overview.drawio)
+
 ---
 
 ## 🗺️ 1. Directory Structure

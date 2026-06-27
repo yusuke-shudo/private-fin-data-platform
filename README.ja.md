@@ -13,6 +13,11 @@ AWSおよびSnowflakeを組み合わせたデータプラットフォームの�
 - [Architecture and Design Philosophy](docs/architecture-and-philosophy.md)
 - [設計思想とアーキテクチャ（日本語版）](docs/architecture-and-philosophy.ja.md)
 
+## 🖼️ アーキテクチャ図
+
+- 閲覧用（ブラウザ）: [Platform Overview (SVG)](docs/diagrams/platform-overview.svg)
+- 編集用ソース: [Platform Overview (draw.io)](docs/diagrams/platform-overview.drawio)
+
 ---
 
 ## 🗺️ 1. ディレクトリ構造
