@@ -34,7 +34,7 @@ BEGIN
     FROM
       @IDENTIFIER(:p_stage_path)
   )
-  FILE_FORMAT = (FORMAT_NAME = IDENTIFIER(:p_file_format_fqn))
+  FILE_FORMAT = (FORMAT_NAME = 'DATALAKE_DB.COMMON.FF_NODELIMITER')
   PATTERN = :p_file_pattern
   FORCE = TRUE
   ON_ERROR = 'ABORT_STATEMENT'
