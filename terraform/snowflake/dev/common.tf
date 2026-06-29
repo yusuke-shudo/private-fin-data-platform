@@ -3,24 +3,10 @@ resource "snowflake_database" "common" {
   comment = local.managed_comment
 }
 
-resource "snowflake_tag_association" "common_database_managed_by" {
-  object_identifiers = [snowflake_database.common.fully_qualified_name]
-  object_type        = "DATABASE"
-  tag_id             = snowflake_tag.database_managed_by.fully_qualified_name
-  tag_value          = "terraform"
-}
-
 resource "snowflake_schema" "governance" {
   name     = "GOVERNANCE"
   database = snowflake_database.common.name
   comment  = "Governance metadata and control objects | ${local.managed_comment}"
-}
-
-resource "snowflake_tag_association" "governance_schema_managed_by" {
-  object_identifiers = [snowflake_schema.governance.fully_qualified_name]
-  object_type        = "SCHEMA"
-  tag_id             = snowflake_tag.schema_managed_by.fully_qualified_name
-  tag_value          = "terraform"
 }
 
 resource "snowflake_tag" "database_managed_by" {
@@ -50,10 +36,12 @@ resource "snowflake_schema" "utils" {
   comment  = "Shared utility functions | ${local.managed_comment}"
 }
 
-resource "snowflake_tag_association" "utils_schema_managed_by" {
-  object_identifiers = [snowflake_schema.utils.fully_qualified_name]
-  object_type        = "SCHEMA"
-  tag_id             = snowflake_tag.schema_managed_by.fully_qualified_name
-  tag_value          = "terraform"
+locals {
+  common_database_managed_by_targets = [snowflake_database.common.fully_qualified_name]
+
+  common_schema_managed_by_targets = [
+    snowflake_schema.governance.fully_qualified_name,
+    snowflake_schema.utils.fully_qualified_name,
+  ]
 }
 

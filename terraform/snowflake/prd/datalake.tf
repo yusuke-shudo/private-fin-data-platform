@@ -3,37 +3,16 @@ resource "snowflake_database" "datalake" {
   comment = local.managed_comment
 }
 
-resource "snowflake_tag_association" "datalake_database_managed_by" {
-  object_identifiers = [snowflake_database.datalake.fully_qualified_name]
-  object_type        = "DATABASE"
-  tag_id             = snowflake_tag.database_managed_by.fully_qualified_name
-  tag_value          = "terraform"
-}
-
 resource "snowflake_schema" "schemachange" {
   name     = "SCHEMACHANGE"
   database = snowflake_database.datalake.name
   comment  = "Schema for schemachange migration metadata | ${local.managed_comment}"
 }
 
-resource "snowflake_tag_association" "datalake_schemachange_schema_managed_by" {
-  object_identifiers = [snowflake_schema.schemachange.fully_qualified_name]
-  object_type        = "SCHEMA"
-  tag_id             = snowflake_tag.schema_managed_by.fully_qualified_name
-  tag_value          = "terraform"
-}
-
 resource "snowflake_schema" "paypay_bank" {
   name     = "PAYPAY_BANK"
   database = snowflake_database.datalake.name
   comment  = local.managed_comment
-}
-
-resource "snowflake_tag_association" "paypay_bank_schema_managed_by" {
-  object_identifiers = [snowflake_schema.paypay_bank.fully_qualified_name]
-  object_type        = "SCHEMA"
-  tag_id             = snowflake_tag.schema_managed_by.fully_qualified_name
-  tag_value          = "terraform"
 }
 
 resource "snowflake_stage" "paypay_bank_stage" {
@@ -45,24 +24,10 @@ resource "snowflake_stage" "paypay_bank_stage" {
   comment              = local.managed_comment
 }
 
-resource "snowflake_tag_association" "paypay_bank_stage_object_managed_by" {
-  object_identifiers = [snowflake_stage.paypay_bank_stage.fully_qualified_name]
-  object_type        = "STAGE"
-  tag_id             = snowflake_tag.object_managed_by.fully_qualified_name
-  tag_value          = "terraform"
-}
-
 resource "snowflake_schema" "sbi_securities" {
   name     = "SBI_SECURITIES"
   database = snowflake_database.datalake.name
   comment  = local.managed_comment
-}
-
-resource "snowflake_tag_association" "sbi_securities_schema_managed_by" {
-  object_identifiers = [snowflake_schema.sbi_securities.fully_qualified_name]
-  object_type        = "SCHEMA"
-  tag_id             = snowflake_tag.schema_managed_by.fully_qualified_name
-  tag_value          = "terraform"
 }
 
 resource "snowflake_stage" "sbi_stage" {
@@ -74,24 +39,10 @@ resource "snowflake_stage" "sbi_stage" {
   comment              = local.managed_comment
 }
 
-resource "snowflake_tag_association" "sbi_stage_object_managed_by" {
-  object_identifiers = [snowflake_stage.sbi_stage.fully_qualified_name]
-  object_type        = "STAGE"
-  tag_id             = snowflake_tag.object_managed_by.fully_qualified_name
-  tag_value          = "terraform"
-}
-
 resource "snowflake_schema" "monex_securities" {
   name     = "MONEX_SECURITIES"
   database = snowflake_database.datalake.name
   comment  = local.managed_comment
-}
-
-resource "snowflake_tag_association" "monex_securities_schema_managed_by" {
-  object_identifiers = [snowflake_schema.monex_securities.fully_qualified_name]
-  object_type        = "SCHEMA"
-  tag_id             = snowflake_tag.schema_managed_by.fully_qualified_name
-  tag_value          = "terraform"
 }
 
 resource "snowflake_stage" "monex_stage" {
@@ -103,10 +54,20 @@ resource "snowflake_stage" "monex_stage" {
   comment              = local.managed_comment
 }
 
-resource "snowflake_tag_association" "monex_stage_object_managed_by" {
-  object_identifiers = [snowflake_stage.monex_stage.fully_qualified_name]
-  object_type        = "STAGE"
-  tag_id             = snowflake_tag.object_managed_by.fully_qualified_name
-  tag_value          = "terraform"
+locals {
+  datalake_database_managed_by_targets = [snowflake_database.datalake.fully_qualified_name]
+
+  datalake_schema_managed_by_targets = [
+    snowflake_schema.schemachange.fully_qualified_name,
+    snowflake_schema.paypay_bank.fully_qualified_name,
+    snowflake_schema.sbi_securities.fully_qualified_name,
+    snowflake_schema.monex_securities.fully_qualified_name,
+  ]
+
+  datalake_stage_object_managed_by_targets = [
+    snowflake_stage.paypay_bank_stage.fully_qualified_name,
+    snowflake_stage.sbi_stage.fully_qualified_name,
+    snowflake_stage.monex_stage.fully_qualified_name,
+  ]
 }
 

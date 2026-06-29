@@ -17,11 +17,8 @@ resource "snowflake_storage_integration_aws" "s3_integration" {
   depends_on                = [time_sleep.wait_for_aws_propagation]
 }
 
-resource "snowflake_tag_association" "s3_integration_object_managed_by" {
-  object_identifiers = [snowflake_storage_integration_aws.s3_integration.fully_qualified_name]
-  object_type        = "INTEGRATION"
-  tag_id             = snowflake_tag.object_managed_by.fully_qualified_name
-  tag_value          = "terraform"
+locals {
+  integration_object_managed_by_targets = [snowflake_storage_integration_aws.s3_integration.fully_qualified_name]
 }
 
 resource "time_sleep" "integration_output_gate" {
