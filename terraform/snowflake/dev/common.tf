@@ -3,11 +3,11 @@ resource "snowflake_database" "common" {
   comment = local.managed_comment
 }
 
-resource "snowflake_tag_association" "common_database_lineage" {
+resource "snowflake_tag_association" "common_database_managed_by" {
   object_identifiers = [snowflake_database.common.fully_qualified_name]
   object_type        = "DATABASE"
-  tag_id             = snowflake_tag.managed_lineage.fully_qualified_name
-  tag_value          = local.managed_comment
+  tag_id             = snowflake_tag.database_managed_by.fully_qualified_name
+  tag_value          = "terraform"
 }
 
 resource "snowflake_schema" "governance" {
@@ -16,18 +16,32 @@ resource "snowflake_schema" "governance" {
   comment  = "Governance metadata and control objects | ${local.managed_comment}"
 }
 
-resource "snowflake_tag_association" "governance_schema_lineage" {
+resource "snowflake_tag_association" "governance_schema_managed_by" {
   object_identifiers = [snowflake_schema.governance.fully_qualified_name]
   object_type        = "SCHEMA"
-  tag_id             = snowflake_tag.managed_lineage.fully_qualified_name
-  tag_value          = local.managed_comment
+  tag_id             = snowflake_tag.schema_managed_by.fully_qualified_name
+  tag_value          = "terraform"
 }
 
-resource "snowflake_tag" "managed_lineage" {
-  name     = "MANAGED_LINEAGE"
+resource "snowflake_tag" "database_managed_by" {
+  name     = "DATABASE_MANAGED_BY"
   database = snowflake_database.common.name
   schema   = snowflake_schema.governance.name
-  comment  = "Managed object lineage metadata"
+  comment  = "Database management owner"
+}
+
+resource "snowflake_tag" "schema_managed_by" {
+  name     = "SCHEMA_MANAGED_BY"
+  database = snowflake_database.common.name
+  schema   = snowflake_schema.governance.name
+  comment  = "Schema management owner"
+}
+
+resource "snowflake_tag" "object_managed_by" {
+  name     = "OBJECT_MANAGED_BY"
+  database = snowflake_database.common.name
+  schema   = snowflake_schema.governance.name
+  comment  = "Object management owner"
 }
 
 resource "snowflake_schema" "utils" {
@@ -36,9 +50,10 @@ resource "snowflake_schema" "utils" {
   comment  = "Shared utility functions | ${local.managed_comment}"
 }
 
-resource "snowflake_tag_association" "utils_schema_lineage" {
+resource "snowflake_tag_association" "utils_schema_managed_by" {
   object_identifiers = [snowflake_schema.utils.fully_qualified_name]
   object_type        = "SCHEMA"
-  tag_id             = snowflake_tag.managed_lineage.fully_qualified_name
-  tag_value          = local.managed_comment
+  tag_id             = snowflake_tag.schema_managed_by.fully_qualified_name
+  tag_value          = "terraform"
 }
+

@@ -3,11 +3,11 @@ resource "snowflake_database" "datalake" {
   comment = local.managed_comment
 }
 
-resource "snowflake_tag_association" "datalake_database_lineage" {
+resource "snowflake_tag_association" "datalake_database_managed_by" {
   object_identifiers = [snowflake_database.datalake.fully_qualified_name]
   object_type        = "DATABASE"
-  tag_id             = snowflake_tag.managed_lineage.fully_qualified_name
-  tag_value          = local.managed_comment
+  tag_id             = snowflake_tag.database_managed_by.fully_qualified_name
+  tag_value          = "terraform"
 }
 
 resource "snowflake_schema" "schemachange" {
@@ -16,11 +16,11 @@ resource "snowflake_schema" "schemachange" {
   comment  = "Schema for schemachange migration metadata | ${local.managed_comment}"
 }
 
-resource "snowflake_tag_association" "schemachange_schema_lineage" {
+resource "snowflake_tag_association" "datalake_schemachange_schema_managed_by" {
   object_identifiers = [snowflake_schema.schemachange.fully_qualified_name]
   object_type        = "SCHEMA"
-  tag_id             = snowflake_tag.managed_lineage.fully_qualified_name
-  tag_value          = local.managed_comment
+  tag_id             = snowflake_tag.schema_managed_by.fully_qualified_name
+  tag_value          = "schemachange"
 }
 
 resource "snowflake_schema" "paypay_bank" {
@@ -29,11 +29,11 @@ resource "snowflake_schema" "paypay_bank" {
   comment  = local.managed_comment
 }
 
-resource "snowflake_tag_association" "paypay_bank_schema_lineage" {
+resource "snowflake_tag_association" "paypay_bank_schema_managed_by" {
   object_identifiers = [snowflake_schema.paypay_bank.fully_qualified_name]
   object_type        = "SCHEMA"
-  tag_id             = snowflake_tag.managed_lineage.fully_qualified_name
-  tag_value          = local.managed_comment
+  tag_id             = snowflake_tag.schema_managed_by.fully_qualified_name
+  tag_value          = "schemachange"
 }
 
 resource "snowflake_stage" "paypay_bank_stage" {
@@ -45,10 +45,10 @@ resource "snowflake_stage" "paypay_bank_stage" {
   comment              = local.managed_comment
 
   tag {
-    name     = snowflake_tag.managed_lineage.name
-    database = snowflake_tag.managed_lineage.database
-    schema   = snowflake_tag.managed_lineage.schema
-    value    = local.managed_comment
+    name     = snowflake_tag.object_managed_by.name
+    database = snowflake_tag.object_managed_by.database
+    schema   = snowflake_tag.object_managed_by.schema
+    value    = "terraform"
   }
 }
 
@@ -58,11 +58,11 @@ resource "snowflake_schema" "sbi_securities" {
   comment  = local.managed_comment
 }
 
-resource "snowflake_tag_association" "sbi_securities_schema_lineage" {
+resource "snowflake_tag_association" "sbi_securities_schema_managed_by" {
   object_identifiers = [snowflake_schema.sbi_securities.fully_qualified_name]
   object_type        = "SCHEMA"
-  tag_id             = snowflake_tag.managed_lineage.fully_qualified_name
-  tag_value          = local.managed_comment
+  tag_id             = snowflake_tag.schema_managed_by.fully_qualified_name
+  tag_value          = "schemachange"
 }
 
 resource "snowflake_stage" "sbi_stage" {
@@ -74,10 +74,10 @@ resource "snowflake_stage" "sbi_stage" {
   comment              = local.managed_comment
 
   tag {
-    name     = snowflake_tag.managed_lineage.name
-    database = snowflake_tag.managed_lineage.database
-    schema   = snowflake_tag.managed_lineage.schema
-    value    = local.managed_comment
+    name     = snowflake_tag.object_managed_by.name
+    database = snowflake_tag.object_managed_by.database
+    schema   = snowflake_tag.object_managed_by.schema
+    value    = "terraform"
   }
 }
 
@@ -87,11 +87,11 @@ resource "snowflake_schema" "monex_securities" {
   comment  = local.managed_comment
 }
 
-resource "snowflake_tag_association" "monex_securities_schema_lineage" {
+resource "snowflake_tag_association" "monex_securities_schema_managed_by" {
   object_identifiers = [snowflake_schema.monex_securities.fully_qualified_name]
   object_type        = "SCHEMA"
-  tag_id             = snowflake_tag.managed_lineage.fully_qualified_name
-  tag_value          = local.managed_comment
+  tag_id             = snowflake_tag.schema_managed_by.fully_qualified_name
+  tag_value          = "schemachange"
 }
 
 resource "snowflake_stage" "monex_stage" {
@@ -103,10 +103,10 @@ resource "snowflake_stage" "monex_stage" {
   comment              = local.managed_comment
 
   tag {
-    name     = snowflake_tag.managed_lineage.name
-    database = snowflake_tag.managed_lineage.database
-    schema   = snowflake_tag.managed_lineage.schema
-    value    = local.managed_comment
+    name     = snowflake_tag.object_managed_by.name
+    database = snowflake_tag.object_managed_by.database
+    schema   = snowflake_tag.object_managed_by.schema
+    value    = "terraform"
   }
 }
 
