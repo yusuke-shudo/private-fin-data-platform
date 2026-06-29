@@ -73,7 +73,7 @@ locals {
   ]
 
   datalake_stage_object_managed_by_targets = [
-    snowflake_stage.paypay_bank_stage.fully_qualified_name,
+    snowflake_stage_external_s3.paypay_bank_stage.fully_qualified_name,
     snowflake_stage.sbi_stage.fully_qualified_name,
     snowflake_stage.monex_stage.fully_qualified_name,
   ]
