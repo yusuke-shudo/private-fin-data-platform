@@ -37,15 +37,6 @@ resource "snowflake_schema" "sbi_securities" {
   comment  = local.managed_comment
 }
 
-resource "snowflake_stage" "sbi_stage" {
-  name                 = "SBI_STAGE"
-  database             = snowflake_database.datalake.name
-  schema               = snowflake_schema.sbi_securities.name
-  url                  = "s3://${var.aws_s3_ap_alias}/sbi/"
-  storage_integration  = snowflake_storage_integration_aws.s3_integration.name
-  comment              = local.managed_comment
-}
-
 resource "snowflake_stage_external_s3" "sbi_stage" {
   name                 = "STAGE_SBI"
   database             = snowflake_database.datalake.name
@@ -60,15 +51,6 @@ resource "snowflake_schema" "monex_securities" {
   name     = "MONEX_SECURITIES"
   database = snowflake_database.datalake.name
   comment  = local.managed_comment
-}
-
-resource "snowflake_stage" "monex_stage" {
-  name                 = "MONEX_STAGE"
-  database             = snowflake_database.datalake.name
-  schema               = snowflake_schema.monex_securities.name
-  url                  = "s3://${var.aws_s3_ap_alias}/monex/"
-  storage_integration  = snowflake_storage_integration_aws.s3_integration.name
-  comment              = local.managed_comment
 }
 
 resource "snowflake_stage_external_s3" "monex_stage" {
@@ -113,21 +95,10 @@ resource "snowflake_tag_association" "datalake_schema_managed_by" {
   tag_value          = "terraform"
 }
 
-# TEMPORARILY COMMENTED OUT: will be restored in Step 2 after old stages are removed
-# resource "snowflake_tag_association" "datalake_stage_object_managed_by" {
-#   object_identifiers = local.datalake_stage_object_managed_by_targets
-#   object_type        = "STAGE"
-#   tag_id             = snowflake_tag.object_managed_by.fully_qualified_name
-#   tag_value          = "terraform"
-# }
-
-# Removes the tag association from state without touching Snowflake.
-# paypay_bank_stage is being recreated (name change), so the old association would fail to read.
-# Delete this block in Step 2.
-removed {
-  from = snowflake_tag_association.datalake_stage_object_managed_by
-  lifecycle {
-    destroy = false
-  }
+resource "snowflake_tag_association" "datalake_stage_object_managed_by" {
+  object_identifiers = local.datalake_stage_object_managed_by_targets
+  object_type        = "STAGE"
+  tag_id             = snowflake_tag.object_managed_by.fully_qualified_name
+  tag_value          = "terraform"
 }
 
