@@ -13,3 +13,17 @@ locals {
   datamart_database_managed_by_targets = [snowflake_database.datamart.fully_qualified_name]
   datamart_schema_managed_by_targets   = [snowflake_schema.datamart_schemachange.fully_qualified_name]
 }
+
+resource "snowflake_tag_association" "datamart_database_managed_by" {
+  object_identifiers = local.datamart_database_managed_by_targets
+  object_type        = "DATABASE"
+  tag_id             = snowflake_tag.database_managed_by.fully_qualified_name
+  tag_value          = "terraform"
+}
+
+resource "snowflake_tag_association" "datamart_schema_managed_by" {
+  object_identifiers = local.datamart_schema_managed_by_targets
+  object_type        = "SCHEMA"
+  tag_id             = snowflake_tag.schema_managed_by.fully_qualified_name
+  tag_value          = "terraform"
+}

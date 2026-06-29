@@ -45,3 +45,17 @@ locals {
   ]
 }
 
+resource "snowflake_tag_association" "common_database_managed_by" {
+  object_identifiers = local.common_database_managed_by_targets
+  object_type        = "DATABASE"
+  tag_id             = snowflake_tag.database_managed_by.fully_qualified_name
+  tag_value          = "terraform"
+}
+
+resource "snowflake_tag_association" "common_schema_managed_by" {
+  object_identifiers = local.common_schema_managed_by_targets
+  object_type        = "SCHEMA"
+  tag_id             = snowflake_tag.schema_managed_by.fully_qualified_name
+  tag_value          = "terraform"
+}
+

@@ -72,10 +72,35 @@ locals {
     snowflake_schema.monex_securities.fully_qualified_name,
   ]
 
-  datalake_stage_object_managed_by_targets = [
-    snowflake_stage_external_s3.paypay_bank_stage.fully_qualified_name,
-    snowflake_stage.sbi_stage.fully_qualified_name,
-    snowflake_stage.monex_stage.fully_qualified_name,
-  ]
+  # TEMPORARILY COMMENTED OUT: state cleanup for snowflake_stage -> snowflake_stage_external_s3 migration
+  # Uncomment together with snowflake_tag_association.datalake_stage_object_managed_by below after state cleanup run.
+  # datalake_stage_object_managed_by_targets = [
+  #   snowflake_stage_external_s3.paypay_bank_stage.fully_qualified_name,
+  #   snowflake_stage.sbi_stage.fully_qualified_name,
+  #   snowflake_stage.monex_stage.fully_qualified_name,
+  # ]
 }
+
+resource "snowflake_tag_association" "datalake_database_managed_by" {
+  object_identifiers = local.datalake_database_managed_by_targets
+  object_type        = "DATABASE"
+  tag_id             = snowflake_tag.database_managed_by.fully_qualified_name
+  tag_value          = "terraform"
+}
+
+resource "snowflake_tag_association" "datalake_schema_managed_by" {
+  object_identifiers = local.datalake_schema_managed_by_targets
+  object_type        = "SCHEMA"
+  tag_id             = snowflake_tag.schema_managed_by.fully_qualified_name
+  tag_value          = "terraform"
+}
+
+# TEMPORARILY COMMENTED OUT: state cleanup for snowflake_stage -> snowflake_stage_external_s3 migration
+# Uncomment together with datalake_stage_object_managed_by_targets local above after state cleanup run.
+# resource "snowflake_tag_association" "datalake_stage_object_managed_by" {
+#   object_identifiers = local.datalake_stage_object_managed_by_targets
+#   object_type        = "STAGE"
+#   tag_id             = snowflake_tag.object_managed_by.fully_qualified_name
+#   tag_value          = "terraform"
+# }
 

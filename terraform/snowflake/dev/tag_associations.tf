@@ -22,12 +22,14 @@ resource "snowflake_tag_association" "schema_managed_by" {
   tag_value   = "terraform"
 }
 
-resource "snowflake_tag_association" "stage_object_managed_by" {
-  object_identifiers = local.datalake_stage_object_managed_by_targets
-  object_type        = "STAGE"
-  tag_id             = snowflake_tag.object_managed_by.fully_qualified_name
-  tag_value          = "terraform"
-}
+# TEMPORARILY COMMENTED OUT: state cleanup for snowflake_stage -> snowflake_stage_external_s3 migration
+# Uncomment after this run succeeds to recreate the tag association against the new stage.
+# resource "snowflake_tag_association" "stage_object_managed_by" {
+#   object_identifiers = local.datalake_stage_object_managed_by_targets
+#   object_type        = "STAGE"
+#   tag_id             = snowflake_tag.object_managed_by.fully_qualified_name
+#   tag_value          = "terraform"
+# }
 
 resource "snowflake_tag_association" "integration_object_managed_by" {
   object_identifiers = local.integration_object_managed_by_targets
