@@ -7,7 +7,7 @@ resource "time_sleep" "wait_for_aws_propagation" {
 
 resource "snowflake_storage_integration_aws" "s3_integration" {
   name                      = "S3_DATA_LAKE_INTEGRATION"
-  comment                   = "Storage Integration for S3 Data Lake via S3 Access Point"
+  comment                   = "Storage Integration for S3 Data Lake via S3 Access Point | ${local.managed_comment}"
   enabled                   = true
   storage_provider          = "S3"
   storage_aws_role_arn      = "arn:aws:iam::${var.aws_account_id}:role/private-fin-sf-s3-role"  
@@ -15,6 +15,10 @@ resource "snowflake_storage_integration_aws" "s3_integration" {
     var.aws_s3_ap_alias != "" ? "s3://${var.aws_s3_ap_alias}/" : "s3://dummy-bootstrap-accesspoint-bucket/"
   ]
   depends_on                = [time_sleep.wait_for_aws_propagation]
+}
+
+locals {
+  integration_object_managed_by_targets = [snowflake_storage_integration_aws.s3_integration.fully_qualified_name]
 }
 
 resource "time_sleep" "integration_output_gate" {

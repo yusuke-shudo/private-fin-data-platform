@@ -1,6 +1,11 @@
 -- ==============================================================================
--- 1. 組織アカウントでの手作業（実行ロール: ORGADMIN / SYSADMIN）
+-- 1. 組織アカウントでの手作業（実行ロール: ACCOUNTADMIN / SYSADMIN / ORGADMIN）
 -- ==============================================================================
+
+-- [ACCOUNTADMIN] 組織アカウントのデフォルトタイムゾーンをUTCに設定
+USE ROLE ACCOUNTADMIN;
+
+ALTER ACCOUNT SET TIMEZONE = 'UTC';
 
 -- [SYSADMIN] 組織アカウント専用の共通ウェアハウス設定
 USE ROLE SYSADMIN;
