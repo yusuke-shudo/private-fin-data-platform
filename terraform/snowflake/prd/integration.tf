@@ -17,6 +17,13 @@ resource "snowflake_storage_integration_aws" "s3_integration" {
   depends_on                = [time_sleep.wait_for_aws_propagation]
 }
 
+resource "snowflake_tag_association" "s3_integration_lineage" {
+  object_identifiers = [snowflake_storage_integration_aws.s3_integration.fully_qualified_name]
+  object_type        = "INTEGRATION"
+  tag_id             = snowflake_tag.managed_lineage.fully_qualified_name
+  tag_value          = local.managed_comment
+}
+
 resource "time_sleep" "integration_output_gate" {
   depends_on      = [snowflake_storage_integration_aws.s3_integration]
   create_duration = "30s"
