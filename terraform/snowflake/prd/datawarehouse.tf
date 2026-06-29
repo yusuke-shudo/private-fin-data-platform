@@ -13,3 +13,17 @@ locals {
   datawarehouse_database_managed_by_targets = [snowflake_database.datawarehouse.fully_qualified_name]
   datawarehouse_schema_managed_by_targets   = [snowflake_schema.datawarehouse_schemachange.fully_qualified_name]
 }
+
+resource "snowflake_tag_association" "datawarehouse_database_managed_by" {
+  object_identifiers = local.datawarehouse_database_managed_by_targets
+  object_type        = "DATABASE"
+  tag_id             = snowflake_tag.database_managed_by.fully_qualified_name
+  tag_value          = "terraform"
+}
+
+resource "snowflake_tag_association" "datawarehouse_schema_managed_by" {
+  object_identifiers = local.datawarehouse_schema_managed_by_targets
+  object_type        = "SCHEMA"
+  tag_id             = snowflake_tag.schema_managed_by.fully_qualified_name
+  tag_value          = "terraform"
+}

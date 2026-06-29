@@ -25,3 +25,10 @@ resource "time_sleep" "integration_output_gate" {
   depends_on      = [snowflake_storage_integration_aws.s3_integration]
   create_duration = "30s"
 }
+
+resource "snowflake_tag_association" "integration_object_managed_by" {
+  object_identifiers = local.integration_object_managed_by_targets
+  object_type        = "INTEGRATION"
+  tag_id             = snowflake_tag.object_managed_by.fully_qualified_name
+  tag_value          = "terraform"
+}
