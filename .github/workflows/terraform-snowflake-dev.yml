@@ -56,6 +56,8 @@ jobs:
       - name: Terraform Apply to Snowflake Dev
         run: terraform apply -auto-approve -no-color
         env:
+          TF_LOG:                                TRACE
+          TF_LOG_PATH:                           terraform.log
           TF_VAR_env:                           ${{ env.TARGET_ENV }}
           TF_VAR_managed_repo:                  ${{ github.repository }}
           TF_VAR_managed_ref:                   ${{ github.sha }}
@@ -66,3 +68,13 @@ jobs:
           SNOWFLAKE_USER:                       "cicd_infra_engineer_user"
           SNOWFLAKE_AUTHENTICATOR:              "WORKLOAD_IDENTITY"
           SNOWFLAKE_WORKLOAD_IDENTITY_PROVIDER: "OIDC"
+
+      - name: Upload Terraform debug logs (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-snowflake-dev-debug-logs
+          path: |
+            terraform/snowflake/dev/terraform.log
+            terraform/snowflake/dev/crash.log
+          if-no-files-found: ignore
