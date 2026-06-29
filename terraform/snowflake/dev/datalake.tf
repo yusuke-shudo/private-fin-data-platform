@@ -20,7 +20,7 @@ resource "snowflake_tag_association" "datalake_schemachange_schema_managed_by" {
   object_identifiers = [snowflake_schema.schemachange.fully_qualified_name]
   object_type        = "SCHEMA"
   tag_id             = snowflake_tag.schema_managed_by.fully_qualified_name
-  tag_value          = "schemachange"
+  tag_value          = "terraform"
 }
 
 resource "snowflake_schema" "paypay_bank" {
@@ -33,7 +33,7 @@ resource "snowflake_tag_association" "paypay_bank_schema_managed_by" {
   object_identifiers = [snowflake_schema.paypay_bank.fully_qualified_name]
   object_type        = "SCHEMA"
   tag_id             = snowflake_tag.schema_managed_by.fully_qualified_name
-  tag_value          = "schemachange"
+  tag_value          = "terraform"
 }
 
 resource "snowflake_stage" "paypay_bank_stage" {
@@ -66,7 +66,7 @@ resource "snowflake_tag_association" "sbi_securities_schema_managed_by" {
   object_identifiers = [snowflake_schema.sbi_securities.fully_qualified_name]
   object_type        = "SCHEMA"
   tag_id             = snowflake_tag.schema_managed_by.fully_qualified_name
-  tag_value          = "schemachange"
+  tag_value          = "terraform"
 }
 
 resource "snowflake_stage" "sbi_stage" {
@@ -99,7 +99,7 @@ resource "snowflake_tag_association" "monex_securities_schema_managed_by" {
   object_identifiers = [snowflake_schema.monex_securities.fully_qualified_name]
   object_type        = "SCHEMA"
   tag_id             = snowflake_tag.schema_managed_by.fully_qualified_name
-  tag_value          = "schemachange"
+  tag_value          = "terraform"
 }
 
 resource "snowflake_stage" "monex_stage" {

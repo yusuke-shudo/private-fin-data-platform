@@ -20,5 +20,5 @@ resource "snowflake_tag_association" "datawarehouse_schema_managed_by" {
   object_identifiers = [snowflake_schema.datawarehouse_schemachange.fully_qualified_name]
   object_type        = "SCHEMA"
   tag_id             = snowflake_tag.schema_managed_by.fully_qualified_name
-  tag_value          = "schemachange"
+  tag_value          = "terraform"
 }
