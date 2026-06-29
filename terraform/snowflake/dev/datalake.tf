@@ -21,11 +21,12 @@ resource "snowflake_schema" "paypay_bank" {
   comment  = local.managed_comment
 }
 
-resource "snowflake_stage" "paypay_bank_stage" {
-  name                 = "PAYPAY_BANK_STAGE"
+resource "snowflake_stage_external_s3" "paypay_bank_stage" {
+  name                 = "STAGE_PAYPAY_BANK"
   database             = snowflake_database.datalake.name
   schema               = snowflake_schema.paypay_bank.name
   url                  = "s3://${var.aws_s3_ap_alias}/paypay_bank/"
+  aws_access_point_arn = "arn:aws:s3:ap-northeast-1:637442130374:accesspoint/private-fin-sf-ap"
   storage_integration  = snowflake_storage_integration_aws.s3_integration.name
   comment              = local.managed_comment
 }
