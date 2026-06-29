@@ -9,6 +9,12 @@ resource "snowflake_schema" "schemachange" {
   comment  = "Schema for schemachange migration metadata | ${local.managed_comment}"
 }
 
+resource "snowflake_schema" "common" {
+  name     = "COMMON"
+  database = snowflake_database.datalake.name
+  comment  = "Schema for shared datalake procedures and file formats | ${local.managed_comment}"
+}
+
 resource "snowflake_schema" "paypay_bank" {
   name     = "PAYPAY_BANK"
   database = snowflake_database.datalake.name
@@ -59,6 +65,7 @@ locals {
 
   datalake_schema_managed_by_targets = [
     snowflake_schema.schemachange.fully_qualified_name,
+    snowflake_schema.common.fully_qualified_name,
     snowflake_schema.paypay_bank.fully_qualified_name,
     snowflake_schema.sbi_securities.fully_qualified_name,
     snowflake_schema.monex_securities.fully_qualified_name,
