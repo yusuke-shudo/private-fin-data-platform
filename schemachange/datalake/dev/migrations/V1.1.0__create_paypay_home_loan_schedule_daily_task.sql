@@ -1,15 +1,22 @@
 -- schemachange migration: create daily full-refresh task for PayPay Bank home loan schedule raw table
 -- Requirement: run once a day, read from S3 paypay_bank/home_loan_schedule/, and fully replace target rows
 
-CREATE SCHEMA IF NOT EXISTS DATALAKE_DB.COMMON;
+CREATE SCHEMA IF NOT EXISTS datalake_db.common;
 
-CREATE OR REPLACE FILE FORMAT DATALAKE_DB.COMMON.FF_NODELIMITER
+CREATE OR REPLACE FILE FORMAT datalake_db.common.ff_nodelimiter
   TYPE = 'CSV'
   FIELD_DELIMITER = NONE
   SKIP_HEADER = 0
-  ENCODING = 'UTF8';
+  ENCODING = 'UTF8'
+;
 
-CREATE OR REPLACE PROCEDURE DATALAKE_DB.COMMON.SP_LOAD_RAW_FULL_REFRESH(
+CREATE OR REPLACE FILE FORMAT datalake_db.common.ff_csv_skipheader1
+  TYPE = 'CSV'
+  SKIP_HEADER = 1
+  ENCODING = 'UTF8'
+;
+
+CREATE OR REPLACE PROCEDURE datalake_db.common.sp_load_raw_full_refresh(
   p_target_table_fqn  STRING,
   p_stage_path        STRING,
   p_file_format_fqn   STRING,
@@ -20,41 +27,46 @@ CREATE OR REPLACE PROCEDURE DATALAKE_DB.COMMON.SP_LOAD_RAW_FULL_REFRESH(
   EXECUTE AS OWNER
 AS
 $$
+DECLARE
+  sql STRING;
 BEGIN
   TRUNCATE TABLE IDENTIFIER(:p_target_table_fqn);
 
-  COPY INTO
-    IDENTIFIER(:p_target_table_fqn)
-  FROM (
-    SELECT
-      CURRENT_TIMESTAMP() AS ingest_at,
-      METADATA$FILENAME AS file_path,
-      METADATA$FILE_ROW_NUMBER AS line_number,
-      TO_VARIANT($1) AS raw_payload
-    FROM
-      @IDENTIFIER(:p_stage_path)
-  )
-  FILE_FORMAT = (FORMAT_NAME = 'DATALAKE_DB.COMMON.FF_NODELIMITER')
-  PATTERN = :p_file_pattern
-  FORCE = TRUE
-  ON_ERROR = 'ABORT_STATEMENT'
-  ;
+  sql := CONCAT_WS(
+    '\n',
+    'COPY INTO',
+    '  ' || :p_target_table_fqn,
+    'FROM(',
+    '  SELECT',
+    '    CONVERT_TIMEZONE(''UTC'', CURRENT_TIMESTAMP())::TIMESTAMP_NTZ AS ingest_at_utc,',
+    '    METADATA$FILENAME AS file_path,',
+    '    METADATA$FILE_ROW_NUMBER AS line_number,',
+    '    ARRAY_CONSTRUCT(*) AS raw_payload,',
+    '  FROM',
+    '    @' || :p_stage_path,
+    ')',
+    'FILE_FORMAT = (FORMAT_NAME = \'' || :p_file_format_fqn || '\')',
+    'PATTERN = \'' || :p_file_pattern || '\'',
+    'FORCE = TRUE',
+    'ON_ERROR = ABORT_STATEMENT'
+  );
+  EXECUTE IMMEDIATE :sql;
 
   RETURN 'SUCCESS';
 END;
 $$
 ;
 
-CREATE OR REPLACE TASK DATALAKE_DB.COMMON.TASK_LOAD_RAW_0300
+CREATE OR REPLACE TASK datalake_db.common.task_load_raw_0300
   SCHEDULE = 'USING CRON 0 3 * * * Asia/Tokyo'
   USER_TASK_MANAGED_INITIAL_WAREHOUSE_SIZE = 'XSMALL'
 AS
-CALL DATALAKE_DB.COMMON.SP_LOAD_RAW_FULL_REFRESH(
-  'DATALAKE_DB.PAYPAY_BANK.home_loan_schedule_raw',
-  'DATALAKE_DB.PAYPAY_BANK.PAYPAY_BANK_STAGE/home_loan_schedule/',
-  'DATALAKE_DB.COMMON.FF_NODELIMITER',
+CALL datalake_db.common.sp_load_raw_full_refresh(
+  'datalake_db.paypay_bank.home_loan_schedule_raw',
+  'datalake_db.paypay_bank.paypay_bank_stage/home_loan_schedule/',
+  'datalake_db.common.ff_nodelimiter',
   '.*\\.csv'
 )
 ;
 
-ALTER TASK DATALAKE_DB.COMMON.TASK_LOAD_RAW_0300 RESUME;
+ALTER TASK datalake_db.common.task_load_raw_0300 RESUME;

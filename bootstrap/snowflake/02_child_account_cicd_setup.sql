@@ -43,8 +43,12 @@ GRANT USAGE ON WAREHOUSE cicd_data_wh TO ROLE cicd_data_engineer_role;
 -- ------------------------------------------------------------------------------
 USE ROLE ACCOUNTADMIN;
 
+ALTER ACCOUNT SET TIMEZONE = 'UTC';
+
 GRANT CREATE INTEGRATION ON ACCOUNT TO ROLE cicd_infra_engineer_role;
 GRANT CREATE DATABASE ON ACCOUNT TO ROLE cicd_infra_engineer_role;
+GRANT EXECUTE TASK ON ACCOUNT TO ROLE cicd_infra_engineer_role;
+GRANT EXECUTE MANAGED TASK ON ACCOUNT TO ROLE cicd_infra_engineer_role;
 
 -- ------------------------------------------------------------------------------
 -- ユーザーの作成とロールの割り当て
