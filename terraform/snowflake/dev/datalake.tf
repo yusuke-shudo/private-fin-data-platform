@@ -43,12 +43,17 @@ resource "snowflake_stage" "paypay_bank_stage" {
   url                  = "s3://${var.aws_s3_ap_alias}/paypay_bank/"
   storage_integration  = snowflake_storage_integration_aws.s3_integration.name
   comment              = local.managed_comment
-  tag {
-    name     = snowflake_tag.object_managed_by.name
-    database = snowflake_tag.object_managed_by.database
-    schema   = snowflake_tag.object_managed_by.schema
-    value    = "terraform"
+
+  lifecycle {
+    ignore_changes = [tag]
   }
+}
+
+resource "snowflake_tag_association" "paypay_bank_stage_object_managed_by" {
+  object_identifiers = [snowflake_stage.paypay_bank_stage.fully_qualified_name]
+  object_type        = "STAGE"
+  tag_id             = snowflake_tag.object_managed_by.fully_qualified_name
+  tag_value          = "terraform"
 }
 
 resource "snowflake_schema" "sbi_securities" {
@@ -72,12 +77,16 @@ resource "snowflake_stage" "sbi_stage" {
   storage_integration  = snowflake_storage_integration_aws.s3_integration.name
   comment              = local.managed_comment
 
-  tag {
-    name     = snowflake_tag.object_managed_by.name
-    database = snowflake_tag.object_managed_by.database
-    schema   = snowflake_tag.object_managed_by.schema
-    value    = "terraform"
+  lifecycle {
+    ignore_changes = [tag]
   }
+}
+
+resource "snowflake_tag_association" "sbi_stage_object_managed_by" {
+  object_identifiers = [snowflake_stage.sbi_stage.fully_qualified_name]
+  object_type        = "STAGE"
+  tag_id             = snowflake_tag.object_managed_by.fully_qualified_name
+  tag_value          = "terraform"
 }
 
 resource "snowflake_schema" "monex_securities" {
@@ -101,11 +110,15 @@ resource "snowflake_stage" "monex_stage" {
   storage_integration  = snowflake_storage_integration_aws.s3_integration.name
   comment              = local.managed_comment
 
-  tag {
-    name     = snowflake_tag.object_managed_by.name
-    database = snowflake_tag.object_managed_by.database
-    schema   = snowflake_tag.object_managed_by.schema
-    value    = "terraform"
+  lifecycle {
+    ignore_changes = [tag]
   }
+}
+
+resource "snowflake_tag_association" "monex_stage_object_managed_by" {
+  object_identifiers = [snowflake_stage.monex_stage.fully_qualified_name]
+  object_type        = "STAGE"
+  tag_id             = snowflake_tag.object_managed_by.fully_qualified_name
+  tag_value          = "terraform"
 }
 
