@@ -43,10 +43,6 @@ resource "snowflake_stage" "paypay_bank_stage" {
   url                  = "s3://${var.aws_s3_ap_alias}/paypay_bank/"
   storage_integration  = snowflake_storage_integration_aws.s3_integration.name
   comment              = local.managed_comment
-
-  lifecycle {
-    ignore_changes = [tag]
-  }
 }
 
 resource "snowflake_tag_association" "paypay_bank_stage_object_managed_by" {
@@ -76,10 +72,6 @@ resource "snowflake_stage" "sbi_stage" {
   url                  = "s3://${var.aws_s3_ap_alias}/sbi/"
   storage_integration  = snowflake_storage_integration_aws.s3_integration.name
   comment              = local.managed_comment
-
-  lifecycle {
-    ignore_changes = [tag]
-  }
 }
 
 resource "snowflake_tag_association" "sbi_stage_object_managed_by" {
@@ -109,10 +101,6 @@ resource "snowflake_stage" "monex_stage" {
   url                  = "s3://${var.aws_s3_ap_alias}/monex/"
   storage_integration  = snowflake_storage_integration_aws.s3_integration.name
   comment              = local.managed_comment
-
-  lifecycle {
-    ignore_changes = [tag]
-  }
 }
 
 resource "snowflake_tag_association" "monex_stage_object_managed_by" {
