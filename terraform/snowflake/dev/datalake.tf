@@ -22,7 +22,7 @@ resource "snowflake_schema" "paypay_bank" {
 }
 
 resource "snowflake_stage_external_s3" "paypay_bank_stage" {
-  name                 = "STAGE_PAYPAY_BANK"
+  name                 = "PAYPAY_BANK_STAGE"
   database             = snowflake_database.datalake.name
   schema               = snowflake_schema.paypay_bank.name
   url                  = "s3://${var.aws_s3_ap_alias}/paypay_bank/"
