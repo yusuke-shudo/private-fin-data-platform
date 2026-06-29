@@ -104,3 +104,13 @@ resource "snowflake_tag_association" "datalake_schema_managed_by" {
 #   tag_value          = "terraform"
 # }
 
+# Remove the old stage tag association from state without touching Snowflake.
+# The underlying stage no longer exists (snowflake_stage -> snowflake_stage_external_s3 migration).
+# Delete this block after the state cleanup run succeeds.
+removed {
+  from = snowflake_tag_association.stage_object_managed_by
+  lifecycle {
+    destroy = false
+  }
+}
+
