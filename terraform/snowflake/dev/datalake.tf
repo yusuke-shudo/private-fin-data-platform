@@ -26,7 +26,7 @@ resource "snowflake_stage_external_s3" "paypay_bank_stage" {
   database             = snowflake_database.datalake.name
   schema               = snowflake_schema.paypay_bank.name
   url                  = "s3://${var.aws_s3_ap_alias}/paypay_bank/"
-  aws_access_point_arn = "arn:aws:s3:ap-northeast-1:637442130374:accesspoint/private-fin-sf-ap"
+  aws_access_point_arn = "arn:aws:s3:ap-northeast-1:${var.aws_account_id}:accesspoint/private-fin-sf-ap"
   storage_integration  = snowflake_storage_integration_aws.s3_integration.name
   comment              = local.managed_comment
 }
