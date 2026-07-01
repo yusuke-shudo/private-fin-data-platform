@@ -45,8 +45,15 @@ jobs:
             -backend-config="use_lockfile=true" \
             -backend-config="encrypt=true"
 
+      - name: Terraform Plan to AWS Dev
+        run: terraform plan -no-color -out=tfplan
+        env:
+          TF_VAR_env:            ${{ env.TARGET_ENV }}
+          TF_VAR_sf_user_arn:    ${{ vars.SF_USER_ARN }}
+          TF_VAR_sf_external_id: ${{ vars.SF_EXTERNAL_ID }}
+
       - name: Terraform Apply to AWS Dev
-        run: terraform apply -auto-approve -no-color
+        run: terraform apply -no-color tfplan
         env:
           TF_VAR_env:            ${{ env.TARGET_ENV }}
           TF_VAR_sf_user_arn:    ${{ vars.SF_USER_ARN }}

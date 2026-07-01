@@ -53,8 +53,24 @@ jobs:
             -backend-config="use_lockfile=true" \
             -backend-config="encrypt=true"
 
+      - name: Terraform Plan to Snowflake Dev
+        run: terraform plan -no-color -out=tfplan
+        env:
+          TF_LOG:                                TRACE
+          TF_LOG_PATH:                           terraform.log
+          TF_VAR_env:                           ${{ env.TARGET_ENV }}
+          TF_VAR_managed_repo:                  ${{ github.repository }}
+          TF_VAR_managed_ref:                   ${{ github.sha }}
+          TF_VAR_sf_organization_name:          ${{ vars.SF_ORGANIZATION_NAME }}
+          TF_VAR_sf_account_name:               ${{ vars.SF_ACCOUNT_NAME }}
+          TF_VAR_aws_account_id:                ${{ vars.AWS_ACCOUNT_ID }}
+          TF_VAR_aws_s3_ap_alias:               ${{ vars.AWS_S3_AP_ALIAS }}
+          SNOWFLAKE_USER:                       "cicd_infra_engineer_user"
+          SNOWFLAKE_AUTHENTICATOR:              "WORKLOAD_IDENTITY"
+          SNOWFLAKE_WORKLOAD_IDENTITY_PROVIDER: "OIDC"
+
       - name: Terraform Apply to Snowflake Dev
-        run: terraform apply -auto-approve -no-color
+        run: terraform apply -no-color tfplan
         env:
           TF_LOG:                                TRACE
           TF_LOG_PATH:                           terraform.log
