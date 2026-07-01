@@ -27,4 +27,3 @@ CALL datalake_db.common.proc_load_csv_to_json_full_refresh(
   'datalake_db.common.ff_csv_parse_header_sjis',
   '.*\\.csv'
 );
-;
