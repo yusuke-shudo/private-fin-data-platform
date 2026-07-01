@@ -211,25 +211,17 @@ DECLARE
 
 BEGIN
 
-  BEGIN
-    CALL datalake_db.common.proc_load_raw_full_refresh(
-      'datalake_db.paypay_bank.home_loan_schedule_raw',
-      'datalake_db.paypay_bank.stage_paypay_bank/home_loan_schedule/',
-      'datalake_db.common.ff_nodelimiter_sjis'
-    );
-  EXCEPTION WHEN OTHERS THEN
-    RAISE EXCEPTION 'Error loading PayPay home loan schedule: %', :SQLERRM;
-  END;
+  CALL datalake_db.common.proc_load_raw_full_refresh(
+    'datalake_db.paypay_bank.home_loan_schedule_raw',
+    'datalake_db.paypay_bank.stage_paypay_bank/home_loan_schedule/',
+    'datalake_db.common.ff_nodelimiter_sjis'
+  );
 
-  BEGIN
-    CALL datalake_db.common.proc_load_raw_full_refresh(
-      'datalake_db.sbi_securities.sbi_tokutei_profit_loss_report_raw',
-      'datalake_db.sbi_securities.stage_sbi_securities/profit_loss_report/',
-      'datalake_db.common.ff_nodelimiter_sjis'
-    );
-  EXCEPTION WHEN OTHERS THEN
-    RAISE EXCEPTION 'Error loading SBI tokutei profit/loss report: %', :SQLERRM;
-  END;
+  CALL datalake_db.common.proc_load_raw_full_refresh(
+    'datalake_db.sbi_securities.sbi_tokutei_profit_loss_report_raw',
+    'datalake_db.sbi_securities.stage_sbi_securities/profit_loss_report/',
+    'datalake_db.common.ff_nodelimiter_sjis'
+  );
 
   RETURN 'SUCCESS';
 
