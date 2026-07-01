@@ -17,6 +17,7 @@ BEGIN
 END
 ;
 
+-- Load CSV to JSON task
 CREATE OR REPLACE TASK datalake_db.common.task_load_csv_to_json_full_refresh
   WITH TAG ( common_db.governance.object_managed_by = 'schemachange' )
   USER_TASK_MANAGED_INITIAL_WAREHOUSE_SIZE = 'XSMALL'
