@@ -1,0 +1,13 @@
+# Preserve line endings and encoding for financial institution sample data
+# (SJIS, CRLF, TSV, CSV, etc. from PayPay/SBI/Monex - keep as-is)
+sample_data/** -text
+
+# Normalize line endings for most files
+* text=auto
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+*.tf text eol=lf
+*.py text eol=lf
+*.sh text eol=lf
