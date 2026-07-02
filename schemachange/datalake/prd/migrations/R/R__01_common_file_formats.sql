@@ -1,0 +1,25 @@
+CREATE OR REPLACE FILE FORMAT datalake_db.common.ff_nodelimiter
+  TYPE = 'CSV'
+  FIELD_DELIMITER = NONE
+  SKIP_HEADER = 0
+  EMPTY_FIELD_AS_NULL = FALSE
+  ENCODING = 'UTF8'
+;
+
+CREATE OR REPLACE FILE FORMAT datalake_db.common.ff_nodelimiter_sjis
+  TYPE = 'CSV'
+  FIELD_DELIMITER = NONE
+  SKIP_HEADER = 0
+  EMPTY_FIELD_AS_NULL = FALSE
+  ENCODING = 'SHIFT_JIS'
+;
+
+CREATE OR REPLACE FILE FORMAT datalake_db.common.ff_csv_parse_header_sjis
+  TYPE = 'CSV'
+  FIELD_DELIMITER = ','
+  PARSE_HEADER = TRUE
+  FIELD_OPTIONALLY_ENCLOSED_BY = '"'
+  TRIM_SPACE = TRUE
+  NULL_IF = ('\N', 'NULL', '')
+  ENCODING = 'SHIFT_JIS'
+;
