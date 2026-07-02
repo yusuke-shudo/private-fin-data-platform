@@ -38,10 +38,10 @@ resource "snowflake_schema" "sbi_securities" {
 }
 
 resource "snowflake_stage_external_s3" "sbi_stage" {
-  name                 = "STAGE_SBI"
+  name                 = "STAGE_SBI_SECURITIES"
   database             = snowflake_database.datalake.name
   schema               = snowflake_schema.sbi_securities.name
-  url                  = "s3://${var.aws_s3_ap_alias}/sbi/"
+  url                  = "s3://${var.aws_s3_ap_alias}/sbi_securities/"
   aws_access_point_arn = "arn:aws:s3:ap-northeast-1:${var.aws_account_id}:accesspoint/private-fin-sf-ap"
   storage_integration  = snowflake_storage_integration_aws.s3_integration.name
   comment              = local.managed_comment
@@ -54,10 +54,10 @@ resource "snowflake_schema" "monex_securities" {
 }
 
 resource "snowflake_stage_external_s3" "monex_stage" {
-  name                 = "STAGE_MONEX"
+  name                 = "STAGE_MONEX_SECURITIES"
   database             = snowflake_database.datalake.name
   schema               = snowflake_schema.monex_securities.name
-  url                  = "s3://${var.aws_s3_ap_alias}/monex/"
+  url                  = "s3://${var.aws_s3_ap_alias}/monex_securities/"
   aws_access_point_arn = "arn:aws:s3:ap-northeast-1:${var.aws_account_id}:accesspoint/private-fin-sf-ap"
   storage_integration  = snowflake_storage_integration_aws.s3_integration.name
   comment              = local.managed_comment
