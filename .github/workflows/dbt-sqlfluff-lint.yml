@@ -69,12 +69,20 @@ jobs:
       - name: Get changed SQL files
         id: changed-files
         run: |
+          echo "Event: ${{ github.event_name }}"
+          echo "Base ref: ${{ github.base_ref }}"
+          echo "Head ref: ${{ github.head_ref }}"
+          
           if [ "${{ github.event_name }}" == "pull_request" ]; then
+            echo "Running git diff..."
+            git diff --name-only origin/${{ github.base_ref }}...HEAD
             FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep '\.sql$' | grep '^dbt/' | tr '\n' ' ' || true)
           else
             FILES=$(find dbt -name '*.sql' -type f | tr '\n' ' ')
           fi
           COUNT=$(echo "$FILES" | wc -w)
+          echo "Files: $FILES"
+          echo "Count: $COUNT"
           echo "files=$FILES" >> $GITHUB_OUTPUT
           echo "count=$COUNT" >> $GITHUB_OUTPUT
 
