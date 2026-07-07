@@ -1,25 +1,28 @@
-with source_data as (
-  select
-    *
-  from {{ source('paypay_bank', 'home_loan_schedule_raw') }}
+WITH source_data AS (
+  SELECT * FROM {{ source('paypay_bank', 'home_loan_schedule_raw') }}
 ),
-parsed_data as (
-  select
-    to_date(trim(split_part(raw_text, ',', 1)), 'YYYY/MM/DD')                                                    as payment_date,
-    try_to_number(trim(split_part(raw_text, ',', 2)))                                                            as payment_amount,
-    try_to_number(trim(split_part(raw_text, ',', 3)))                                                            as principal_amount,
-    try_to_number(trim(split_part(raw_text, ',', 4)))                                                            as interest_amount,
-    iff(trim(split_part(raw_text, ',', 5)) = '-', null, try_to_number(trim(split_part(raw_text, ',', 5))))    as extra_principal_amount,
-    iff(trim(split_part(raw_text, ',', 6)) = '-', null, try_to_number(trim(split_part(raw_text, ',', 6))))    as extra_interest_amount,
-    try_to_number(trim(split_part(raw_text, ',', 7)))                                                            as annual_interest_rate,
-    try_to_number(trim(split_part(raw_text, ',', 8)))                                                            as remaining_balance,
-    ingest_at_utc                                                                                                as ingested_at,
-    file_path,
-    line_number,
-    current_timestamp()                                                                                          as created_at
-  from source_data
+data1 AS (
+  SELECT
+    SPLIT(REPLACE(raw_text, '"'), ',') AS col_array,
+    ingest_at_utc,
+  FROM
+    source_data
+  WHERE
+    line_number > 1
 ),
-final as (
-  select * from parsed_data
+data2 AS (
+  SELECT
+    TO_DATE(col_array[0]::VARCHAR, 'YYYY/MM/DD') AS payment_date,
+    col_array[1]::NUMBER AS payment_amount,
+    col_array[2]::NUMBER AS principal_amount,
+    col_array[3]::NUMBER AS interest_amount,
+    NULLIF(col_array[4]::VARCHAR, '-')::NUMBER AS extra_principal_amount,
+    NULLIF(col_array[5]::VARCHAR, '-')::NUMBER AS extra_interest_amount,
+    col_array[6]::NUMBER(4, 2) AS annual_interest_rate,
+    col_array[7]::NUMBER AS remaining_balance,
+    ingest_at_utc,
+  FROM
+    data1
 )
-select * from final
+SELECT * FROM data2
+;

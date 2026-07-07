@@ -7,9 +7,12 @@ templater = dbt
 # デフォルトルールを使用。不要なルールだけ除外
 exclude_rules = 
 
+# 最大行長
+max_line_length = 100
+
 [sqlfluff:indentation]
 indent_unit = space
-indent_size = 2
+tab_space_size = 2
 
 [sqlfluff:rules:capitalisation.keywords]
 # 予約語は大文字
@@ -22,7 +25,3 @@ capitalisation_policy = lower
 [sqlfluff:rules:capitalisation.functions]
 # 関数名は小文字
 capitalisation_policy = lower
-
-[sqlfluff:rules:layout.long_lines]
-# 最大行長
-line_length = 100
