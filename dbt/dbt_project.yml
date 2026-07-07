@@ -24,4 +24,4 @@ models:
     staging:
       +database: DATAWAREHOUSE_DB
       +schema: STAGING
-      +materialized: table
+      +materialized: view

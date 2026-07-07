@@ -1,0 +1,88 @@
+name: dbt sqlfluff Linting
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main]
+    paths:
+      - 'dbt/**'
+      - '.sqlfluff'
+      - '.github/workflows/dbt-sqlfluff-lint.yml'
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: "3.11"
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+jobs:
+  sqlfluff-lint:
+    runs-on: ubuntu-latest
+    environment: dev-data
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install sqlfluff sqlfluff-templater-dbt dbt-snowflake
+
+      - name: Mint Snowflake OIDC Token
+        run: |
+          OIDC_TOKEN=$(curl -sLS \
+            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=snowflakecomputing.com" \
+            | jq -r '.value')
+          echo "SNOWFLAKE_TOKEN=$OIDC_TOKEN" >> $GITHUB_ENV
+
+      - name: Generate dbt profiles.yml
+        run: |
+          mkdir -p ~/.dbt
+          cat > ~/.dbt/profiles.yml << EOF
+          private_fin_data_platform:
+            target: dev
+            outputs:
+              dev:
+                type: snowflake
+                account: ${{ format('{0}-{1}', vars.SF_ORGANIZATION_NAME, vars.SF_ACCOUNT_NAME) }}
+                authenticator: oauth
+                token: ${{ env.SNOWFLAKE_TOKEN }}
+                role: cicd_data_engineer_role
+                warehouse: cicd_data_wh
+                database: DATAWAREHOUSE_DB
+                schema: STAGING
+                threads: 4
+          EOF
+
+      - name: Get changed SQL files
+        id: changed-files
+        run: |
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep '\.sql$' | grep '^dbt/' || true)
+          else
+            FILES=$(find dbt -name '*.sql' -type f)
+          fi
+          echo "files=$FILES" >> $GITHUB_OUTPUT
+          echo "count=$(echo "$FILES" | grep -c '.' || echo 0)" >> $GITHUB_OUTPUT
+
+      - name: Run sqlfluff lint
+        if: steps.changed-files.outputs.count != '0'
+        run: |
+          sqlfluff lint ${{ steps.changed-files.outputs.files }} \
+            --config .sqlfluff
+        env:
+          SNOWFLAKE_ACCOUNT: ${{ format('{0}-{1}', vars.SF_ORGANIZATION_NAME, vars.SF_ACCOUNT_NAME) }}
+          SNOWFLAKE_TOKEN: ${{ env.SNOWFLAKE_TOKEN }}
+          DBT_PROJECT_DIR: dbt
