@@ -1,6 +1,7 @@
 WITH source_data AS (
   SELECT * FROM {{ source('paypay_bank', 'home_loan_schedule_raw') }}
 ),
+
 data1 AS (
   SELECT
     SPLIT(REPLACE(raw_text, '"'), ',') AS col_array,
@@ -10,6 +11,7 @@ data1 AS (
   WHERE
     line_number > 1
 ),
+
 data2 AS (
   SELECT
     TO_DATE(col_array[0]::VARCHAR, 'YYYY/MM/DD') AS payment_date,
@@ -24,5 +26,6 @@ data2 AS (
   FROM
     data1
 )
+
 SELECT * FROM data2
 ;
