@@ -37,7 +37,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install sqlfluff sqlfluff-templater-dbt dbt-snowflake
+          pip install sqlfluff sqlfluff-templater-dbt 'dbt-snowflake>=1.12.0'
 
       - name: Mint Snowflake OIDC Token
         run: |
@@ -57,8 +57,10 @@ jobs:
               dev:
                 type: snowflake
                 account: ${{ format('{0}-{1}', vars.SF_ORGANIZATION_NAME, vars.SF_ACCOUNT_NAME) }}
-                authenticator: oauth
-                token: ${{ env.SNOWFLAKE_TOKEN }}
+                user: cicd_data_engineer_user
+                authenticator: workload_identity
+                workload_identity_provider: OIDC
+                token: "{{ env_var('SNOWFLAKE_TOKEN') }}"
                 role: cicd_data_engineer_role
                 warehouse: cicd_data_wh
                 database: DATAWAREHOUSE_DB

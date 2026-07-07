@@ -11,18 +11,18 @@ exclude_rules =
 indent_unit = space
 indent_size = 2
 
-[sqlfluff:rules:L010]
+[sqlfluff:rules:capitalisation.keywords]
 # 予約語は大文字
 capitalisation_policy = upper
 
-[sqlfluff:rules:L014]
+[sqlfluff:rules:capitalisation.identifiers]
 # 識別子は小文字
 capitalisation_policy = lower
 
-[sqlfluff:rules:L030]
+[sqlfluff:rules:capitalisation.functions]
 # 関数名は小文字
 capitalisation_policy = lower
 
-[sqlfluff:rules:L016]
+[sqlfluff:rules:layout.long_lines]
 # 最大行長
 line_length = 100
