@@ -76,7 +76,8 @@ jobs:
           if [ "${{ github.event_name }}" == "pull_request" ]; then
             echo "Running git diff..."
             git diff --name-only origin/${{ github.base_ref }}...HEAD
-            FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep '\.sql$' | grep '^dbt/' | tr '\n' ' ' || true)
+            # 存在するファイルのみをフィルタ
+            FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep '\.sql$' | grep '^dbt/' | while read f; do [ -f "$f" ] && echo "$f"; done | tr '\n' ' ' || true)
           else
             FILES=$(find dbt -name '*.sql' -type f | tr '\n' ' ')
           fi
