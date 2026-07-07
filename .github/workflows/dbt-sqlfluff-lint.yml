@@ -70,12 +70,13 @@ jobs:
         id: changed-files
         run: |
           if [ "${{ github.event_name }}" == "pull_request" ]; then
-            FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep '\.sql$' | grep '^dbt/' || true)
+            FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep '\.sql$' | grep '^dbt/' | tr '\n' ' ' || true)
           else
-            FILES=$(find dbt -name '*.sql' -type f)
+            FILES=$(find dbt -name '*.sql' -type f | tr '\n' ' ')
           fi
+          COUNT=$(echo "$FILES" | wc -w)
           echo "files=$FILES" >> $GITHUB_OUTPUT
-          echo "count=$(echo "$FILES" | grep -c '.' || echo 0)" >> $GITHUB_OUTPUT
+          echo "count=$COUNT" >> $GITHUB_OUTPUT
 
       - name: Run sqlfluff lint
         if: steps.changed-files.outputs.count != '0'
