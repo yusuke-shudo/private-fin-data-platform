@@ -50,6 +50,12 @@ GRANT CREATE DATABASE ON ACCOUNT TO ROLE cicd_infra_engineer_role;
 GRANT EXECUTE TASK ON ACCOUNT TO ROLE cicd_infra_engineer_role;
 GRANT EXECUTE MANAGED TASK ON ACCOUNT TO ROLE cicd_infra_engineer_role;
 
+-- NOTE:
+-- Database/schema-level object privileges for data transformations are granted
+-- after databases and schemas are provisioned by Terraform/schemachange.
+GRANT EXECUTE TASK ON ACCOUNT TO ROLE cicd_data_engineer_role;
+GRANT EXECUTE MANAGED TASK ON ACCOUNT TO ROLE cicd_data_engineer_role;
+
 -- ------------------------------------------------------------------------------
 -- ユーザーの作成とロールの割り当て
 -- ------------------------------------------------------------------------------

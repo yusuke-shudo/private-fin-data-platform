@@ -11,7 +11,7 @@ Because some configuration values (such as account IDs) are dependent across pla
 
 Always execute bootstrap in the order below. Each link points to the detailed manual for that platform.
 
-1. [Step 1: AWS bootstrap](./aws/README.md) - Create S3 backend, DynamoDB, and related resources
+1. [Step 1: AWS bootstrap](./aws/README.md) - Build Terraform S3 backend foundation (S3/Access Point/IAM roles)
 2. [Step 2: Snowflake bootstrap](./snowflake/README.md) - Environment/account split (DEV/PRD) and CI/CD objects
 3. [Step 3: GitHub environment setup](./github/README.md) - Define environments and map confirmed variables
 
@@ -20,7 +20,7 @@ Always execute bootstrap in the order below. Each link points to the detailed ma
 ## 🏃‍♂️ Platform Setup Overview
 
 ### 1. AWS Initial Setup
-* Deploy an S3 bucket for Terraform state (`tfstate`) and a DynamoDB table for state locking via the provided CloudFormation template.
+* Deploy an S3 backend foundation for Terraform state (`tfstate`) via the provided CloudFormation template (S3 bucket, access point, and CI/CD IAM roles).
 
 ### 2. Snowflake Initial Setup
 * From the organization account, manually create environment-separated child accounts (DEV/PRD) via SQL.
@@ -35,3 +35,7 @@ Always execute bootstrap in the order below. Each link points to the detailed ma
 ## 🏁 Completion Check
 
 When all manual platform steps are complete and required GitHub variables/branch protection are in place, the repository is ready for fully automated deployment via pushes and PR merges to `main`.
+
+If a Terraform workflow fails and leaves a lock file, recover with:
+
+- [.github/workflows/terraform-unlock.yml](../.github/workflows/terraform-unlock.yml)
