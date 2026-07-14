@@ -12,7 +12,7 @@ This directory contains schemachange migrations for DATALAKE, DATAWAREHOUSE, and
 
 Current boundary:
 - Fixed DATAWAREHOUSE schemas (`SCHEMACHANGE`, `STAGING`, `CORE`) are managed by Terraform.
-- Fixed DATAMART schemas (`SCHEMACHANGE`, `PERSONAL_ASSETS`, `INVESTMENT_PERFORMANCE`) are managed by Terraform.
+- DATAMART `SCHEMACHANGE` schema is managed by Terraform.
 - The `schemachange/datawarehouse` and `schemachange/datamart` paths are intentionally kept for future SQL objects that are better managed by schemachange.
 
 ## SQL Style

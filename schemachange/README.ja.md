@@ -12,7 +12,7 @@
 
 現在の境界:
 - DATAWAREHOUSE の固定スキーマ（`SCHEMACHANGE`, `STAGING`, `CORE`）は Terraform で管理する。
-- DATAMART の固定スキーマ（`SCHEMACHANGE`, `PERSONAL_ASSETS`, `INVESTMENT_PERFORMANCE`）は Terraform で管理する。
+- DATAMART の `SCHEMACHANGE` スキーマは Terraform で管理する。
 - `schemachange/datawarehouse` と `schemachange/datamart` は、将来 schemachange で管理するのが適切な SQL オブジェクト用に残している。
 
 ## SQL スタイル
