@@ -51,10 +51,10 @@ GRANT EXECUTE TASK ON ACCOUNT TO ROLE cicd_infra_engineer_role;
 GRANT EXECUTE MANAGED TASK ON ACCOUNT TO ROLE cicd_infra_engineer_role;
 
 -- NOTE:
--- Database/schema-level object privileges for data transformations are granted
--- after databases and schemas are provisioned by Terraform/schemachange.
-GRANT EXECUTE TASK ON ACCOUNT TO ROLE cicd_data_engineer_role;
-GRANT EXECUTE MANAGED TASK ON ACCOUNT TO ROLE cicd_data_engineer_role;
+-- dbt-related data-side object privileges for cicd_data_engineer_role are
+-- intentionally not granted in bootstrap.
+-- Grant required privileges later, explicitly, near target objects in
+-- Terraform/schemachange phases.
 
 -- ------------------------------------------------------------------------------
 -- ユーザーの作成とロールの割り当て

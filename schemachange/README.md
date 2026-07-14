@@ -15,6 +15,11 @@ Current boundary:
 - DATAMART `SCHEMACHANGE` schema is managed by Terraform.
 - The `schemachange/datawarehouse` and `schemachange/datamart` paths are intentionally kept for future SQL objects that are better managed by schemachange.
 
+## TASK Policy
+
+- TASK definitions for active datalake pipelines are managed in `schemachange/datalake/*/migrations/R/`.
+- Do not auto-resume TASKs after definition changes. Keep resume as an explicit operational action to avoid unintentionally starting paused workloads.
+
 ## SQL Style
 
 Apply the following formatting rule to column definitions in migration SQL:

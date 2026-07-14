@@ -70,6 +70,11 @@ git config --global init.defaultBranch main
 
 ### 3. 環境（Environments）と変数（Variables）の作成
 
+> 📌 **責務の境界**
+> 本セクションは、GitHub 側での Environment 作成と初期変数の配置のみを扱う。
+> 変数登録の順序・タイミングの正本は [docs/operations-runbook.ja.md](../../docs/operations-runbook.ja.md) とする。
+> human developer のユーザー/ロールは bootstrap の対象外で、別運用で管理する。
+
 > 💡 **環境を4つに分ける理由**
 > Snowflake のセキュリティ制限により、「同一の OIDC Subject（GitHub の環境名やブランチ名）」を複数の統合オブジェクトに重複して登録することができない。これを回避するため、インフラ（Terraform）用とデータ（dbt）用で「環境 × 役割」の計 4 つの Environment を個別に定義する。
 

@@ -15,6 +15,11 @@
 - DATAMART の `SCHEMACHANGE` スキーマは Terraform で管理する。
 - `schemachange/datawarehouse` と `schemachange/datamart` は、将来 schemachange で管理するのが適切な SQL オブジェクト用に残している。
 
+## TASK 運用方針
+
+- 稼働中の datalake パイプラインの TASK 定義は `schemachange/datalake/*/migrations/R/` で管理する。
+- 定義変更後の TASK 自動再開は行わない。停止していた workload の意図しない起動を避けるため、再開は明示的な運用操作とする。
+
 ## SQL スタイル
 
 migration SQL のカラム定義には、次の整形ルールを適用する。

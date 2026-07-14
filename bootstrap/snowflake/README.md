@@ -7,7 +7,13 @@ This guide describes manual Snowflake setup steps that must be completed in Snow
 What this bootstrap configures (summary):
 - Organization account baseline settings and child account creation (`_dev` / `_prd`)
 - Child-account CI/CD warehouses, roles, account-level grants, and OIDC service users for GitHub Actions
-- Baseline task-execution privileges for `cicd_data_engineer_role` (object-level grants are applied after DB/schema provisioning)
+- Shared CI/CD bootstrap roles (`cicd_infra_engineer_role`, `cicd_data_engineer_role`) as execution identities
+- Human developer users/roles are out of scope for this bootstrap and are handled separately because they vary by person and use case.
+
+Boundary for this bootstrap:
+- This step prepares only CI/CD bootstrap prerequisites in Snowflake.
+- Ongoing management of fixed DB/schema boundaries and baseline grants is handled by Terraform workflows.
+- SQL migrations are handled by schemachange where needed (currently active in datalake), while dbt manages transformation models in approved schemas.
 
 ## Manual bootstrap flow
 
@@ -39,6 +45,10 @@ For each child account (DEV and PRD), run the following steps independently.
 3. Execute CI/CD setup SQL
 - Execute all SQL in the worksheet after edits.
 - This prepares base deployment objects including dedicated users and roles required by downstream Terraform automation.
+
+Note:
+- `02_child_account_cicd_setup.sql` is intentionally limited to CI/CD service identities and shared bootstrap prerequisites.
+- Human developer access is not created here; it should be handled separately so person-specific role requirements do not leak into bootstrap.
 
 ### 3. Completion checks
 
