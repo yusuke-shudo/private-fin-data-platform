@@ -1,133 +1,179 @@
 # private-fin-data-platform: Architecture and Design Philosophy
 
-- 日本語版: [architecture-and-philosophy.ja.md](architecture-and-philosophy.ja.md)
+- Japanese version: [architecture-and-philosophy.ja.md](architecture-and-philosophy.ja.md)
 
-## 1. What This System Is
+## 1. Positioning
 
-This repository is a reference implementation of a personal financial data platform built with AWS, Snowflake, and GitHub Actions.
+This repository is a personal but production-minded implementation of a financial data platform on AWS and Snowflake.
 
-The goal is not to provide a one-click production template. The goal is to make core design decisions explicit and reusable:
+It is intentionally not a one-click template.
+Its primary purpose is to make design boundaries explicit, keep operations reproducible, and show realistic trade-offs under practical constraints.
 
-- How to separate infrastructure, schema change, and transformation responsibilities
-- How to keep deployment repeatable and observable
-- How to design for low-cost personal operation without losing production-level discipline
+## 2. Core Principles
 
-When there is no strong external constraint, this repository uses the design and implementation choices I believe are the most practical. In that sense, it should be read as a working example rather than a generic template.
+### 2.1 Clear Responsibility Boundaries
 
-Concrete examples of that approach include:
+- Terraform manages platform and infrastructure resources.
+- schemachange manages versioned SQL migration assets.
+- dbt manages transformation and analytics modeling.
 
-- Both AWS and Snowflake use organization-level account separation, with dedicated accounts for `dev` and `prd`.
-	In Snowflake especially, many companies still run dev/prd inside a single account, so this repository intentionally adopts a stricter split model.
-- Terraform uses Snowflake provider preview features such as `snowflake_stage_resource` and `snowflake_storage_integration_aws_resource`.
-- AWS and Snowflake setup live in a single monorepo, so approval responsibilities may belong to either AWS administrators or Snowflake administrators depending on the change area.
-- The default CI/CD flow is `main`-branch PR-driven DEV automation; branch styles such as `dev` or `next` are not part of the intended normal flow.
-- Snowflake ingestion is intentionally centralized into `DATALAKE_DB`.
-- Raw datalake tables are intentionally simple and usually follow a 4-column layout (`ingest_at`, `file_path`, `line_number`, `raw_payload`) for ELT-oriented ingestion.
+Each layer has one primary responsibility to reduce coupling and review ambiguity.
 
-## 2. Design Principles
+### 2.2 Reproducibility Over Convenience
 
-### 2.1 Separation of Responsibilities
+- The same change should be executable by anyone with the same result.
+- Environment differences are controlled explicitly by environment-specific configuration.
+- CI workflow definitions are versioned in the repository.
 
-- Terraform manages infrastructure and platform-level resources.
-- schemachange manages SQL migrations for database objects that should be versioned as DDL.
-- dbt manages transformation logic and analytical modeling.
+### 2.3 Explicitness Over Hidden Automation
 
-Each layer has a single primary role, which reduces hidden coupling and review complexity.
+- One-time bootstrap work is documented as manual initialization.
+- Continuous operations are separated from bootstrap.
+- Execution order is documented and kept deterministic.
 
-### 2.2 Repeatability Over Convenience
+### 2.4 Cost-Aware Design
 
-The same operation should produce the same outcome regardless of who executes it.
+- Small-scale personal operation is a first-class constraint.
+- Storage-first patterns are preferred over unnecessary compute-heavy preprocessing.
 
-- Environment-specific values are injected via environment variables.
-- CI workflows are deterministic and versioned with the code.
-- Migration history is persisted and auditable.
+## 3. Environment Strategy
 
-### 2.3 Safe-by-Default Delivery
+### 3.1 Current and Expected Environments
 
-This system favors explicit checks before irreversible changes.
+- The current baseline is two environments: dev and prd.
+- Additional environments (for example, stg) are expected to be possible.
 
-- Pull requests are used to validate migration and infrastructure changes.
-- Production workflows distinguish verification from deployment.
-- Deployment steps are ordered so dependencies are resolved predictably.
+Terraform and schemachange already use environment-split directory structures, so adding environments is an extension of the existing pattern.
 
-### 2.4 Cost-Aware Operation
+### 3.2 Branching Implications
 
-For personal usage, cost control is treated as a design constraint.
+- For infrastructure and migration assets, GitHub Flow around main is the default operational model.
+- As environments increase, dbt may require additional branch discipline beyond simple main-only flow.
+- A Git Flow-like stage for dbt can be introduced when validation complexity requires it.
 
-- Small default compute profile
-- Short-lived execution patterns
-- Operational preference for manual or low-frequency execution where practical
+## 4. Repository and Approval Boundaries
 
-## 3. Architecture Overview
+AWS and Snowflake are currently managed in a single repository.
 
-At a high level, the architecture is split into control plane and data plane.
+- The default approval boundary is expressed by CODEOWNERS.
+- In some organizations, approval responsibilities can be split by organizational or political constraints.
+- If CODEOWNERS-based separation is insufficient, splitting repositories is a valid option.
 
-- Control plane: GitHub repository, CI workflows, Terraform, schemachange, dbt execution
-- Data plane: S3 landing, Snowflake databases/schemas/tables, transformed analytical models
+The key goal is not monorepo purity but clear accountability for review and release decisions.
 
-This separation keeps deployment mechanics independent from business data modeling.
+## 5. AWS Architecture Policy
 
-## 4. Data Lifecycle
+### 5.1 Preferred Model (Multi-Account)
 
-The system follows a layered lifecycle:
+1. Create dev OU and prd OU manually.
+2. Apply the same template to both OUs.
+3. The template prepares Terraform execution baseline resources:
+	- S3 for tfstate
+	- S3 Access Point for GitHub Actions access
+	- IAM role for access path control
 
-1. Ingest raw files into datalake raw tables
-2. Normalize and model data into datawarehouse
-3. Publish analytics-oriented structures in datamart
+The IAM role itself should stay minimal, and access control should be enforced at the Access Point policy layer.
 
-Raw ingestion is not append-only by default. Depending on data characteristics, it can be append, full refresh, or slice-based reload (DELETE+INSERT or MERGE).
-For yearly files such as transfer profit/loss reports, `year` is used as the slice key to rebuild only the affected slice.
+### 5.2 Access Model
 
-## 5. Why Terraform + schemachange + dbt
+- Human login users are managed from the organization account via SSO.
 
-These tools are intentionally combined, not duplicated.
+### 5.3 Fallback When Organization Account Is Not Available
 
-- Terraform: account/database/schema-level infrastructure and integration primitives
-- schemachange: versioned SQL migrations for database DDL evolution
-- dbt: model lineage, testing, and transformation orchestration
+- Create a dedicated account for user management and StackSets management.
+- Use switch-role into each target account.
+- Use StackSets for baseline environment provisioning.
 
-The boundary is practical: platform objects and migration mechanics stay out of dbt models, while analytics logic stays out of infrastructure code.
+### 5.4 Single-Account Constraint (Not Preferred)
 
-## 6. Reliability and Operability
+When only one AWS account is available:
 
-Operational reliability is improved through simple, explicit patterns:
+- Separate resources by environment naming conventions.
+- Separate roles for dev and prd operations.
+- Apply strict cost allocation discipline (for example, tags).
 
-- Ordered execution for dependent steps
-- Environment separation (dev/prd)
-- Versioned CI workflow definitions
-- Change history tables for migration traceability
+This model is operationally possible but increases risk and governance burden.
 
-The current workflow strategy prioritizes fewer approval interruptions and lower operational friction while preserving ordering guarantees.
+## 6. Snowflake Architecture Policy
 
-## 7. Security and Governance Posture
+### 6.1 Datalake Strategy
 
-This repository is public and intended for design transparency.
+The platform philosophy is to gather all data into Snowflake first.
 
-- It contains sample data only
-- Secrets are not stored in the repository
-- Runtime credentials are expected to be provided by workload identity and environment configuration
+- Snowflake is treated as the primary datalake platform.
+- As long as cost permits, source data should be accepted and stored as raw as possible.
+- Data providers should not be forced to build custom ETL just for delivery.
 
-The implementation demonstrates a pattern, not organizational trust policy.
+### 6.2 Schema and Database Layering
 
-## 8. Trade-offs and Non-Goals
+- DATALAKE_DB: raw ingestion layer (Bronze)
+- DATAWAREHOUSE_DB: standardized and refined layer (Silver)
+- DATAMART_DB: consumer-facing serving layer
 
-### Trade-offs
+Within DATALAKE_DB, schemas are split by source system.
 
-- Simpler workflows can reduce operational overhead but provide less per-step isolation.
-- Personal cost optimization may prefer manual execution over full automation.
-- Public readability can limit inclusion of organization-specific controls.
+### 6.3 Standardization Policy
 
-### Non-Goals
+- Standardization starts in STAGING.
+- Column-name drift, semantic drift, and structural inconsistencies should be normalized as early as practical.
+- STAGING should avoid multi-table joins and focus on shape harmonization.
 
-- This repository does not attempt to encode every enterprise governance requirement.
-- It does not prescribe one universal operating model for all organizations.
+### 6.4 Core Data and Distribution
 
-## 9. Future Direction
+- CORE should be designed for downstream analytics and AI use.
+- CORE should also be publishable in Iceberg format where practical.
+- This enables consumers to use S3 access paths without requiring direct Snowflake usage.
 
-Likely evolution paths:
+### 6.5 Account Strategy
 
-- More granular workflow segmentation by domain or database when needed
-- Expanded policy management (e.g., masking and row access) where dbt is not the right control surface
-- Stronger cost guardrails for serverless usage visibility
+Preferred model:
 
-The guiding rule remains the same: introduce complexity only when it buys clear operational value.
+- Create separate Snowflake accounts for dev and prd manually.
+- In each account, separate roles, users, and warehouses by purpose (platform operation vs data application).
+
+Fallback model (single account only):
+
+- Separate databases, roles, warehouses, and service users by environment naming conventions.
+
+## 7. Operational Model
+
+### 7.1 Bootstrap vs Continuous Operations
+
+- Bootstrap is one-time manual initialization.
+- Terraform and schemachange handle continuous managed changes afterward.
+
+### 7.2 Task Ownership and Execution Posture
+
+- Task definitions are managed as migration assets.
+- Automatic resume behavior after task redefinition is intentionally avoided.
+- Execution and privilege boundaries are kept explicit and close to the managed objects.
+
+## 8. Security and Transparency Posture
+
+- This is a public repository for design transparency.
+- No secrets should be stored in source control.
+- Runtime authentication should rely on workload identity and environment configuration.
+- Sample data and demonstrative patterns are included, not enterprise-wide trust policy.
+
+## 9. Trade-offs
+
+- A single repository improves cross-layer traceability but can complicate reviewer boundaries.
+- Main-centered flow is efficient for infrastructure and migration layers but may become insufficient for dbt at higher environment complexity.
+- Single-account fallback patterns are pragmatic but carry higher operational risk.
+
+## 10. Non-Goals
+
+- This repository does not claim to be a universal enterprise standard.
+- It does not attempt to encode every governance requirement for every organization.
+- It is not optimized for organizations that require strict domain-by-domain platform separation from day one.
+
+## 11. Evolution Direction
+
+Likely next steps:
+
+- Add explicit stg expansion rules for Terraform/schemachange/workflows.
+- Define objective criteria for when dbt branch strategy should evolve beyond main-only flow.
+- Expand governance assets (for example masking and policy controls) as usage grows.
+- Harden Iceberg-based delivery contracts for non-Snowflake consumers.
+
+The guiding principle remains unchanged: add complexity only when it provides clear operational value.
