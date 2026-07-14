@@ -11,7 +11,7 @@
 
 Bootstrapは必ず以下の順番で実施すること。リンクをクリックすると各プラットフォームの詳細手順（マニュアルTOP）へ移動する。
 
-1. [👉 Step 1: AWSの初期構築](./aws/README.md) — S3バックエンド・DynamoDBの作成など
+1. [👉 Step 1: AWSの初期構築](./aws/README.md) — Terraform 用 S3 バックエンド基盤（S3/Access Point/IAM ロール）の作成
 2. [👉 Step 2: Snowflakeの初期構築](./snowflake/README.md) — 組織・環境分離（DEV/PRD）とCICD用オブジェクト作成
 3. [👉 Step 3: GitHubの環境変数登録](./github/README.md) — 環境（Environments）定義と確定した変数のマッピング
 
@@ -20,7 +20,7 @@ Bootstrapは必ず以下の順番で実施すること。リンクをクリッ�
 ## 🏃‍♂️ 各プラットフォーム構築の概要
 
 ### 1. AWS の初期セットアップ
-* Terraform の状態管理（`tfstate`）を安全に保存するための S3 バケット、および排他制御用の DynamoDB テーブル（State Lock 用）等を、提供された CloudFormation テンプレートから展開する。
+* Terraform の状態管理（`tfstate`）を安全に運用するための S3 バックエンド基盤（S3 バケット、Access Point、CI/CD 用 IAM ロール）を、提供された CloudFormation テンプレートから展開する。
 
 ### 2. Snowflake の初期セットアップ
 * 組織（Organization）アカウントから環境分離された子アカウント（DEV / PRD）を SQL で手動発行する。その後、各子アカウントにログインし、GitHub Actions と OIDC 連携を行うためのセキュリティ統合（Security Integration）やデプロイ用オブジェクト群を整備する。
@@ -33,3 +33,7 @@ Bootstrapは必ず以下の順番で実施すること。リンクをクリッ�
 ## 🏁 構築完了の確認
 
 すべてのプラットフォームの手作業ステップが完了し、必要な環境変数やブランチ保護が GitHub 側に反映された段階で、`main` ブランチへのコードプッシュ（およびプルリクエストのマージ）による全自動デプロイパイプラインの準備が完了する。
+
+Terraform workflow の失敗で lock ファイルが残った場合は、次の workflow で復旧する。
+
+- [.github/workflows/terraform-unlock.yml](../.github/workflows/terraform-unlock.yml)

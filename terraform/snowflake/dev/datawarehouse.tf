@@ -9,9 +9,25 @@ resource "snowflake_schema" "datawarehouse_schemachange" {
   comment  = "Schema for schemachange migration metadata | ${local.managed_comment}"
 }
 
+resource "snowflake_schema" "datawarehouse_staging" {
+  name     = "STAGING"
+  database = snowflake_database.datawarehouse.name
+  comment  = "Schema for standardized and cleaned staging tables | ${local.managed_comment}"
+}
+
+resource "snowflake_schema" "datawarehouse_core" {
+  name     = "CORE"
+  database = snowflake_database.datawarehouse.name
+  comment  = "Schema for core business entities and dimensions | ${local.managed_comment}"
+}
+
 locals {
   datawarehouse_database_managed_by_targets = [snowflake_database.datawarehouse.fully_qualified_name]
-  datawarehouse_schema_managed_by_targets   = [snowflake_schema.datawarehouse_schemachange.fully_qualified_name]
+  datawarehouse_schema_managed_by_targets = [
+    snowflake_schema.datawarehouse_schemachange.fully_qualified_name,
+    snowflake_schema.datawarehouse_staging.fully_qualified_name,
+    snowflake_schema.datawarehouse_core.fully_qualified_name,
+  ]
 }
 
 resource "snowflake_tag_association" "datawarehouse_database_managed_by" {

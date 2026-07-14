@@ -2,7 +2,8 @@
 
 - English version: [README.md](README.md)
 
-本手順は、AWS の管理アカウント（Root/親アカウント）にログインし、マルチアカウント環境の土台（AWS Organizations / IAM Identity Center / StackSets）を手作業で構築するためのマニュアルである。
+本手順は、AWS の管理アカウントにログインし、マルチアカウント環境の土台（AWS Organizations / IAM Identity Center / StackSets）を手作業で構築するためのマニュアルである。
+本手順で「Rootユーザー」と記載する場合は、管理アカウントと子アカウントそれぞれのRootユーザーを指す。
 
 ## 🏃‍♂️ 管理アカウントでの初期構築フロー
 
@@ -50,6 +51,14 @@
 > ⚠️ **注意**
 > StackSets のターゲットは親である `Private` OU ではなく、新設した子OU（`Dev` / `Prd`）それぞれの OU ID を個別に指定すること。親OUを指定すると、開発用の設定が本番アカウントへ誤って自動デプロイされる原因となる。
 
+この StackSet で適用される主な内容（要約）:
+* CI/CD 用の GitHub OIDC Provider と IAM ロール（`github-actions-tfstate-access-role`, `github-actions-resource-creation-role`）
+* Terraform state 用 S3 バケット（`<ProjectPrefix>-<env>-tfstate`）と保護設定（バージョニング、オブジェクトロック、暗号化、パブリックアクセス遮断）
+* S3 Access Point と制限付きポリシー（Access Point 経由のアクセス制御、TLS 1.2+ 強制）
+
+テンプレート単位の詳細（作成リソース、パラメータ、Outputs）は次を参照:
+* [templates/README.ja.md](templates/README.ja.md)
+
 1. **開発環境（Dev）用 StackSet の展開**
 * `CloudFormation` ➔ `StackSets` ➔ `Create StackSet` を選択する。
 * **テンプレート**: `bootstrap/aws/templates/fin-data-tfstate-base.yaml` をアップロードする。
@@ -58,6 +67,7 @@
 * **展開先**: `Deploy to organizational units (OUs)` を選択し、子OU **`Dev` の OU ID**（`ou-xxxx-xxxx`）を入力する。
 * **リージョン**: メインリージョン（例: `ap-northeast-1`）を指定する。
 * **自動展開（Auto Deployment）**: **`Enabled`** に設定する。
+* **完了確認**: Dev 対象アカウントの Stack instances が **`CURRENT`** になっていることを確認する。
 
 2. **本番環境（Prd）用 StackSet の展開**
 * 同様に 2 つ目の StackSet を新規作成する。
@@ -67,6 +77,7 @@
 * **展開先**: 子OU **`Prd` の OU ID**（`ou-yyyy-yyyy`）を入力する。
 * **リージョン**: メインリージョン（例: `ap-northeast-1`）を指定する。
 * **自動展開（Auto Deployment）**: **`Enabled`** に設定する。
+* **完了確認**: Prd 対象アカウントの Stack instances が **`CURRENT`** になっていることを確認する。
 
 
 ---
@@ -97,7 +108,7 @@
 #### 3-2. 本番環境（PRD）のセットアップ
 
 1. **AWS アカウントの作成**
-* 同様に AWS Organizations の画面で `Create an AWS account` を選択する。
+* 管理アカウントの AWS Organizations 画面を開き、`Add an AWS account` ➔ `Create an AWS account` を選択する。
 * **AWS アカウント名**: `fin-data-platform-prd`
 * **メールアドレス**: `xxxxxx+aws-fin-data-platform-prd@yourdomain.com`
 
@@ -107,3 +118,9 @@
 3. **ターゲット OU への移動（自動デプロイの発火）**
 * 管理アカウントに戻り、作成した `fin-data-platform-prd` アカウントを選択して、子OU **`Private/Prd`** の中へ移動させる。
 * *※ 移動完了と同時に StackSets が自動発火し、prd 用の S3 バケット（S3 オブジェクトロック付き）と IAM ロールが自動生成される。*
+
+### 4. Terraform workflow の lock 復旧
+
+Terraform workflow の実行失敗で lock ファイルが残った場合は、AWS に手動ログインして削除する代わりに、次の workflow で復旧する。
+
+* [.github/workflows/terraform-unlock.yml](../../.github/workflows/terraform-unlock.yml)
