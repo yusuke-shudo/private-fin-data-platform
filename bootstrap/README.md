@@ -13,7 +13,7 @@ Always execute bootstrap in the order below. Each link points to the detailed ma
 
 1. [Step 1: AWS bootstrap](./aws/README.md) - Build Terraform S3 backend foundation (S3/Access Point/IAM roles)
 2. [Step 2: Snowflake bootstrap](./snowflake/README.md) - Environment/account split (DEV/PRD) and CI/CD objects
-3. [Step 3: GitHub environment setup](./github/README.md) - Define environments and map confirmed variables
+3. [Step 3: GitHub environment setup](./github/README.md) - Define GitHub Environments and baseline variables
 
 ---
 
@@ -27,15 +27,14 @@ Always execute bootstrap in the order below. Each link points to the detailed ma
 * Then sign in to each child account and prepare deployment resources including security integration for GitHub Actions OIDC.
 
 ### 3. GitHub Actions Initial Setup
-* Define GitHub Environments and Variables, then map AWS/Snowflake identifiers obtained in earlier steps.
+* Define GitHub Environments and baseline Variables.
+* For detailed variable registration flow and timing, see [docs/operations-runbook.md](../docs/operations-runbook.md).
 * Configure strict production protection rules (no self-approval, no admin bypass) to prevent unsafe deployments.
 
 ---
 
 ## 🏁 Completion Check
 
-When all manual platform steps are complete and required GitHub variables/branch protection are in place, the repository is ready for fully automated deployment via pushes and PR merges to `main`.
+When the manual bootstrap steps (AWS -> Snowflake -> GitHub) are complete, continue with the execution flow in [docs/operations-runbook.md](../docs/operations-runbook.md).
 
-If a Terraform workflow fails and leaves a lock file, recover with:
-
-- [.github/workflows/terraform-unlock.yml](../.github/workflows/terraform-unlock.yml)
+First-time bring-up should be judged complete using the runbook completion criteria.

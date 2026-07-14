@@ -54,6 +54,11 @@ git config --global init.defaultBranch main
 
 ### 3. Create Environments and Variables
 
+Scope note:
+- This section covers GitHub-side environment creation and baseline variable placement only.
+- The source of truth for variable registration order/timing is [docs/operations-runbook.md](../../docs/operations-runbook.md).
+- Human developer users/roles are out of scope for this bootstrap and are handled separately.
+
 Why 4 environments:
 - Snowflake OIDC subject constraints can require unique environment-role combinations.
 - Define separate environments for infra and data workloads in dev/prd.
