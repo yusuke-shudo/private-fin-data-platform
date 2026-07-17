@@ -135,6 +135,13 @@ Fallback model (single account only):
 
 - Separate databases, roles, warehouses, and service users by environment naming conventions.
 
+### 6.6 Developer Schema Boundary (Current Policy)
+
+- Canonical schemas in `DATAWAREHOUSE_DB` (especially `STAGING` and `CORE`) are expected to be updated through CI/CD execution paths.
+- Human developer trial-and-error should occur in personal custom schemas, not in canonical shared schemas.
+- This keeps reviewability and reproducibility aligned with pull-request-based change flow.
+- The policy may evolve, but CI/CD-first schema protection is the current default stance.
+
 ## 7. Operational Model
 
 ### 7.1 Bootstrap vs Continuous Operations
@@ -147,6 +154,14 @@ Fallback model (single account only):
 - Task definitions are managed as migration assets.
 - Automatic resume behavior after task redefinition is intentionally avoided.
 - Execution and privilege boundaries are kept explicit and close to the managed objects.
+
+### 7.3 Developer Workbench and Identity Boundary
+
+- Developer workbench instances are treated as disposable execution surfaces, not identity stores.
+- Provisioning/deletion should stay in Terraform workflow control to avoid state drift.
+- Ownership and access boundaries should be enforced with tags (especially `Owner`) and IAM conditions.
+- Human developer lifecycle management remains outside Git; repository-managed policy defines technical boundaries only.
+- Support access is allowed as an explicit exception path with approval and audit logging.
 
 ## 8. Security and Transparency Posture
 

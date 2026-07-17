@@ -81,7 +81,49 @@ Treat first-time bring-up as complete when all items below are satisfied for the
 - Intermediate variables are registered (`AWS_S3_AP_ALIAS`, `SF_USER_ARN`, `SF_EXTERNAL_ID`).
 - schemachange workflow completed after Terraform integration resources became ready.
 
-## 5. Related Documents
+## 5. Developer Workbench Operation (EC2 + dbt)
+
+This section defines the minimum operation rules for developer workbench instances used for local dbt development.
+
+### 5.1 Provisioning Boundary
+
+- Create and destroy workbench EC2 instances only through `workflow_dispatch` + Terraform.
+- Developers do not run Terraform directly for this operation.
+- Manual EC2 termination from console should be avoided to prevent Terraform state drift.
+
+### 5.2 Allowed Manual Operations
+
+- Manual stop/start from EC2 console is allowed when IAM policy permits it.
+- Terminate/delete must stay in Terraform workflow boundary.
+
+### 5.3 Tag-Based Ownership Model
+
+- Every workbench EC2 must include at least these tags:
+   - `Owner` (developer identity)
+   - `Environment` (for example `dev`)
+   - `Name` (human-readable label)
+- Access control should rely on `Owner` tag matching, not only on instance name.
+
+### 5.4 Support Session Model
+
+- Default mode: only owner can access own instance.
+- Support mode: temporary cross-owner access is allowed only with explicit approval and audit logging.
+- Session Manager logs should be stored for traceability.
+
+### 5.5 Identity Management Boundary
+
+- Human developer user lifecycle management is out of Git scope.
+- Repository-managed assets should focus on role/policy boundaries and execution workflow.
+
+### 5.6 Snowflake Developer Execution Boundary (Current Rule)
+
+- Canonical schemas `DATAWAREHOUSE_DB.STAGING` and `DATAWAREHOUSE_DB.CORE` are treated as CI/CD-managed write targets.
+- Non-CI/CD developer experiments should run only in personal custom schemas (for example `staging_<owner>`).
+- Promotion into canonical schemas must go through pull request + CI/CD execution.
+- Personal development schemas are temporary work areas and should be periodically cleaned up.
+- This boundary can evolve later, but explicit CI/CD-first protection is the current default.
+
+## 6. Related Documents
 
 - [README.md](../README.md)
 - [bootstrap/README.md](../bootstrap/README.md)
