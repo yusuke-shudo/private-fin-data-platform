@@ -257,6 +257,197 @@ tables:
 
 ---
 
+## Local Development Setup
+
+### Prerequisites
+
+**Required:**
+- Python 3.11 以上
+- Windows PowerShell 5.1 以上（または Windows Terminal）
+- Snowflake アカウントへのアクセス権限
+
+### 1. Python 環境構築
+
+**Python 3.11 インストール:**
+```powershell
+# Python のバージョン確認
+python --version
+
+# 3.11 以上が必要
+# https://www.python.org/downloads/ からダウンロード、またはほかのパッケージマネージャーを使用
+```
+
+**仮想環境作成（推奨）:**
+```powershell
+# リポジトリルートで実行
+python -m venv venv
+
+# 仮想環境の有効化
+.\venv\Scripts\Activate.ps1
+
+# pip をアップグレード
+python -m pip install --upgrade pip
+```
+
+### 2. 依存パッケージのインストール
+
+```powershell
+# リポジトリルート（private-fin-data-platform/）で実行
+pip install dbt-snowflake==1.12.0b2 sqlfluff sqlfluff-templater-dbt snowflake-connector-python
+```
+
+**インストール済みバージョン確認:**
+```powershell
+dbt --version
+sqlfluff --version
+```
+
+### 3. Snowflake 接続設定（profiles.yml）
+
+**ファイルパス:** `~/.dbt/profiles.yml`
+
+**内容例:**
+```yaml
+private_fin_data_platform:
+  target: dev
+  outputs:
+    dev:
+      type: snowflake
+      account: "{organization}-{account_name}"       # 例: "xyz-ab12345"
+      user: "cicd_data_engineer_user"                # Snowflake ユーザー
+      authenticator: workload_identity
+      workload_identity_provider: OIDC
+      # token はローカル実行時は以下から取得
+      # 1. Snowflake Web UI → Authenticators で取得
+      # 2. または Key Pair authentication を使用
+      # ローカルでは SnowSQL CLI の認証設定を推奨
+      role: cicd_data_engineer_role
+      warehouse: cicd_data_wh
+      database: DATAWAREHOUSE_DB
+      schema: STAGING
+      threads: 4
+```
+
+**Snowflake 認証方法（ローカル開発向け）:**
+
+**Option A: Key Pair Authentication（シンプル）**
+```yaml
+private_fin_data_platform:
+  target: dev
+  outputs:
+    dev:
+      type: snowflake
+      account: "..."
+      user: "cicd_data_engineer_user"
+      private_key_path: "~/.ssh/snowflake_key.p8"   # PEM 形式の秘密鍵
+      private_key_passphrase: "{{ env_var('SF_PRIVATE_KEY_PASS') }}"
+      role: cicd_data_engineer_role
+      warehouse: cicd_data_wh
+      database: DATAWAREHOUSE_DB
+      schema: STAGING
+      threads: 4
+```
+
+秘密鍵の生成：
+```bash
+openssl genrsa 2048 | openssl pkcs8 -topk8 -inform PEM -out ~/.ssh/snowflake_key.p8
+```
+
+**Option B: ユーザー名・パスワード（非推奨ですが簡易）**
+```yaml
+user: "cicd_data_engineer_user"
+password: "{{ env_var('SF_PASSWORD') }}"
+```
+
+環境変数を PowerShell で設定：
+```powershell
+$env:SF_PASSWORD = "your_password"
+```
+
+### 4. sqlfluff 設定
+
+`.sqlfluff` ファイルはリポジトリルートに既に存在します。
+
+**ローカルで sqlfluff lint を実行:**
+```powershell
+# 特定ファイル
+sqlfluff lint dbt/models/staging/paypay_bank_home_loan_schedule/stg_paypay_bank_home_loan_schedule__schedule.sql
+
+# 全 SQL ファイル
+sqlfluff lint dbt/models/
+
+# 修正を自動適用
+sqlfluff fix dbt/models/
+```
+
+### 5. dbt コマンド実行
+
+**Parse（構文チェック）:**
+```powershell
+dbt parse
+```
+
+**Test（ローカルデータベース validation）:**
+```powershell
+# 全テスト実行
+dbt test
+
+# 特定のモデルテストのみ
+dbt test -s stg_paypay_bank_home_loan_schedule__schedule
+```
+
+**Run（全モデル実行）:**
+```powershell
+dbt run
+```
+
+**SQL クエリ直接実行（dbt から）:**
+```powershell
+dbt run-operation macro_name
+```
+
+### 6. Staging Model 開発ワークフロー
+
+**典型的な反復プロセス：**
+
+```powershell
+# 1. モデルファイルを作成・編集
+#    dbt/models/staging/{source}_{table}/stg_{source}__{entity}.sql
+
+# 2. sqlfluff で SQL スタイルチェック
+sqlfluff lint dbt/models/staging/{source}_{table}/
+
+# 3. dbt parse で構文チェック
+dbt parse
+
+# 4. dbt test で data validation
+dbt test -s stg_{source}__{entity}
+
+# 5. テスト失敗 → SQL/YAML 修正 → 再度 4-5 を繰り返す
+
+# 6. 全テスト成功後、dbt run で実行確認
+dbt run -s stg_{source}__{entity}
+
+# 7. Git commit & Push
+git add .
+git commit -m "Add stg_{source}__{entity}"
+git push origin feature/add-{entity}
+```
+
+### トラブルシューティング
+
+**dbt compile エラー:** `dbt clean` してキャッシュクリア
+```powershell
+dbt clean
+dbt parse
+```
+
+**Snowflake 接続エラー:** profiles.yml の account, user, role を確認
+
+**sqlfluff テンプレート解析エラー:** `dbt compile` を先に実行（manifest.json 生成）
+
+---
+
 ## Development Commands
 
 ```bash

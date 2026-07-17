@@ -3,11 +3,6 @@ version: 2
 models:
   - name: stg_paypay_bank_home_loan_schedule__schedule
     description: Staging model for PayPay Bank home loan schedule (Bronze → Silver)
-    tests:
-      - dbt_utils.recency:
-          datepart: day
-          field: created_at
-          interval: 3
     columns:
       - name: payment_date
         description: Date of payment
@@ -15,8 +10,12 @@ models:
           - not_null
       - name: payment_amount
         description: Total payment amount (principal + interest)
+        tests:
+          - not_null
       - name: principal_amount
         description: Principal portion of payment
+        tests:
+          - not_null
       - name: interest_amount
         description: Interest portion of payment
       - name: extra_principal_amount
@@ -25,14 +24,16 @@ models:
         description: Extra interest payment (if any)
       - name: annual_interest_rate
         description: Annual interest rate (%)
+        tests:
+          - not_null
       - name: remaining_balance
         description: Remaining loan balance after payment
-      - name: ingested_at
+        tests:
+          - not_null
+      - name: ingested_at_utc
         description: UTC timestamp when raw data was ingested into Snowflake
-      - name: file_path
-        description: S3 path of source file
-      - name: line_number
-        description: Line number in source file
-      - name: created_at
-        description: Timestamp when model was created (dbt run time)
-
+        tests:
+          - not_null
+    tests:
+      - dbt_constraints.primary_key:
+          column_name: payment_date

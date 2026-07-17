@@ -2,7 +2,7 @@ WITH source_data AS (
   SELECT * FROM {{ source('paypay_bank', 'home_loan_schedule_raw') }}
 ),
 
-data1 AS (
+csv_split AS (
   SELECT
     SPLIT(REPLACE(raw_text, '"'), ',') AS col_array,
     ingest_at_utc
@@ -12,7 +12,7 @@ data1 AS (
     line_number > 1
 ),
 
-data2 AS (
+final AS (
   SELECT
     TO_DATE(col_array[0]::VARCHAR, 'YYYY/MM/DD') AS payment_date,
     col_array[1]::NUMBER AS payment_amount,
@@ -24,7 +24,7 @@ data2 AS (
     col_array[7]::NUMBER AS remaining_balance,
     ingest_at_utc
   FROM
-    data1
+    csv_split
 )
 
-SELECT * FROM data2;
+SELECT * FROM final;

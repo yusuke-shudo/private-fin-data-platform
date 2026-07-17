@@ -98,3 +98,24 @@ jobs:
           SNOWFLAKE_ACCOUNT: ${{ format('{0}-{1}', vars.SF_ORGANIZATION_NAME, vars.SF_ACCOUNT_NAME) }}
           SNOWFLAKE_TOKEN: ${{ env.SNOWFLAKE_TOKEN }}
           DBT_PROJECT_DIR: dbt
+
+      - name: Create dbt project archive
+        run: |
+          tar -czf dbt-project.tar.gz dbt/
+          ls -lh dbt-project.tar.gz
+
+      - name: Install Snowflake connector
+        run: |
+          pip install snowflake-connector-python
+
+      - name: Upload dbt project to Snowflake stage
+        run: |
+          python .github/scripts/upload_to_stage.py
+        env:
+          SNOWFLAKE_ACCOUNT: ${{ format('{0}-{1}', vars.SF_ORGANIZATION_NAME, vars.SF_ACCOUNT_NAME) }}
+          SNOWFLAKE_TOKEN: ${{ env.SNOWFLAKE_TOKEN }}
+          SNOWFLAKE_USER: cicd_data_engineer_user
+          SNOWFLAKE_ROLE: cicd_data_engineer_role
+          SNOWFLAKE_WAREHOUSE: cicd_data_wh
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}

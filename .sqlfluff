@@ -20,8 +20,8 @@ capitalisation_policy = upper
 
 [sqlfluff:rules:capitalisation.identifiers]
 # 識別子は小文字
-capitalisation_policy = lower
+extended_capitalisation_policy = lower
 
 [sqlfluff:rules:capitalisation.functions]
-# 関数名は小文字
-capitalisation_policy = lower
+# 関数名は大文字
+extended_capitalisation_policy = upper
