@@ -1,0 +1,87 @@
+name: Workbench Network (AWS)
+
+on:
+  workflow_dispatch:
+    inputs:
+      env:
+        description: 'Target environment'
+        required: true
+        type: choice
+        options:
+          - dev
+        default: 'dev'
+      operation:
+        description: 'Operation to run'
+        required: true
+        type: choice
+        options:
+          - plan
+          - apply
+        default: 'plan'
+      nat_mode:
+        description: 'NAT instance mode'
+        required: true
+        type: choice
+        options:
+          - none
+          - az1_only
+          - az2_only
+          - az1_az2
+        default: 'az1_only'
+
+env:
+  TARGET_ENV: ${{ github.event.inputs.env }}
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  workbench_aws:
+    name: Workbench AWS
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.env }}-infra
+    defaults:
+      run:
+        working-directory: ./terraform/aws/workbench/${{ github.event.inputs.env }}/network
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v7
+
+      - name: Configure AWS Credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/github-actions-tfstate-access-role
+          aws-region: ap-northeast-1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v4
+
+      - name: Terraform Init
+        run: |
+          terraform init \
+            -backend-config="bucket=arn:aws:s3:ap-northeast-1:${{ vars.AWS_ACCOUNT_ID }}:accesspoint/${{ vars.PROJECT_PREFIX }}-${{ env.TARGET_ENV }}-tfstate-ap" \
+            -backend-config="use_lockfile=true" \
+            -backend-config="encrypt=true"
+
+      - name: Terraform Plan Workbench
+        if: github.event.inputs.operation == 'plan'
+        run: terraform plan -no-color
+        env:
+          TF_VAR_env:                ${{ env.TARGET_ENV }}
+          TF_VAR_workbench_nat_mode: ${{ github.event.inputs.nat_mode }}
+
+      - name: Terraform Plan Workbench for Apply
+        if: github.event.inputs.operation == 'apply'
+        run: terraform plan -no-color -out=tfplan
+        env:
+          TF_VAR_env:                ${{ env.TARGET_ENV }}
+          TF_VAR_workbench_nat_mode: ${{ github.event.inputs.nat_mode }}
+
+      - name: Terraform Apply Workbench
+        if: github.event.inputs.operation == 'apply'
+        run: terraform apply -no-color tfplan
+        env:
+          TF_VAR_env:                ${{ env.TARGET_ENV }}
+          TF_VAR_workbench_nat_mode: ${{ github.event.inputs.nat_mode }}

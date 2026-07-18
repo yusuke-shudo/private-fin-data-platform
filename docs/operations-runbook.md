@@ -87,16 +87,36 @@ This section defines the minimum operation rules for developer workbench instanc
 
 ### 5.1 Provisioning Boundary
 
-- Create and destroy workbench EC2 instances only through `workflow_dispatch` + Terraform.
+- Manage workbench network resources only through `workbench-network-aws.yml`.
+- Create and delete developer workbench EC2 instances only through `workbench-instance-aws.yml`.
 - Developers do not run Terraform directly for this operation.
 - Manual EC2 termination from console should be avoided to prevent Terraform state drift.
 
-### 5.2 Allowed Manual Operations
+### 5.2 Workbench Network Mode
+
+- The workbench network is currently dev-only.
+- Public/private subnets and Snowflake-allowlisted EIPs are kept for both `az1` and `az2`.
+- NAT instances are controlled by `nat_mode`:
+   - `none`: keep VPC/subnets/EIPs, run no NAT instance.
+   - `az1_only`: run only the `az1` NAT instance.
+   - `az2_only`: run only the `az2` NAT instance.
+   - `az1_az2`: run NAT instances in both AZ slots.
+- `none` is a low-cost standby mode; it is not a full environment deletion.
+- Full deletion, including EIP release, is an exceptional environment retirement operation and is not part of the normal workflow.
+
+### 5.3 Workbench Instance Boundary
+
+- Instance ownership is scoped by GitHub actor and AZ slot.
+- A developer can manage one workbench EC2 per AZ slot.
+- Instance Terraform state is separated by `owner` and `az_slot` so one developer's operation does not plan or mutate another developer's instance.
+- The `Owner` tag is set from the workflow actor, not from a free-form workflow input.
+
+### 5.4 Allowed Manual Operations
 
 - Manual stop/start from EC2 console is allowed when IAM policy permits it.
 - Terminate/delete must stay in Terraform workflow boundary.
 
-### 5.3 Tag-Based Ownership Model
+### 5.5 Tag-Based Ownership Model
 
 - Every workbench EC2 must include at least these tags:
    - `Owner` (developer identity)
@@ -104,18 +124,18 @@ This section defines the minimum operation rules for developer workbench instanc
    - `Name` (human-readable label)
 - Access control should rely on `Owner` tag matching, not only on instance name.
 
-### 5.4 Support Session Model
+### 5.6 Support Session Model
 
 - Default mode: only owner can access own instance.
 - Support mode: temporary cross-owner access is allowed only with explicit approval and audit logging.
 - Session Manager logs should be stored for traceability.
 
-### 5.5 Identity Management Boundary
+### 5.7 Identity Management Boundary
 
 - Human developer user lifecycle management is out of Git scope.
 - Repository-managed assets should focus on role/policy boundaries and execution workflow.
 
-### 5.6 Snowflake Developer Execution Boundary (Current Rule)
+### 5.8 Snowflake Developer Execution Boundary (Current Rule)
 
 - Canonical schemas `DATAWAREHOUSE_DB.STAGING` and `DATAWAREHOUSE_DB.CORE` are treated as CI/CD-managed write targets.
 - Non-CI/CD developer experiments should run only in personal custom schemas (for example `staging_<owner>`).
