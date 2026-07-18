@@ -87,16 +87,36 @@
 
 ### 5.1 作成・削除の境界
 
-- Workbench EC2 の作成と削除は `workflow_dispatch` + Terraform 経由のみにする。
+- Workbench network の管理は `workbench-network-aws.yml` 経由のみにする。
+- 開発者用 Workbench EC2 の作成と削除は `workbench-instance-aws.yml` 経由のみにする。
 - この用途では開発者が Terraform を直接実行しない。
 - Terraform state ドリフト防止のため、EC2 コンソールからの手動 terminate は避ける。
 
-### 5.2 手動操作の許容範囲
+### 5.2 Workbench network mode
+
+- Workbench network は現時点では dev 専用とする。
+- public/private subnet と Snowflake 側で許可する EIP は `az1` / `az2` の両方に保持する。
+- NAT instance は `nat_mode` で制御する。
+   - `none`: VPC/subnet/EIP は保持し、NAT instance は起動しない。
+   - `az1_only`: `az1` の NAT instance のみ起動する。
+   - `az2_only`: `az2` の NAT instance のみ起動する。
+   - `az1_az2`: 両方の AZ slot で NAT instance を起動する。
+- `none` は低コストの休止モードであり、環境全体の削除ではない。
+- EIP 解放を含む完全削除は例外的な環境廃棄として扱い、通常 workflow には含めない。
+
+### 5.3 Workbench instance の境界
+
+- Instance の所有境界は GitHub actor と AZ slot の組み合わせで定義する。
+- 開発者は AZ slot ごとに 1 台の Workbench EC2 を管理できる。
+- Instance の Terraform state は `owner` と `az_slot` ごとに分離し、ある開発者の操作が別の開発者の instance を plan / 変更しないようにする。
+- `Owner` タグは自由入力ではなく workflow 実行者から設定する。
+
+### 5.4 手動操作の許容範囲
 
 - IAM ポリシーで許可されている場合、EC2 コンソールからの stop/start は許容する。
 - terminate/delete は Terraform ワークフロー境界に限定する。
 
-### 5.3 タグベース所有者モデル
+### 5.5 タグベース所有者モデル
 
 - すべての Workbench EC2 に最低限次のタグを付与する。
    - `Owner`（開発者識別子）
@@ -104,18 +124,18 @@
    - `Name`（表示用ラベル）
 - アクセス制御は instance 名ではなく `Owner` タグ一致で判定する。
 
-### 5.4 サポートセッション運用
+### 5.6 サポートセッション運用
 
 - 通常モード: 所有者のみ自分のインスタンスへアクセス可能。
 - サポートモード: 明示承認と監査ログ記録を条件に、一時的な他者アクセスを許可する。
 - Session Manager のログは追跡可能性のため保存する。
 
-### 5.5 アイデンティティ管理境界
+### 5.7 アイデンティティ管理境界
 
 - 人間の開発者ユーザのライフサイクル管理は Git 管理対象外。
 - リポジトリ側ではロール/ポリシー境界と実行ワークフローを管理対象とする。
 
-### 5.6 Snowflake 開発実行境界（現時点ルール）
+### 5.8 Snowflake 開発実行境界（現時点ルール）
 
 - 正式スキーマ `DATAWAREHOUSE_DB.STAGING` と `DATAWAREHOUSE_DB.CORE` は、CI/CD 管理下の書き込み先として扱う。
 - 非 CI/CD の開発者検証は、個人用カスタムスキーマ（例: `staging_<owner>`）でのみ実施する。

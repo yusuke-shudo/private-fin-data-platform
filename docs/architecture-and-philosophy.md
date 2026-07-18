@@ -158,8 +158,11 @@ Fallback model (single account only):
 ### 7.3 Developer Workbench and Identity Boundary
 
 - Developer workbench instances are treated as disposable execution surfaces, not identity stores.
+- Shared workbench network resources and per-developer workbench instances are managed by separate Terraform roots and workflows.
+- Workbench network state is shared; developer instance state is split by owner and AZ slot.
 - Provisioning/deletion should stay in Terraform workflow control to avoid state drift.
 - Ownership and access boundaries should be enforced with tags (especially `Owner`) and IAM conditions.
+- The network keeps per-AZ EIPs so Snowflake allowlists can remain stable while NAT instances are started or stopped by mode.
 - Human developer lifecycle management remains outside Git; repository-managed policy defines technical boundaries only.
 - Support access is allowed as an explicit exception path with approval and audit logging.
 

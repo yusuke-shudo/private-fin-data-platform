@@ -1,0 +1,116 @@
+name: Workbench Instance (AWS)
+
+on:
+  workflow_dispatch:
+    inputs:
+      env:
+        description: 'Target environment'
+        required: true
+        type: choice
+        options:
+          - dev
+        default: 'dev'
+      operation:
+        description: 'Operation to run'
+        required: true
+        type: choice
+        options:
+          - plan
+          - apply
+          - delete
+        default: 'plan'
+      az_slot:
+        description: 'Logical AZ slot for this workbench instance'
+        required: true
+        type: choice
+        options:
+          - az1
+          - az2
+        default: 'az1'
+      instance_type:
+        description: 'EC2 instance type'
+        required: true
+        type: choice
+        options:
+          - t4g.small
+          - t4g.medium
+        default: 't4g.small'
+
+env:
+  TARGET_ENV: ${{ github.event.inputs.env }}
+  OWNER: ${{ github.actor }}
+  TFSTATE_BUCKET: arn:aws:s3:ap-northeast-1:${{ vars.AWS_ACCOUNT_ID }}:accesspoint/${{ vars.PROJECT_PREFIX }}-${{ github.event.inputs.env }}-tfstate-ap
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  workbench_instance_aws:
+    name: Workbench Instance AWS
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.env }}-infra
+    defaults:
+      run:
+        working-directory: ./terraform/aws/workbench/${{ github.event.inputs.env }}/instance
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v7
+
+      - name: Configure AWS Credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/github-actions-tfstate-access-role
+          aws-region: ap-northeast-1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v4
+
+      - name: Terraform Init
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ env.TFSTATE_BUCKET }}" \
+            -backend-config="key=infrastructure/aws/workbench/${{ env.TARGET_ENV }}/instances/${{ env.OWNER }}/${{ github.event.inputs.az_slot }}/terraform.tfstate" \
+            -backend-config="use_lockfile=true" \
+            -backend-config="encrypt=true"
+
+      - name: Terraform Plan Workbench Instance
+        if: github.event.inputs.operation == 'plan'
+        run: terraform plan -no-color
+        env:
+          TF_VAR_env:                     ${{ env.TARGET_ENV }}
+          TF_VAR_owner:                   ${{ env.OWNER }}
+          TF_VAR_az_slot:                 ${{ github.event.inputs.az_slot }}
+          TF_VAR_workbench_instance_type: ${{ github.event.inputs.instance_type }}
+          TF_VAR_tfstate_bucket:          ${{ env.TFSTATE_BUCKET }}
+
+      - name: Terraform Plan Workbench Instance for Apply
+        if: github.event.inputs.operation == 'apply'
+        run: terraform plan -no-color -out=tfplan
+        env:
+          TF_VAR_env:                     ${{ env.TARGET_ENV }}
+          TF_VAR_owner:                   ${{ env.OWNER }}
+          TF_VAR_az_slot:                 ${{ github.event.inputs.az_slot }}
+          TF_VAR_workbench_instance_type: ${{ github.event.inputs.instance_type }}
+          TF_VAR_tfstate_bucket:          ${{ env.TFSTATE_BUCKET }}
+
+      - name: Terraform Apply Workbench Instance
+        if: github.event.inputs.operation == 'apply'
+        run: terraform apply -no-color tfplan
+        env:
+          TF_VAR_env:                     ${{ env.TARGET_ENV }}
+          TF_VAR_owner:                   ${{ env.OWNER }}
+          TF_VAR_az_slot:                 ${{ github.event.inputs.az_slot }}
+          TF_VAR_workbench_instance_type: ${{ github.event.inputs.instance_type }}
+          TF_VAR_tfstate_bucket:          ${{ env.TFSTATE_BUCKET }}
+
+      - name: Terraform Delete Workbench Instance
+        if: github.event.inputs.operation == 'delete'
+        run: terraform destroy -no-color -auto-approve
+        env:
+          TF_VAR_env:                     ${{ env.TARGET_ENV }}
+          TF_VAR_owner:                   ${{ env.OWNER }}
+          TF_VAR_az_slot:                 ${{ github.event.inputs.az_slot }}
+          TF_VAR_workbench_instance_type: ${{ github.event.inputs.instance_type }}
+          TF_VAR_tfstate_bucket:          ${{ env.TFSTATE_BUCKET }}
