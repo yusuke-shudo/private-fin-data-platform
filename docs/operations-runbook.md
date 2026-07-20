@@ -122,6 +122,16 @@ Recommended setup order:
 3. Create or update the Snowflake workbench service user for the owner, using the owner-scoped IAM role ARN as `WORKLOAD_IDENTITY`.
 4. Run `workbench-instance-aws.yml` for the target `az_slot`.
 
+After connecting through Session Manager, switch to the development user and clone the private repository interactively:
+
+```bash
+sudo -iu ec2-user
+gh auth login
+gh repo clone yusuke-shudo/private-fin-data-platform ~/private-fin-data-platform
+```
+
+Workbench instances are initialized with Git, GitHub CLI, Python 3.14, dbt, dbt-snowflake, and sqlfluff. The system `python3` remains managed by Amazon Linux; interactive `ec2-user` shells define `python` and `pip` aliases for Python 3.14.
+
 Snowflake workload identity notes:
 
 - `WORKLOAD_IDENTITY` is for Snowflake `TYPE = SERVICE` users; it cannot be set on `TYPE = PERSON` users.
