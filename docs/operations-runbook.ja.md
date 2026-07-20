@@ -88,6 +88,7 @@
 ### 5.1 作成・削除の境界
 
 - Workbench network の管理は `workbench-network-aws.yml` 経由のみにする。
+- owner 単位の Workbench IAM identity の管理は `workbench-identity-aws.yml` 経由のみにする。
 - 開発者用 Workbench EC2 の作成と削除は `workbench-instance-aws.yml` 経由のみにする。
 - この用途では開発者が Terraform を直接実行しない。
 - Terraform state ドリフト防止のため、EC2 コンソールからの手動 terminate は避ける。
@@ -106,10 +107,27 @@
 
 ### 5.3 Workbench instance の境界
 
+- Workbench IAM identity は AZ slot ではなく GitHub actor 単位で定義する。
+- 同じ owner 単位の IAM role / instance profile を、その開発者の `az1` / `az2` Workbench EC2 で共有する。
 - Instance の所有境界は GitHub actor と AZ slot の組み合わせで定義する。
 - 開発者は AZ slot ごとに 1 台の Workbench EC2 を管理できる。
+- Identity の Terraform state は `owner` ごとに分離する。
 - Instance の Terraform state は `owner` と `az_slot` ごとに分離し、ある開発者の操作が別の開発者の instance を plan / 変更しないようにする。
 - `Owner` タグは自由入力ではなく workflow 実行者から設定する。
+
+推奨するセットアップ順序:
+
+1. `workbench-network-aws.yml` で共有 network と AZ ごとの EIP を作成する。
+2. `workbench-identity-aws.yml` で owner 単位の IAM role / instance profile を作成する。
+3. owner 単位の IAM role ARN を `WORKLOAD_IDENTITY` として使い、Snowflake 側の Workbench service user を作成または更新する。
+4. 対象の `az_slot` に対して `workbench-instance-aws.yml` を実行する。
+
+Snowflake workload identity の補足:
+
+- `WORKLOAD_IDENTITY` は Snowflake の `TYPE = SERVICE` user 用であり、`TYPE = PERSON` user には設定できない。
+- Snowflake user が持てる `WORKLOAD_IDENTITY` property は 1 つである。
+- Workbench からの dbt 実行は、owner 単位の AWS IAM role に紐づく Workbench service user で行う。
+- 人間用の `PERSON` user と Workbench service user は分離する。
 
 ### 5.4 手動操作の許容範囲
 

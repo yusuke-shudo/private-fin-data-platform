@@ -88,6 +88,7 @@ This section defines the minimum operation rules for developer workbench instanc
 ### 5.1 Provisioning Boundary
 
 - Manage workbench network resources only through `workbench-network-aws.yml`.
+- Manage owner-scoped workbench IAM identities only through `workbench-identity-aws.yml`.
 - Create and delete developer workbench EC2 instances only through `workbench-instance-aws.yml`.
 - Developers do not run Terraform directly for this operation.
 - Manual EC2 termination from console should be avoided to prevent Terraform state drift.
@@ -106,10 +107,27 @@ This section defines the minimum operation rules for developer workbench instanc
 
 ### 5.3 Workbench Instance Boundary
 
+- Workbench IAM identity is scoped by GitHub actor, not by AZ slot.
+- The same owner-scoped IAM role and instance profile are used by that developer's `az1` and `az2` workbench EC2 instances.
 - Instance ownership is scoped by GitHub actor and AZ slot.
 - A developer can manage one workbench EC2 per AZ slot.
+- Identity Terraform state is separated by `owner`.
 - Instance Terraform state is separated by `owner` and `az_slot` so one developer's operation does not plan or mutate another developer's instance.
 - The `Owner` tag is set from the workflow actor, not from a free-form workflow input.
+
+Recommended setup order:
+
+1. Run `workbench-network-aws.yml` to create the shared network and per-AZ EIPs.
+2. Run `workbench-identity-aws.yml` to create the owner-scoped IAM role and instance profile.
+3. Create or update the Snowflake workbench service user for the owner, using the owner-scoped IAM role ARN as `WORKLOAD_IDENTITY`.
+4. Run `workbench-instance-aws.yml` for the target `az_slot`.
+
+Snowflake workload identity notes:
+
+- `WORKLOAD_IDENTITY` is for Snowflake `TYPE = SERVICE` users; it cannot be set on `TYPE = PERSON` users.
+- A Snowflake user has a single `WORKLOAD_IDENTITY` property.
+- Workbench dbt execution should therefore use a workbench service user mapped to the owner-scoped AWS IAM role.
+- Human `PERSON` users remain separate from workbench service users.
 
 ### 5.4 Allowed Manual Operations
 
