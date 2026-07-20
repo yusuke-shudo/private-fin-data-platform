@@ -269,12 +269,13 @@ resource "aws_instance" "platform_nat_instance" {
               #!/bin/bash
               set -eux
               dnf -y update
-              dnf -y install iptables-services
+              dnf -y install iptables-services amazon-ssm-agent
               sysctl -w net.ipv4.ip_forward=1
               echo "net.ipv4.ip_forward = 1" >/etc/sysctl.d/99-nat.conf
               iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
               service iptables save
               systemctl enable iptables
+              systemctl enable --now amazon-ssm-agent
               EOT
 
   tags = merge(local.workbench_common_tags, {
