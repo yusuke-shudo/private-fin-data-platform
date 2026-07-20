@@ -38,7 +38,7 @@ data "terraform_remote_state" "identity" {
 
 data "aws_ssm_parameter" "workbench_al2023_arm64_ami" {
   provider = aws.resource_creation
-  name     = "/aws/service/ami-amazon-linux-latest/al2023-ami-minimal-kernel-default-arm64"
+  name     = "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-arm64"
 }
 
 resource "aws_instance" "workbench" {
