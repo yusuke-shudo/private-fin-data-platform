@@ -3,6 +3,8 @@
 # =========================================================================
 
 locals {
+  workbench_nat_identity_name = "platform-workbench-nat"
+
   workbench_common_tags = {
     Project     = "private-fin-data-platform"
     ManagedBy   = "Terraform"
@@ -212,6 +214,45 @@ data "aws_ssm_parameter" "nat_al2023_arm64_ami" {
   name     = "/aws/service/ami-amazon-linux-latest/al2023-ami-minimal-kernel-default-arm64"
 }
 
+data "aws_iam_policy_document" "platform_nat_assume_role" {
+  statement {
+    actions = ["sts:AssumeRole"]
+
+    principals {
+      type        = "Service"
+      identifiers = ["ec2.amazonaws.com"]
+    }
+  }
+}
+
+resource "aws_iam_role" "platform_nat_role" {
+  provider           = aws.resource_creation
+  name               = local.workbench_nat_identity_name
+  assume_role_policy = data.aws_iam_policy_document.platform_nat_assume_role.json
+
+  tags = merge(local.workbench_common_tags, {
+    Name = local.workbench_nat_identity_name
+    Role = "nat"
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "platform_nat_ssm_core" {
+  provider   = aws.resource_creation
+  role       = aws_iam_role.platform_nat_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
+resource "aws_iam_instance_profile" "platform_nat_instance_profile" {
+  provider = aws.resource_creation
+  name     = local.workbench_nat_identity_name
+  role     = aws_iam_role.platform_nat_role.name
+
+  tags = merge(local.workbench_common_tags, {
+    Name = local.workbench_nat_identity_name
+    Role = "nat"
+  })
+}
+
 resource "aws_instance" "platform_nat_instance" {
   for_each                    = toset(local.workbench_nat_enabled_az_slots)
   provider                    = aws.resource_creation
@@ -219,8 +260,10 @@ resource "aws_instance" "platform_nat_instance" {
   instance_type               = var.workbench_nat_instance_type
   subnet_id                   = local.workbench_public_subnet_ids[each.key]
   vpc_security_group_ids      = [aws_security_group.platform_nat_sg.id]
+  iam_instance_profile        = aws_iam_instance_profile.platform_nat_instance_profile.name
   associate_public_ip_address = true
   source_dest_check           = false
+  user_data_replace_on_change = true
 
   user_data = <<-EOT
               #!/bin/bash

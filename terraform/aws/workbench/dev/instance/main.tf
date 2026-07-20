@@ -21,7 +21,7 @@ data "terraform_remote_state" "network" {
 
   config = {
     bucket = var.tfstate_bucket
-    key    = "infrastructure/aws/workbench/${var.env}/network/terraform.tfstate"
+    key    = "infrastructure/aws/workbench/network/terraform.tfstate"
     region = "ap-northeast-1"
   }
 }
@@ -31,7 +31,7 @@ data "terraform_remote_state" "identity" {
 
   config = {
     bucket = var.tfstate_bucket
-    key    = "infrastructure/aws/workbench/${var.env}/identities/${var.owner}/terraform.tfstate"
+    key    = "infrastructure/aws/workbench/identities/${var.owner}/terraform.tfstate"
     region = "ap-northeast-1"
   }
 }
