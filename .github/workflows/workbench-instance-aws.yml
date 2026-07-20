@@ -28,7 +28,7 @@ on:
           - az2
         default: 'az1'
       instance_type:
-        description: 'EC2 instance type'
+        description: 'EC2 instance type for plan/apply; ignored for delete'
         required: true
         type: choice
         options:

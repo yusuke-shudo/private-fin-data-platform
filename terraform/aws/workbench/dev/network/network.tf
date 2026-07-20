@@ -347,7 +347,9 @@ resource "aws_instance" "platform_nat_instance" {
               dnf -y install iptables-services amazon-ssm-agent
               sysctl -w net.ipv4.ip_forward=1
               echo "net.ipv4.ip_forward = 1" >/etc/sysctl.d/99-nat.conf
-              iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+              primary_interface="$(ip -o -4 route show to default | awk '{print $5}')"
+              iptables -F FORWARD
+              iptables -t nat -A POSTROUTING -o "$primary_interface" -j MASQUERADE
               service iptables save
               systemctl enable iptables
               systemctl enable --now amazon-ssm-agent
