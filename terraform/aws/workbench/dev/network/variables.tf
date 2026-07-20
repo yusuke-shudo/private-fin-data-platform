@@ -67,3 +67,9 @@ variable "workbench_nat_instance_type" {
   description = "EC2 instance type for NAT instance"
   default     = "t4g.nano"
 }
+
+variable "workbench_vpc_flow_logs_retention_days" {
+  type        = number
+  description = "CloudWatch Logs retention in days for workbench VPC Flow Logs"
+  default     = 14
+}
