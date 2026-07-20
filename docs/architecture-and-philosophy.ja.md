@@ -158,11 +158,12 @@ DATALAKE_DB 配下はデータソース単位でスキーマ分割する。
 ### 7.3 開発用 Workbench とアイデンティティ境界
 
 - 開発用 Workbench インスタンスは、恒久的なアイデンティティ保管場所ではなく使い捨て実行面として扱う。
-- 共有 Workbench network と開発者別 Workbench instance は、別 Terraform root / 別 workflow で管理する。
-- Workbench network の state は共有し、開発者用 instance の state は owner と AZ slot ごとに分離する。
+- 共有 Workbench network、owner 単位の IAM identity、開発者別 Workbench instance は、別 Terraform root / 別 workflow で管理する。
+- Workbench network の state は共有し、IAM identity の state は owner ごと、開発者用 instance の state は owner と AZ slot ごとに分離する。
 - 作成/削除は Terraform ワークフロー管理下に置き、state ドリフトを避ける。
 - 所有者境界とアクセス境界はタグ（特に `Owner`）と IAM 条件で強制する。
 - network は AZ ごとの EIP を保持し、Snowflake 側の許可 IP を安定させたまま NAT instance を mode に応じて起動/停止する。
+- Workbench 実行用の Snowflake workload identity federation は、owner 単位の AWS IAM role に紐づく service user で扱い、人間用の PERSON user とは分離する。
 - 人間の開発者ライフサイクル管理は Git 管理対象外とし、リポジトリは技術的な境界定義のみを担う。
 - サポートアクセスは、承認と監査ログを前提にした明示的な例外経路として扱う。
 

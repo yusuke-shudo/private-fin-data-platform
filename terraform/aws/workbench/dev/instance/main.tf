@@ -21,7 +21,17 @@ data "terraform_remote_state" "network" {
 
   config = {
     bucket = var.tfstate_bucket
-    key    = "infrastructure/aws/workbench/${var.env}/network/terraform.tfstate"
+    key    = "infrastructure/aws/workbench/network/terraform.tfstate"
+    region = "ap-northeast-1"
+  }
+}
+
+data "terraform_remote_state" "identity" {
+  backend = "s3"
+
+  config = {
+    bucket = var.tfstate_bucket
+    key    = "infrastructure/aws/workbench/identities/${var.owner}/terraform.tfstate"
     region = "ap-northeast-1"
   }
 }
@@ -31,52 +41,13 @@ data "aws_ssm_parameter" "workbench_al2023_arm64_ami" {
   name     = "/aws/service/ami-amazon-linux-latest/al2023-ami-minimal-kernel-default-arm64"
 }
 
-data "aws_iam_policy_document" "workbench_assume_role" {
-  statement {
-    actions = ["sts:AssumeRole"]
-
-    principals {
-      type        = "Service"
-      identifiers = ["ec2.amazonaws.com"]
-    }
-  }
-}
-
-resource "aws_iam_role" "workbench_instance_role" {
-  provider           = aws.resource_creation
-  name               = local.workbench_instance_name
-  assume_role_policy = data.aws_iam_policy_document.workbench_assume_role.json
-
-  tags = merge(local.workbench_common_tags, {
-    Name = local.workbench_instance_name
-    Role = "workbench-instance"
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "workbench_ssm_core" {
-  provider   = aws.resource_creation
-  role       = aws_iam_role.workbench_instance_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
-}
-
-resource "aws_iam_instance_profile" "workbench_instance_profile" {
-  provider = aws.resource_creation
-  name     = local.workbench_instance_name
-  role     = aws_iam_role.workbench_instance_role.name
-
-  tags = merge(local.workbench_common_tags, {
-    Name = local.workbench_instance_name
-    Role = "workbench-instance"
-  })
-}
-
 resource "aws_instance" "workbench" {
   provider                    = aws.resource_creation
   ami                         = data.aws_ssm_parameter.workbench_al2023_arm64_ami.value
   instance_type               = var.workbench_instance_type
   subnet_id                   = local.workbench_private_subnet_ids[var.az_slot]
   vpc_security_group_ids      = [data.terraform_remote_state.network.outputs.platform_workbench_sg_id]
-  iam_instance_profile        = aws_iam_instance_profile.workbench_instance_profile.name
+  iam_instance_profile        = data.terraform_remote_state.identity.outputs.workbench_instance_profile_name
   associate_public_ip_address = false
 
   root_block_device {
@@ -89,6 +60,4 @@ resource "aws_instance" "workbench" {
     Name = local.workbench_instance_name
     Role = "workbench-instance"
   })
-
-  depends_on = [aws_iam_role_policy_attachment.workbench_ssm_core]
 }
