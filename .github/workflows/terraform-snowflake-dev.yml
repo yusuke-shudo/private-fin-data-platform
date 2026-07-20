@@ -5,7 +5,7 @@ on:
     types: [opened, synchronize, reopened]
     branches: [ main ]
     paths:
-      - 'terraform/snowflake/dev/**'
+      - 'terraform/snowflake/platform/dev/**'
       - '.github/workflows/terraform-snowflake-dev.yml'
   workflow_dispatch:
 
@@ -23,7 +23,7 @@ jobs:
     environment: dev-infra
     defaults:
       run:
-        working-directory: ./terraform/snowflake/${{ env.TARGET_ENV }}
+        working-directory: ./terraform/snowflake/platform/${{ env.TARGET_ENV }}
 
     steps:
       - name: Checkout Code

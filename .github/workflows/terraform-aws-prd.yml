@@ -5,7 +5,7 @@ on:
     types: [opened, synchronize, reopened]
     branches: [ main ]
     paths:
-      - 'terraform/aws/prd/**'
+      - 'terraform/aws/platform/prd/**'
       - '.github/workflows/terraform-aws-prd.yml'
   push:
     branches: [ main ]
@@ -28,7 +28,7 @@ jobs:
     environment: prd-infra
     defaults:
       run:
-        working-directory: ./terraform/aws/${{ env.TARGET_ENV }}
+        working-directory: ./terraform/aws/platform/${{ env.TARGET_ENV }}
 
     steps:
       - name: Checkout Code
