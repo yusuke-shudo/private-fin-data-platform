@@ -35,7 +35,7 @@ jobs:
     environment: ${{ github.event.inputs.target_env }}-infra
     defaults:
       run:
-        working-directory: ./terraform/${{ github.event.inputs.target_layer }}/${{ github.event.inputs.target_env }}
+        working-directory: ./terraform/${{ github.event.inputs.target_layer }}/platform/${{ github.event.inputs.target_env }}
 
     steps:
       - name: Checkout Code

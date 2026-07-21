@@ -46,3 +46,13 @@ variable "tfstate_bucket" {
   type        = string
   description = "S3 bucket or access point ARN used for Terraform remote state"
 }
+
+variable "sf_organization_name" {
+  type        = string
+  description = "Snowflake organization name"
+}
+
+variable "sf_account_name" {
+  type        = string
+  description = "Snowflake account name for dev environment"
+}

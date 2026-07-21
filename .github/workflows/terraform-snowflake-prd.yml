@@ -5,7 +5,7 @@ on:
     types: [opened, synchronize, reopened]
     branches: [ main ]
     paths:
-      - 'terraform/snowflake/prd/**'
+      - 'terraform/snowflake/platform/prd/**'
       - '.github/workflows/terraform-snowflake-prd.yml'
   push:
     branches: [ main ]
@@ -28,7 +28,7 @@ jobs:
     environment: prd-infra
     defaults:
       run:
-        working-directory: ./terraform/snowflake/${{ env.TARGET_ENV }}
+        working-directory: ./terraform/snowflake/platform/${{ env.TARGET_ENV }}
 
     steps:
       - name: Checkout Code

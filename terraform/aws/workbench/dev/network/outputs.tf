@@ -32,3 +32,13 @@ output "platform_nat_instance_ids" {
   value       = { for slot, instance in aws_instance.platform_nat_instance : slot => instance.id }
   description = "active platform NAT instance ids by AZ slot"
 }
+
+output "platform_vpc_flow_logs_log_group_name" {
+  value       = aws_cloudwatch_log_group.platform_vpc_flow_logs.name
+  description = "CloudWatch Logs log group name for platform VPC Flow Logs"
+}
+
+output "platform_vpc_flow_logs_id" {
+  value       = aws_flow_log.platform_vpc_flow_logs.id
+  description = "platform VPC Flow Logs id"
+}

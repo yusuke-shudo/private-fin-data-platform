@@ -38,7 +38,7 @@ data "terraform_remote_state" "identity" {
 
 data "aws_ssm_parameter" "workbench_al2023_arm64_ami" {
   provider = aws.resource_creation
-  name     = "/aws/service/ami-amazon-linux-latest/al2023-ami-minimal-kernel-default-arm64"
+  name     = "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-arm64"
 }
 
 resource "aws_instance" "workbench" {
@@ -49,6 +49,13 @@ resource "aws_instance" "workbench" {
   vpc_security_group_ids      = [data.terraform_remote_state.network.outputs.platform_workbench_sg_id]
   iam_instance_profile        = data.terraform_remote_state.identity.outputs.workbench_instance_profile_name
   associate_public_ip_address = false
+  user_data_replace_on_change = true
+
+  user_data = base64encode(templatefile("${path.module}/user_data.sh", {
+    owner                 = var.owner
+    sf_organization_name  = var.sf_organization_name
+    sf_account_name       = var.sf_account_name
+  }))
 
   root_block_device {
     encrypted   = true

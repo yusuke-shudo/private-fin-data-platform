@@ -3,7 +3,9 @@
 # =========================================================================
 
 locals {
-  workbench_nat_identity_name = "platform-workbench-nat"
+  workbench_flow_logs_log_group_name = "/aws/vpc-flow-logs/platform-workbench"
+  workbench_flow_logs_name           = "platform-workbench-vpc-flow-logs"
+  workbench_nat_identity_name        = "platform-workbench-nat"
 
   workbench_common_tags = {
     Project     = "private-fin-data-platform"
@@ -44,6 +46,79 @@ resource "aws_vpc" "platform_vpc" {
   tags = merge(local.workbench_common_tags, {
     Name = "platform-vpc"
   })
+}
+
+resource "aws_cloudwatch_log_group" "platform_vpc_flow_logs" {
+  provider          = aws.resource_creation
+  name              = local.workbench_flow_logs_log_group_name
+  retention_in_days = var.workbench_vpc_flow_logs_retention_days
+
+  tags = merge(local.workbench_common_tags, {
+    Name = local.workbench_flow_logs_name
+  })
+}
+
+data "aws_iam_policy_document" "platform_vpc_flow_logs_assume_role" {
+  statement {
+    actions = ["sts:AssumeRole"]
+
+    principals {
+      type        = "Service"
+      identifiers = ["vpc-flow-logs.amazonaws.com"]
+    }
+  }
+}
+
+resource "aws_iam_role" "platform_vpc_flow_logs_role" {
+  provider           = aws.resource_creation
+  name               = local.workbench_flow_logs_name
+  assume_role_policy = data.aws_iam_policy_document.platform_vpc_flow_logs_assume_role.json
+
+  tags = merge(local.workbench_common_tags, {
+    Name = local.workbench_flow_logs_name
+    Role = "vpc-flow-logs"
+  })
+}
+
+data "aws_iam_policy_document" "platform_vpc_flow_logs_policy" {
+  statement {
+    actions   = ["logs:DescribeLogGroups"]
+    resources = ["*"]
+  }
+
+  statement {
+    actions = [
+      "logs:CreateLogStream",
+      "logs:DescribeLogStreams",
+      "logs:PutLogEvents"
+    ]
+
+    resources = ["${aws_cloudwatch_log_group.platform_vpc_flow_logs.arn}:*"]
+  }
+}
+
+resource "aws_iam_role_policy" "platform_vpc_flow_logs_policy" {
+  provider = aws.resource_creation
+  name     = local.workbench_flow_logs_name
+  role     = aws_iam_role.platform_vpc_flow_logs_role.id
+  policy   = data.aws_iam_policy_document.platform_vpc_flow_logs_policy.json
+}
+
+resource "aws_flow_log" "platform_vpc_flow_logs" {
+  provider                 = aws.resource_creation
+  iam_role_arn             = aws_iam_role.platform_vpc_flow_logs_role.arn
+  log_destination          = aws_cloudwatch_log_group.platform_vpc_flow_logs.arn
+  log_destination_type     = "cloud-watch-logs"
+  log_format               = "$${version} $${account-id} $${interface-id} $${srcaddr} $${dstaddr} $${srcport} $${dstport} $${protocol} $${packets} $${bytes} $${start} $${end} $${action} $${log-status} $${vpc-id} $${subnet-id} $${instance-id} $${tcp-flags} $${type} $${pkt-srcaddr} $${pkt-dstaddr} $${flow-direction} $${traffic-path}"
+  max_aggregation_interval = 60
+  traffic_type             = "ALL"
+  vpc_id                   = aws_vpc.platform_vpc.id
+
+  tags = merge(local.workbench_common_tags, {
+    Name = local.workbench_flow_logs_name
+  })
+
+  depends_on = [aws_iam_role_policy.platform_vpc_flow_logs_policy]
 }
 
 resource "aws_internet_gateway" "platform_igw" {
@@ -272,7 +347,9 @@ resource "aws_instance" "platform_nat_instance" {
               dnf -y install iptables-services amazon-ssm-agent
               sysctl -w net.ipv4.ip_forward=1
               echo "net.ipv4.ip_forward = 1" >/etc/sysctl.d/99-nat.conf
-              iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+              primary_interface="$(ip -o -4 route show to default | awk '{print $5}')"
+              iptables -F FORWARD
+              iptables -t nat -A POSTROUTING -o "$primary_interface" -j MASQUERADE
               service iptables save
               systemctl enable iptables
               systemctl enable --now amazon-ssm-agent

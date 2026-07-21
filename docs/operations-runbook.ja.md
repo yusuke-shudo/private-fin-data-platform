@@ -122,6 +122,16 @@
 3. owner 単位の IAM role ARN を `WORKLOAD_IDENTITY` として使い、Snowflake 側の Workbench service user を作成または更新する。
 4. 対象の `az_slot` に対して `workbench-instance-aws.yml` を実行する。
 
+Session Manager で接続した後、開発用ユーザに切り替え、private repository は対話的に clone する。
+
+```bash
+sudo -iu ec2-user
+gh auth login
+gh repo clone yusuke-shudo/private-fin-data-platform ~/private-fin-data-platform
+```
+
+Workbench EC2 には Git、GitHub CLI、Python 3.14、dbt、dbt-snowflake、sqlfluff を初期導入する。Amazon Linux が管理する `python3` は変更せず、`ec2-user` の対話 shell では `python` と `pip` を Python 3.14 向け alias として定義する。
+
 Snowflake workload identity の補足:
 
 - `WORKLOAD_IDENTITY` は Snowflake の `TYPE = SERVICE` user 用であり、`TYPE = PERSON` user には設定できない。
