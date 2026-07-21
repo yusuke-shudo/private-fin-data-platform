@@ -103,7 +103,6 @@ jobs:
   workbench_identity_snowflake:
     name: Workbench Identity Snowflake
     needs: workbench_identity_aws
-    if: github.event.inputs.operation != 'delete'
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.env }}-infra
     defaults:
