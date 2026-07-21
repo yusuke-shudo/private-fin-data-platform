@@ -20,19 +20,18 @@ resource "snowflake_warehouse" "workbench" {
   comment           = "Developer workbench warehouse for ${var.owner} | ${local.managed_comment}"
 }
 
-resource "snowflake_role" "workbench" {
+resource "snowflake_account_role" "workbench" {
   name    = "${local.workbench_identity_name}_role"
   comment = "Developer workbench role for ${var.owner} (dbt execution) | ${local.managed_comment}"
 }
 
-resource "snowflake_user" "workbench" {
+resource "snowflake_service_user" "workbench" {
   name         = "${local.workbench_identity_name}_user"
-  type         = "SERVICE"
-  default_role = snowflake_role.workbench.name
+  default_role = snowflake_account_role.workbench.name
   default_warehouse = snowflake_warehouse.workbench.name
-  workload_identity {
+  default_workload_identity_federation {
     identity_type = "AWS_IAM"
-    arn           = "arn:aws:iam::${var.aws_account_id}:role/platform-workbench-${var.owner}"
+    arn           = var.aws_iam_role_arn
   }
   abort_detached_query        = true
   lock_timeout                = 10
@@ -40,8 +39,8 @@ resource "snowflake_user" "workbench" {
   comment                     = "Service user for developer workbench (${var.owner}) via AWS IAM Workload Identity | ${local.managed_comment}"
 }
 
-resource "snowflake_grant_privileges_to_role" "workbench_warehouse_usage" {
-  role_name = snowflake_role.workbench.name
+resource "snowflake_grant_privileges_to_account_role" "workbench_warehouse_usage" {
+  role_name = snowflake_account_role.workbench.name
 
   privileges = ["USAGE"]
   on_account_object {
@@ -50,7 +49,7 @@ resource "snowflake_grant_privileges_to_role" "workbench_warehouse_usage" {
   }
 }
 
-resource "snowflake_grant_role_to_user" "workbench_user_role" {
-  role_name = snowflake_role.workbench.name
-  user_name = snowflake_user.workbench.name
+resource "snowflake_grant_account_role" "workbench_user_role" {
+  role_name = snowflake_account_role.workbench.name
+  user_name = snowflake_service_user.workbench.name
 }

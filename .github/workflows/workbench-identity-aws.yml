@@ -103,7 +103,7 @@ jobs:
   workbench_identity_snowflake:
     name: Workbench Identity Snowflake
     needs: workbench_identity_aws
-    if: github.event.inputs.operation != 'plan'
+    if: github.event.inputs.operation != 'delete'
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.env }}-infra
     defaults:
@@ -147,6 +147,7 @@ jobs:
           TF_VAR_sf_organization_name: ${{ vars.SF_ORGANIZATION_NAME }}
           TF_VAR_sf_account_name:      ${{ vars.SF_ACCOUNT_NAME }}
           TF_VAR_aws_account_id:       ${{ vars.AWS_ACCOUNT_ID }}
+          TF_VAR_aws_iam_role_arn:     ${{ needs.workbench_identity_aws.outputs.workbench_iam_role_arn }}
           SNOWFLAKE_USER:              "cicd_infra_engineer_user"
           SNOWFLAKE_AUTHENTICATOR:     "WORKLOAD_IDENTITY"
           SNOWFLAKE_WORKLOAD_IDENTITY_PROVIDER: "OIDC"
@@ -160,6 +161,7 @@ jobs:
           TF_VAR_sf_organization_name: ${{ vars.SF_ORGANIZATION_NAME }}
           TF_VAR_sf_account_name:      ${{ vars.SF_ACCOUNT_NAME }}
           TF_VAR_aws_account_id:       ${{ vars.AWS_ACCOUNT_ID }}
+          TF_VAR_aws_iam_role_arn:     ${{ needs.workbench_identity_aws.outputs.workbench_iam_role_arn }}
           SNOWFLAKE_USER:              "cicd_infra_engineer_user"
           SNOWFLAKE_AUTHENTICATOR:     "WORKLOAD_IDENTITY"
           SNOWFLAKE_WORKLOAD_IDENTITY_PROVIDER: "OIDC"
@@ -173,6 +175,7 @@ jobs:
           TF_VAR_sf_organization_name: ${{ vars.SF_ORGANIZATION_NAME }}
           TF_VAR_sf_account_name:      ${{ vars.SF_ACCOUNT_NAME }}
           TF_VAR_aws_account_id:       ${{ vars.AWS_ACCOUNT_ID }}
+          TF_VAR_aws_iam_role_arn:     ${{ needs.workbench_identity_aws.outputs.workbench_iam_role_arn }}
           SNOWFLAKE_USER:              "cicd_infra_engineer_user"
           SNOWFLAKE_AUTHENTICATOR:     "WORKLOAD_IDENTITY"
           SNOWFLAKE_WORKLOAD_IDENTITY_PROVIDER: "OIDC"

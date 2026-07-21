@@ -33,3 +33,8 @@ variable "aws_account_id" {
   type        = string
   description = "AWS account ID for IAM role ARN"
 }
+
+variable "aws_iam_role_arn" {
+  type        = string
+  description = "AWS IAM role ARN for Workload Identity"
+}
