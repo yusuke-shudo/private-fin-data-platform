@@ -51,7 +51,7 @@ Wants=network-online.target
 [Service]
 Type=simple
 Environment=TUNNEL_NAME=%H
-ExecStart=/usr/bin/code tunnel --name ${TUNNEL_NAME} --accept-server-license-terms
+ExecStart=/usr/bin/code tunnel --name $${TUNNEL_NAME} --accept-server-license-terms
 Restart=always
 RestartSec=5
 
