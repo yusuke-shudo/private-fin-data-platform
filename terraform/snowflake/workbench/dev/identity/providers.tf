@@ -15,4 +15,6 @@ provider "snowflake" {
   role                       = "cicd_infra_engineer_role"
   authenticator              = "WORKLOAD_IDENTITY"
   workload_identity_provider = "OIDC"
+
+  experimental_features_enabled = ["USER_ENABLE_DEFAULT_WORKLOAD_IDENTITY"]
 }
