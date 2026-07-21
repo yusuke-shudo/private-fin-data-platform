@@ -38,6 +38,9 @@ jobs:
       run:
         working-directory: ./terraform/aws/workbench/${{ github.event.inputs.env }}/identity
 
+    outputs:
+      workbench_iam_role_arn: ${{ steps.tf_output.outputs.workbench_iam_role_arn }}
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v7
@@ -80,9 +83,96 @@ jobs:
           TF_VAR_env:   ${{ env.TARGET_ENV }}
           TF_VAR_owner: ${{ env.OWNER }}
 
+      - name: Extract Terraform Outputs
+        if: github.event.inputs.operation != 'delete'
+        id: tf_output
+        run: |
+          ARN=$(terraform output -raw workbench_iam_role_arn 2>/dev/null || echo "")
+          echo "workbench_iam_role_arn=$ARN" >> $GITHUB_OUTPUT
+        env:
+          TF_VAR_env:   ${{ env.TARGET_ENV }}
+          TF_VAR_owner: ${{ env.OWNER }}
+
       - name: Terraform Delete Workbench Identity
         if: github.event.inputs.operation == 'delete'
         run: terraform destroy -no-color -auto-approve
         env:
           TF_VAR_env:   ${{ env.TARGET_ENV }}
           TF_VAR_owner: ${{ env.OWNER }}
+
+  workbench_identity_snowflake:
+    name: Workbench Identity Snowflake
+    needs: workbench_identity_aws
+    if: github.event.inputs.operation != 'plan'
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.env }}-infra
+    defaults:
+      run:
+        working-directory: ./terraform/snowflake/workbench/${{ github.event.inputs.env }}/identity
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v7
+
+      - name: Configure AWS Credentials via OIDC (For S3 Backend)
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/github-actions-tfstate-access-role
+          aws-region: ap-northeast-1
+
+      - name: Mint Snowflake OIDC Token
+        run: |
+          OIDC_TOKEN=$(curl -sLS \
+            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=snowflakecomputing.com" \
+            | jq -r '.value')
+          echo "SNOWFLAKE_TOKEN=$OIDC_TOKEN" >> $GITHUB_ENV
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v4
+
+      - name: Terraform Init
+        run: |
+          terraform init \
+            -backend-config="bucket=arn:aws:s3:ap-northeast-1:${{ vars.AWS_ACCOUNT_ID }}:accesspoint/${{ vars.PROJECT_PREFIX }}-${{ github.event.inputs.env }}-tfstate-ap" \
+            -backend-config="key=infrastructure/snowflake/workbench/identities/${{ env.OWNER }}/terraform.tfstate" \
+            -backend-config="use_lockfile=true" \
+            -backend-config="encrypt=true"
+
+      - name: Terraform Plan Workbench Identity (Snowflake)
+        run: terraform plan -no-color -out=tfplan
+        env:
+          TF_VAR_env:                  ${{ env.TARGET_ENV }}
+          TF_VAR_owner:                ${{ env.OWNER }}
+          TF_VAR_sf_organization_name: ${{ vars.SF_ORGANIZATION_NAME }}
+          TF_VAR_sf_account_name:      ${{ vars.SF_ACCOUNT_NAME }}
+          TF_VAR_aws_account_id:       ${{ vars.AWS_ACCOUNT_ID }}
+          SNOWFLAKE_USER:              "cicd_infra_engineer_user"
+          SNOWFLAKE_AUTHENTICATOR:     "WORKLOAD_IDENTITY"
+          SNOWFLAKE_WORKLOAD_IDENTITY_PROVIDER: "OIDC"
+
+      - name: Terraform Apply Workbench Identity (Snowflake)
+        if: github.event.inputs.operation == 'apply'
+        run: terraform apply -no-color tfplan
+        env:
+          TF_VAR_env:                  ${{ env.TARGET_ENV }}
+          TF_VAR_owner:                ${{ env.OWNER }}
+          TF_VAR_sf_organization_name: ${{ vars.SF_ORGANIZATION_NAME }}
+          TF_VAR_sf_account_name:      ${{ vars.SF_ACCOUNT_NAME }}
+          TF_VAR_aws_account_id:       ${{ vars.AWS_ACCOUNT_ID }}
+          SNOWFLAKE_USER:              "cicd_infra_engineer_user"
+          SNOWFLAKE_AUTHENTICATOR:     "WORKLOAD_IDENTITY"
+          SNOWFLAKE_WORKLOAD_IDENTITY_PROVIDER: "OIDC"
+
+      - name: Terraform Delete Workbench Identity (Snowflake)
+        if: github.event.inputs.operation == 'delete'
+        run: terraform destroy -no-color -auto-approve
+        env:
+          TF_VAR_env:                  ${{ env.TARGET_ENV }}
+          TF_VAR_owner:                ${{ env.OWNER }}
+          TF_VAR_sf_organization_name: ${{ vars.SF_ORGANIZATION_NAME }}
+          TF_VAR_sf_account_name:      ${{ vars.SF_ACCOUNT_NAME }}
+          TF_VAR_aws_account_id:       ${{ vars.AWS_ACCOUNT_ID }}
+          SNOWFLAKE_USER:              "cicd_infra_engineer_user"
+          SNOWFLAKE_AUTHENTICATOR:     "WORKLOAD_IDENTITY"
+          SNOWFLAKE_WORKLOAD_IDENTITY_PROVIDER: "OIDC"

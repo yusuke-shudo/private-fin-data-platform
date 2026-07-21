@@ -51,23 +51,11 @@ resource "aws_instance" "workbench" {
   associate_public_ip_address = false
   user_data_replace_on_change = true
 
-  user_data = <<-EOT
-              #!/bin/bash
-              set -eux
-              dnf -y update
-              dnf -y install dnf-plugins-core git python3.14 python3.14-pip
-              dnf config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo
-              dnf -y install gh
-              python3.14 -m pip install --upgrade pip
-              python3.14 -m pip install dbt-core dbt-snowflake sqlfluff
-              cat <<'EOF' >>/home/ec2-user/.bashrc
-
-              # Workbench Python aliases
-              alias python=python3.14
-              alias pip='python3.14 -m pip'
-              EOF
-              chown ec2-user:ec2-user /home/ec2-user/.bashrc
-              EOT
+  user_data = base64encode(templatefile("${path.module}/user_data.sh", {
+    owner                 = var.owner
+    sf_organization_name  = var.sf_organization_name
+    sf_account_name       = var.sf_account_name
+  }))
 
   root_block_device {
     encrypted   = true

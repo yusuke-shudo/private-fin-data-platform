@@ -49,7 +49,7 @@ jobs:
   workbench_instance_aws:
     name: Workbench Instance AWS
     runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.env }}-infra
+    environment: dev-data
     defaults:
       run:
         working-directory: ./terraform/aws/workbench/${{ github.event.inputs.env }}/instance
@@ -84,6 +84,8 @@ jobs:
           TF_VAR_az_slot:                 ${{ github.event.inputs.az_slot }}
           TF_VAR_workbench_instance_type: ${{ github.event.inputs.instance_type }}
           TF_VAR_tfstate_bucket:          ${{ env.TFSTATE_BUCKET }}
+          TF_VAR_sf_organization_name:    ${{ vars.SF_ORGANIZATION_NAME }}
+          TF_VAR_sf_account_name:         ${{ vars.SF_ACCOUNT_NAME }}
 
       - name: Terraform Plan Workbench Instance for Apply
         if: github.event.inputs.operation == 'apply'
@@ -94,6 +96,8 @@ jobs:
           TF_VAR_az_slot:                 ${{ github.event.inputs.az_slot }}
           TF_VAR_workbench_instance_type: ${{ github.event.inputs.instance_type }}
           TF_VAR_tfstate_bucket:          ${{ env.TFSTATE_BUCKET }}
+          TF_VAR_sf_organization_name:    ${{ vars.SF_ORGANIZATION_NAME }}
+          TF_VAR_sf_account_name:         ${{ vars.SF_ACCOUNT_NAME }}
 
       - name: Terraform Apply Workbench Instance
         if: github.event.inputs.operation == 'apply'
@@ -104,6 +108,8 @@ jobs:
           TF_VAR_az_slot:                 ${{ github.event.inputs.az_slot }}
           TF_VAR_workbench_instance_type: ${{ github.event.inputs.instance_type }}
           TF_VAR_tfstate_bucket:          ${{ env.TFSTATE_BUCKET }}
+          TF_VAR_sf_organization_name:    ${{ vars.SF_ORGANIZATION_NAME }}
+          TF_VAR_sf_account_name:         ${{ vars.SF_ACCOUNT_NAME }}
 
       - name: Terraform Delete Workbench Instance
         if: github.event.inputs.operation == 'delete'
@@ -114,3 +120,5 @@ jobs:
           TF_VAR_az_slot:                 ${{ github.event.inputs.az_slot }}
           TF_VAR_workbench_instance_type: ${{ github.event.inputs.instance_type }}
           TF_VAR_tfstate_bucket:          ${{ env.TFSTATE_BUCKET }}
+          TF_VAR_sf_organization_name:    ${{ vars.SF_ORGANIZATION_NAME }}
+          TF_VAR_sf_account_name:         ${{ vars.SF_ACCOUNT_NAME }}
