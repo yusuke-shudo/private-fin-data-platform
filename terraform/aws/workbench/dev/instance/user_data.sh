@@ -50,7 +50,8 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-Environment=TUNNEL_NAME=%H
+ExecStartPre=/bin/bash -c 'ec2-metadata --instance-id | cut -d " " -f 2 > /run/user/1000/vscode-tunnel.env && sed -i "s/^/TUNNEL_NAME=/" /run/user/1000/vscode-tunnel.env'
+EnvironmentFile=/run/user/1000/vscode-tunnel.env
 ExecStart=/usr/bin/code tunnel --name $${TUNNEL_NAME} --accept-server-license-terms
 Restart=always
 RestartSec=5
