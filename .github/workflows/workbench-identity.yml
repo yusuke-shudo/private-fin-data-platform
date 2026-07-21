@@ -1,4 +1,4 @@
-name: Workbench Identity (AWS)
+name: Workbench Identity
 
 on:
   workflow_dispatch:
