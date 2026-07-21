@@ -1,4 +1,4 @@
-name: Workbench Network (AWS)
+name: Workbench Network
 
 on:
   workflow_dispatch:

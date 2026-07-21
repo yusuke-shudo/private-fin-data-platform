@@ -1,4 +1,4 @@
-name: Workbench Instance (AWS)
+name: Workbench Instance
 
 on:
   workflow_dispatch:
