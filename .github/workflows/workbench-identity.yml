@@ -1,4 +1,4 @@
-name: Workbench Identity
+name: Workbench Identity (AWS & Snowflake)
 
 on:
   workflow_dispatch:
