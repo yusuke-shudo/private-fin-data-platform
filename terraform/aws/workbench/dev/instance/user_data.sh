@@ -50,7 +50,7 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-ExecStart=/bin/bash -c 'TUNNEL_NAME=$(ec2-metadata --instance-id | cut -d " " -f 2) && /usr/bin/code tunnel --name ${TUNNEL_NAME} --accept-server-license-terms'
+ExecStart=/bin/bash -c 'TUNNEL_NAME=$(ec2-metadata --instance-id | cut -d " " -f 2) && /usr/bin/code tunnel --name $${TUNNEL_NAME} --accept-server-license-terms'
 Restart=always
 RestartSec=5
 
