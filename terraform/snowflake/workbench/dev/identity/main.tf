@@ -29,9 +29,10 @@ resource "snowflake_service_user" "workbench" {
   name         = "${local.workbench_identity_name}_user"
   default_role = snowflake_account_role.workbench.name
   default_warehouse = snowflake_warehouse.workbench.name
-  default_workload_identity_federation {
-    identity_type = "AWS_IAM"
-    arn           = var.aws_iam_role_arn
+  default_workload_identity {
+    aws {
+      arn = var.aws_iam_role_arn
+    }
   }
   abort_detached_query        = true
   lock_timeout                = 10
@@ -40,7 +41,7 @@ resource "snowflake_service_user" "workbench" {
 }
 
 resource "snowflake_grant_privileges_to_account_role" "workbench_warehouse_usage" {
-  role_name = snowflake_account_role.workbench.name
+  account_role_name = snowflake_account_role.workbench.name
 
   privileges = ["USAGE"]
   on_account_object {
