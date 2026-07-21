@@ -42,6 +42,16 @@ EOF
 chmod +x ~/.local/bin/start-vscode-tunnel-service
 
 mkdir -p ~/.config/systemd/user
+mkdir -p ~/.local/bin
+
+cat > ~/.local/bin/vscode-tunnel-start.sh <<'EOF'
+#!/bin/bash
+set -euo pipefail
+TUNNEL_NAME=$(ec2-metadata --instance-id | cut -d ' ' -f 2)
+/usr/bin/code tunnel --name "$TUNNEL_NAME" --accept-server-license-terms
+EOF
+chmod +x ~/.local/bin/vscode-tunnel-start.sh
+
 cat > ~/.config/systemd/user/vscode-tunnel.service <<'EOF'
 [Unit]
 Description=VS Code Tunnel
@@ -50,7 +60,7 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-ExecStart=/bin/bash -c "TUNNEL_NAME=\$(ec2-metadata --instance-id | cut -d ' ' -f 2) && /usr/bin/code tunnel --name \$TUNNEL_NAME --accept-server-license-terms"
+ExecStart=%h/.local/bin/vscode-tunnel-start.sh
 Restart=always
 RestartSec=5
 
