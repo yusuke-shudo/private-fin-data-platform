@@ -89,7 +89,8 @@ private_fin_data_platform:
       user: workbench_${owner}_user
       authenticator: WORKLOAD_IDENTITY
       workload_identity_provider: AWS
-      role: workbench_${owner}_role
+      # The Snowflake workbench service user created by Terraform already has a
+      # default role configured, so leave role unset here.
       warehouse: workbench_${owner}_wh
       database: DATAWAREHOUSE_DB
       schema: STAGING
