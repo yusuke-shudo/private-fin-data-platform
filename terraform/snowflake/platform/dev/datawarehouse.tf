@@ -10,17 +10,17 @@ resource "snowflake_schema" "datawarehouse_schemachange" {
 }
 
 resource "snowflake_schema" "datawarehouse_staging" {
-  name              = "STAGING"
-  database          = snowflake_database.datawarehouse.name
-  is_managed_access = true
-  comment           = "Schema for standardized and cleaned staging tables | ${local.managed_comment}"
+  name               = "STAGING"
+  database           = snowflake_database.datawarehouse.name
+  with_managed_access = true
+  comment            = "Schema for standardized and cleaned staging tables | ${local.managed_comment}"
 }
 
 resource "snowflake_schema" "datawarehouse_core" {
-  name              = "CORE"
-  database          = snowflake_database.datawarehouse.name
-  is_managed_access = true
-  comment           = "Schema for core business entities and dimensions | ${local.managed_comment}"
+  name               = "CORE"
+  database           = snowflake_database.datawarehouse.name
+  with_managed_access = true
+  comment            = "Schema for core business entities and dimensions | ${local.managed_comment}"
 }
 
 locals {
