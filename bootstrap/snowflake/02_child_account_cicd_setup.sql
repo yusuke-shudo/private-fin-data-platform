@@ -50,6 +50,7 @@ GRANT CREATE USER ON ACCOUNT TO ROLE cicd_infra_engineer_role;
 GRANT CREATE WAREHOUSE ON ACCOUNT TO ROLE cicd_infra_engineer_role;
 GRANT CREATE INTEGRATION ON ACCOUNT TO ROLE cicd_infra_engineer_role;
 GRANT CREATE DATABASE ON ACCOUNT TO ROLE cicd_infra_engineer_role;
+GRANT MANAGE GRANTS ON ACCOUNT TO ROLE cicd_infra_engineer_role;
 GRANT EXECUTE TASK ON ACCOUNT TO ROLE cicd_infra_engineer_role;
 GRANT EXECUTE MANAGED TASK ON ACCOUNT TO ROLE cicd_infra_engineer_role;
 
