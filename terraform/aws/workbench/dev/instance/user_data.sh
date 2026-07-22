@@ -58,19 +58,22 @@ else
   # Run code tunnel in background for authentication
   # Using nohup & to detach from TTY so it survives SSM session disconnection
   nohup /usr/bin/code tunnel --name "$TUNNEL_NAME" --accept-server-license-terms > ~/.code-tunnel.log 2>&1 &
-  sleep 10
+  sleep 2
   
   echo ""
   echo "=========================================="
-  echo "✓ Authentication started in background!"
+  echo "Waiting for authentication code..."
   echo "=========================================="
   echo ""
-  echo "Check tunnel status with:"
-  echo "  journalctl --user -u vscode-tunnel.service -f"
+  
+  # Show the live log so user can see the auth code
+  tail -f ~/.code-tunnel.log
+  
+  # After user stops tail with Ctrl+C, start the systemd service
   echo ""
-  echo "Or view the log:"
-  echo "  tail -f ~/.code-tunnel.log"
-  echo ""
+  echo "=========================================="
+  echo "Starting tunnel service in background..."
+  echo "=========================================="
   systemctl --user daemon-reload
   systemctl --user enable --now vscode-tunnel.service
   sleep 2
