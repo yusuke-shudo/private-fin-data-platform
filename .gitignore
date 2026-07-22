@@ -1,2 +1,9 @@
 # dbt logs
 /dbt/logs/
+
+# dbt build artifacts
+/dbt/target/
+
+# dbt local config and dependency artifacts
+/dbt/.user.yml
+/dbt/dbt_packages/
