@@ -55,15 +55,22 @@ else
   echo "Please follow the instructions below:"
   echo ""
   
-  # Run code tunnel interactively for authentication
-  /usr/bin/code tunnel --name "$TUNNEL_NAME" --accept-server-license-terms
+  # Run code tunnel in background for authentication
+  # Using nohup & to detach from TTY so it survives SSM session disconnection
+  nohup /usr/bin/code tunnel --name "$TUNNEL_NAME" --accept-server-license-terms > ~/.code-tunnel.log 2>&1 &
+  sleep 10
   
   echo ""
   echo "=========================================="
-  echo "✓ Authentication complete!"
+  echo "✓ Authentication started in background!"
   echo "=========================================="
   echo ""
-  echo "Starting tunnel service in background..."
+  echo "Check tunnel status with:"
+  echo "  journalctl --user -u vscode-tunnel.service -f"
+  echo ""
+  echo "Or view the log:"
+  echo "  tail -f ~/.code-tunnel.log"
+  echo ""
   systemctl --user daemon-reload
   systemctl --user enable --now vscode-tunnel.service
   sleep 2
