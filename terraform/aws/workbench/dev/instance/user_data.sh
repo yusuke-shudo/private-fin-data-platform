@@ -35,13 +35,72 @@ fi
 cat > ~/.local/bin/start-vscode-tunnel-service <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
-systemctl --user daemon-reload
-systemctl --user enable --now vscode-tunnel.service
-systemctl --user status vscode-tunnel.service --no-pager
+
+TUNNEL_NAME=$(ec2-metadata --instance-id | cut -d ' ' -f 2)
+
+# Check if already authenticated
+if [ -f ~/.vscode-cli/cli-tokens.json ]; then
+  echo "✓ Already authenticated. Starting tunnel service..."
+  systemctl --user daemon-reload
+  systemctl --user enable --now vscode-tunnel.service
+  systemctl --user status vscode-tunnel.service --no-pager
+else
+  echo "=========================================="
+  echo "VS Code Tunnel - Initial Authentication"
+  echo "=========================================="
+  echo ""
+  echo "Tunnel name: $TUNNEL_NAME"
+  echo ""
+  echo "GitHub authentication required."
+  echo "Please follow the instructions below:"
+  echo ""
+  
+  # Run code tunnel in background for authentication
+  # Using nohup & to detach from TTY so it survives SSM session disconnection
+  nohup /usr/bin/code tunnel --name "$TUNNEL_NAME" --accept-server-license-terms > ~/.code-tunnel.log 2>&1 &
+  sleep 2
+  
+  echo ""
+  echo "=========================================="
+  echo "Waiting for authentication code..."
+  echo "=========================================="
+  echo ""
+  
+  # Show the live log so user can see the auth code
+  tail -f ~/.code-tunnel.log
+  
+  # After user stops tail with Ctrl+C, start the systemd service
+  echo ""
+  echo "=========================================="
+  echo "Starting tunnel service in background..."
+  echo "=========================================="
+  systemctl --user daemon-reload
+  systemctl --user enable --now vscode-tunnel.service
+  sleep 2
+  systemctl --user status vscode-tunnel.service --no-pager
+  
+  echo ""
+  echo "=========================================="
+  echo "✓ VS Code tunnel is now running."
+  echo "✓ You can safely close this SSM session."
+  echo "✓ Your local VS Code tunnel will continue"
+  echo "  working in the background."
+  echo "=========================================="
+fi
 EOF
 chmod +x ~/.local/bin/start-vscode-tunnel-service
 
 mkdir -p ~/.config/systemd/user
+mkdir -p ~/.local/bin
+
+cat > ~/.local/bin/vscode-tunnel-start.sh <<'EOF'
+#!/bin/bash
+set -euo pipefail
+TUNNEL_NAME=$(ec2-metadata --instance-id | cut -d ' ' -f 2)
+/usr/bin/code tunnel --name "$TUNNEL_NAME" --accept-server-license-terms
+EOF
+chmod +x ~/.local/bin/vscode-tunnel-start.sh
+
 cat > ~/.config/systemd/user/vscode-tunnel.service <<'EOF'
 [Unit]
 Description=VS Code Tunnel
@@ -50,8 +109,7 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-Environment=TUNNEL_NAME=%H
-ExecStart=/usr/bin/code tunnel --name $${TUNNEL_NAME} --accept-server-license-terms
+ExecStart=%h/.local/bin/vscode-tunnel-start.sh
 Restart=always
 RestartSec=5
 

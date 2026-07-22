@@ -28,10 +28,11 @@ on:
           - az2
         default: 'az1'
       instance_type:
-        description: 'EC2 instance type for plan/apply; ignored for delete'
+        description: 'EC2 instance type (t4g.micro insufficient for VS Code tunnel; use t4g.small or larger)'
         required: true
         type: choice
         options:
+          - t4g.micro
           - t4g.small
           - t4g.medium
         default: 't4g.small'
