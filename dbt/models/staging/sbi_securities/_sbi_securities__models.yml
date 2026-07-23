@@ -1,0 +1,6 @@
+version: 2
+
+models:
+  - name: stg_sbi_securities__tokutei_profit_loss_report_yearly_summary
+  - name: stg_sbi_securities__tokutei_profit_loss_report_trades
+  - name: stg_sbi_securities__tokutei_profit_loss_report_dividends

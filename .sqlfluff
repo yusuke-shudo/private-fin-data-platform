@@ -1,0 +1,27 @@
+[sqlfluff]
+dialect = snowflake
+
+# dbt プロジェクト用のテンプレーター設定
+templater = dbt
+
+# デフォルトルールを使用。不要なルールだけ除外
+exclude_rules = structure.column_order
+
+# 最大行長
+max_line_length = 100
+
+[sqlfluff:indentation]
+indent_unit = space
+tab_space_size = 2
+
+[sqlfluff:rules:capitalisation.keywords]
+# 予約語は大文字
+capitalisation_policy = upper
+
+[sqlfluff:rules:capitalisation.identifiers]
+# 識別子は小文字
+extended_capitalisation_policy = lower
+
+[sqlfluff:rules:capitalisation.functions]
+# 関数名は大文字
+extended_capitalisation_policy = upper
