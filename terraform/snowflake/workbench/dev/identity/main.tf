@@ -56,21 +56,41 @@ resource "snowflake_grant_privileges_to_account_role" "workbench_warehouse_usage
 # limited to developer-specific schemas.
 resource "snowflake_grant_privileges_to_account_role" "workbench_datalake_read" {
   account_role_name = snowflake_account_role.workbench.name
-
-  privileges = ["USAGE", "SELECT"]
+  privileges        = ["USAGE"]
   on_account_object {
     object_type = "DATABASE"
     object_name = "DATALAKE_DB"
   }
 }
 
+resource "snowflake_grant_privileges_to_account_role" "workbench_datalake_tables_read" {
+  account_role_name = snowflake_account_role.workbench.name
+  privileges        = ["SELECT"]
+  on_schema_object {
+    all {
+      object_type_plural = "TABLES"
+      in_database        = "DATALAKE_DB"
+    }
+  }
+}
+
 resource "snowflake_grant_privileges_to_account_role" "workbench_datawarehouse_read" {
   account_role_name = snowflake_account_role.workbench.name
-
-  privileges = ["USAGE", "SELECT"]
+  privileges        = ["USAGE"]
   on_account_object {
     object_type = "DATABASE"
     object_name = "DATAWAREHOUSE_DB"
+  }
+}
+
+resource "snowflake_grant_privileges_to_account_role" "workbench_datawarehouse_tables_read" {
+  account_role_name = snowflake_account_role.workbench.name
+  privileges        = ["SELECT"]
+  on_schema_object {
+    all {
+      object_type_plural = "TABLES"
+      in_database        = "DATAWAREHOUSE_DB"
+    }
   }
 }
 
