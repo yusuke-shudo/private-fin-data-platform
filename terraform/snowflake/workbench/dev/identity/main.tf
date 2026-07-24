@@ -1,6 +1,6 @@
 locals {
   workbench_owner_slug    = upper(replace(var.owner, "-", "_"))
-  workbench_identity_name = "workbench_${local.workbench_owner_slug}"
+  workbench_identity_name = "WORKBENCH_${local.workbench_owner_slug}"
   
   workbench_common_tags = {
     Project     = "private-fin-data-platform"
@@ -14,7 +14,7 @@ locals {
 }
 
 resource "snowflake_warehouse" "workbench" {
-  name               = "${local.workbench_identity_name}_wh"
+  name               = "${local.workbench_identity_name}_WH"
   warehouse_size     = "XSMALL"
   auto_suspend       = 60
   initially_suspended = true
@@ -22,12 +22,12 @@ resource "snowflake_warehouse" "workbench" {
 }
 
 resource "snowflake_account_role" "workbench" {
-  name    = "${local.workbench_identity_name}_role"
+  name    = "${local.workbench_identity_name}_ROLE"
   comment = "Developer workbench role for ${var.owner} (dbt execution) | ${local.managed_comment}"
 }
 
 resource "snowflake_service_user" "workbench" {
-  name         = "${local.workbench_identity_name}_user"
+  name         = "${local.workbench_identity_name}_USER"
   default_role = snowflake_account_role.workbench.name
   default_warehouse = snowflake_warehouse.workbench.name
   default_workload_identity {
