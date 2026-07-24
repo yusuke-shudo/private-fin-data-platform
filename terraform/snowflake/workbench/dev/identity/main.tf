@@ -1,5 +1,5 @@
 locals {
-  workbench_owner_slug    = lower(replace(var.owner, "-", "_"))
+  workbench_owner_slug    = upper(replace(var.owner, "-", "_"))
   workbench_identity_name = "workbench_${local.workbench_owner_slug}"
   
   workbench_common_tags = {
