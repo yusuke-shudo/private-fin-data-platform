@@ -5,7 +5,7 @@ set -eux
 # System package updates and installations
 # ==============================================================================
 dnf -y update
-dnf -y install dnf-plugins-core git python3.14 python3.14-pip tmux
+dnf -y install dnf-plugins-core git python3.12 python3.12-pip tmux
 dnf config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo
 dnf -y install gh
 
@@ -123,8 +123,11 @@ loginctl enable-linger ec2-user
 # ==============================================================================
 # Python tools installation
 # ==============================================================================
-python3.14 -m pip install --upgrade pip
-python3.14 -m pip install dbt-core dbt-snowflake sqlfluff
+python3.12 -m pip install --upgrade pip
+cat << EOF > /tmp/requirements.txt
+${requirements_content}
+EOF
+python3.12 -m pip install -r /tmp/requirements.txt
 
 # ==============================================================================
 # Configure persistent dbt log path

@@ -58,8 +58,9 @@ resource "snowflake_grant_privileges_to_account_role" "workbench_datalake_read" 
   account_role_name = snowflake_account_role.workbench.name
 
   privileges = ["USAGE", "SELECT"]
-  on_database {
-    database_name = "DATALAKE_DB"
+  on_account_object {
+    object_type = "DATABASE"
+    object_name = "DATALAKE_DB"
   }
 }
 
@@ -67,8 +68,9 @@ resource "snowflake_grant_privileges_to_account_role" "workbench_datawarehouse_r
   account_role_name = snowflake_account_role.workbench.name
 
   privileges = ["USAGE", "SELECT"]
-  on_database {
-    database_name = "DATAWAREHOUSE_DB"
+  on_account_object {
+    object_type = "DATABASE"
+    object_name = "DATAWAREHOUSE_DB"
   }
 }
 
@@ -78,8 +80,9 @@ resource "snowflake_grant_privileges_to_account_role" "workbench_self_schema_wri
   account_role_name = snowflake_account_role.workbench.name
 
   privileges = ["USAGE", "CREATE SCHEMA"]
-  on_database {
-    database_name = "DATAWAREHOUSE_DB"
+  on_account_object {
+    object_type = "DATABASE"
+    object_name = "DATAWAREHOUSE_DB"
   }
 }
 
