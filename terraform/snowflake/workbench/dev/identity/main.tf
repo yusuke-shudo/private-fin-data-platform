@@ -48,9 +48,9 @@ resource "snowflake_grant_privileges_to_account_role" "workbench_warehouse_usage
   }
 }
 
-# Broad read access for the data lake and the data warehouse so the role can inspect
-# schemas and objects across DATAWAREHOUSE_DB, while still keeping write/create behavior
-# limited to developer-specific schemas.
+# ==========================================
+# DATALAKE_DB 関連の権限設定
+# ==========================================
 
 resource "snowflake_grant_privileges_to_account_role" "workbench_datalake_read" {
   account_role_name = snowflake_account_role.workbench.name
@@ -99,9 +99,13 @@ resource "snowflake_grant_privileges_to_account_role" "workbench_datalake_future
   }
 }
 
-resource "snowflake_grant_privileges_to_account_role" "workbench_datawarehouse_read" {
+# ==========================================
+# DATAWAREHOUSE_DB 関連の権限設定
+# ==========================================
+
+resource "snowflake_grant_privileges_to_account_role" "workbench_datawarehouse_read_and_write" {
   account_role_name = snowflake_account_role.workbench.name
-  privileges        = ["USAGE"]
+  privileges        = ["USAGE", "CREATE SCHEMA"]
   on_account_object {
     object_type = "DATABASE"
     object_name = "DATAWAREHOUSE_DB"
@@ -146,16 +150,9 @@ resource "snowflake_grant_privileges_to_account_role" "workbench_datawarehouse_f
   }
 }
 
-# dbt creates developer-specific custom schemas at runtime, such as staging_yusuke_shudo.
-# The role therefore needs database-level CREATE SCHEMA permission for its own target schema pattern.
-resource "snowflake_grant_privileges_to_account_role" "workbench_self_schema_write" {
-  account_role_name = snowflake_account_role.workbench.name
-  privileges        = ["CREATE SCHEMA"]
-  on_account_object {
-    object_type = "DATABASE"
-    object_name = "DATAWAREHOUSE_DB"
-  }
-}
+# ==========================================
+# ロール付与
+# ==========================================
 
 resource "snowflake_grant_account_role" "workbench_user_role" {
   role_name = snowflake_account_role.workbench.name
