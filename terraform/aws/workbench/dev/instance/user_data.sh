@@ -39,7 +39,7 @@ set -euo pipefail
 TUNNEL_NAME=$(ec2-metadata --instance-id | cut -d ' ' -f 2)
 
 # Check if already authenticated
-if [ -f ~/.vscode-cli/cli-tokens.json ]; then
+if [ -f ~/.vscode/cli/code_tunnel.json ]; then
   echo "✓ Already authenticated. Starting tunnel service..."
   systemctl --user daemon-reload
   systemctl --user enable --now vscode-tunnel.service
