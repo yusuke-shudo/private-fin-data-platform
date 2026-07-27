@@ -140,7 +140,6 @@ DBT_LOG_CONFIG
 # Generate dbt profiles.yml for AWS IAM Workload Identity
 # ==============================================================================
 mkdir -p /home/ec2-user/.dbt
-owner_slug=$(echo "${owner}" | sed 's/-/_/g')
 cat >/home/ec2-user/.dbt/profiles.yml <<EOF
 private_fin_data_platform:
   target: dev
