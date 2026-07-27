@@ -27,4 +27,4 @@ final AS (
     csv_split
 )
 
-SELECT * FROM final;
+SELECT * FROM final

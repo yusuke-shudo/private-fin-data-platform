@@ -140,6 +140,7 @@ DBT_LOG_CONFIG
 # Generate dbt profiles.yml for AWS IAM Workload Identity
 # ==============================================================================
 mkdir -p /home/ec2-user/.dbt
+owner_slug=$(echo "${owner}" | sed 's/-/_/g')
 cat >/home/ec2-user/.dbt/profiles.yml <<EOF
 private_fin_data_platform:
   target: dev
@@ -147,14 +148,13 @@ private_fin_data_platform:
     dev:
       type: snowflake
       account: ${sf_organization_name}-${sf_account_name}
-      user: workbench_${owner}_user
       authenticator: WORKLOAD_IDENTITY
       workload_identity_provider: AWS
       # The Snowflake workbench service user created by Terraform already has a
       # default role configured, so leave role unset here.
       warehouse: workbench_${owner}_wh
       database: DATAWAREHOUSE_DB
-      schema: STAGING
+      schema: ${owner_slug}
       threads: 4
 EOF
 
