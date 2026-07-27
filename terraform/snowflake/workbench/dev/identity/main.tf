@@ -12,11 +12,11 @@ locals {
 }
 
 resource "snowflake_warehouse" "workbench" {
-  name               = "${local.workbench_identity_name}_WH"
-  warehouse_size     = "XSMALL"
-  auto_suspend       = 60
+  name                = "${local.workbench_identity_name}_WH"
+  warehouse_size      = "XSMALL"
+  auto_suspend        = 60
   initially_suspended = true
-  comment            = "Developer workbench warehouse for ${var.owner} | ${local.managed_comment}"
+  comment             = "Developer workbench warehouse for ${var.owner} | ${local.managed_comment}"
 }
 
 resource "snowflake_account_role" "workbench" {
@@ -25,23 +25,23 @@ resource "snowflake_account_role" "workbench" {
 }
 
 resource "snowflake_service_user" "workbench" {
-  name         = "${local.workbench_identity_name}_USER"
-  default_role = snowflake_account_role.workbench.name
+  name              = "${local.workbench_identity_name}_USER"
+  default_role      = snowflake_account_role.workbench.name
   default_warehouse = snowflake_warehouse.workbench.name
   default_workload_identity {
     aws {
       arn = var.aws_iam_role_arn
     }
   }
-  abort_detached_query        = true
-  lock_timeout                = 10
+  abort_detached_query         = true
+  lock_timeout                 = 10
   statement_timeout_in_seconds = 1800
-  comment                     = "Service user for developer workbench (${var.owner}) via AWS IAM Workload Identity | ${local.managed_comment}"
+  comment                      = "Service user for developer workbench (${var.owner}) via AWS IAM Workload Identity | ${local.managed_comment}"
 }
 
 resource "snowflake_grant_privileges_to_account_role" "workbench_warehouse_usage" {
   account_role_name = snowflake_account_role.workbench.name
-  privileges = ["USAGE"]
+  privileges        = ["USAGE"]
   on_account_object {
     object_type = "WAREHOUSE"
     object_name = snowflake_warehouse.workbench.name
@@ -51,6 +51,7 @@ resource "snowflake_grant_privileges_to_account_role" "workbench_warehouse_usage
 # Broad read access for the data lake and the data warehouse so the role can inspect
 # schemas and objects across DATAWAREHOUSE_DB, while still keeping write/create behavior
 # limited to developer-specific schemas.
+
 resource "snowflake_grant_privileges_to_account_role" "workbench_datalake_read" {
   account_role_name = snowflake_account_role.workbench.name
   privileges        = ["USAGE"]
@@ -63,22 +64,16 @@ resource "snowflake_grant_privileges_to_account_role" "workbench_datalake_read" 
 resource "snowflake_grant_privileges_to_account_role" "workbench_datalake_schemas_usage" {
   account_role_name = snowflake_account_role.workbench.name
   privileges        = ["USAGE"]
-  on_schema_object {
-    all {
-      object_type_plural = "SCHEMAS"
-      in_database        = "DATALAKE_DB"
-    }
+  on_schema {
+    all_schemas_in_database = "DATALAKE_DB"
   }
 }
 
 resource "snowflake_grant_privileges_to_account_role" "workbench_datalake_future_schemas_usage" {
   account_role_name = snowflake_account_role.workbench.name
   privileges        = ["USAGE"]
-  on_schema_object {
-    future {
-      object_type_plural = "SCHEMAS"
-      in_database        = "DATALAKE_DB"
-    }
+  on_schema {
+    future_schemas_in_database = "DATALAKE_DB"
   }
 }
 
@@ -116,22 +111,16 @@ resource "snowflake_grant_privileges_to_account_role" "workbench_datawarehouse_r
 resource "snowflake_grant_privileges_to_account_role" "workbench_datawarehouse_schemas_usage" {
   account_role_name = snowflake_account_role.workbench.name
   privileges        = ["USAGE"]
-  on_schema_object {
-    all {
-      object_type_plural = "SCHEMAS"
-      in_database        = "DATAWAREHOUSE_DB"
-    }
+  on_schema {
+    all_schemas_in_database = "DATAWAREHOUSE_DB"
   }
 }
 
 resource "snowflake_grant_privileges_to_account_role" "workbench_datawarehouse_future_schemas_usage" {
   account_role_name = snowflake_account_role.workbench.name
   privileges        = ["USAGE"]
-  on_schema_object {
-    future {
-      object_type_plural = "SCHEMAS"
-      in_database        = "DATAWAREHOUSE_DB"
-    }
+  on_schema {
+    future_schemas_in_database = "DATAWAREHOUSE_DB"
   }
 }
 
@@ -161,7 +150,7 @@ resource "snowflake_grant_privileges_to_account_role" "workbench_datawarehouse_f
 # The role therefore needs database-level CREATE SCHEMA permission for its own target schema pattern.
 resource "snowflake_grant_privileges_to_account_role" "workbench_self_schema_write" {
   account_role_name = snowflake_account_role.workbench.name
-  privileges = ["CREATE SCHEMA"]
+  privileges        = ["CREATE SCHEMA"]
   on_account_object {
     object_type = "DATABASE"
     object_name = "DATAWAREHOUSE_DB"
