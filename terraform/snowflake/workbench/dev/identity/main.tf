@@ -1,7 +1,6 @@
 locals {
   workbench_owner_slug    = upper(replace(var.owner, "-", "_"))
   workbench_identity_name = "WORKBENCH_${local.workbench_owner_slug}"
-  
   workbench_common_tags = {
     Project     = "private-fin-data-platform"
     ManagedBy   = "Terraform"
@@ -9,7 +8,6 @@ locals {
     Scope       = "workbench"
     Owner       = var.owner
   }
-  
   managed_comment = "Managed by Terraform (repo: private-fin-data-platform)"
 }
 
@@ -43,7 +41,6 @@ resource "snowflake_service_user" "workbench" {
 
 resource "snowflake_grant_privileges_to_account_role" "workbench_warehouse_usage" {
   account_role_name = snowflake_account_role.workbench.name
-
   privileges = ["USAGE"]
   on_account_object {
     object_type = "WAREHOUSE"
@@ -63,11 +60,44 @@ resource "snowflake_grant_privileges_to_account_role" "workbench_datalake_read" 
   }
 }
 
+resource "snowflake_grant_privileges_to_account_role" "workbench_datalake_schemas_usage" {
+  account_role_name = snowflake_account_role.workbench.name
+  privileges        = ["USAGE"]
+  on_schema_object {
+    all {
+      object_type_plural = "SCHEMAS"
+      in_database        = "DATALAKE_DB"
+    }
+  }
+}
+
+resource "snowflake_grant_privileges_to_account_role" "workbench_datalake_future_schemas_usage" {
+  account_role_name = snowflake_account_role.workbench.name
+  privileges        = ["USAGE"]
+  on_schema_object {
+    future {
+      object_type_plural = "SCHEMAS"
+      in_database        = "DATALAKE_DB"
+    }
+  }
+}
+
 resource "snowflake_grant_privileges_to_account_role" "workbench_datalake_tables_read" {
   account_role_name = snowflake_account_role.workbench.name
   privileges        = ["SELECT"]
   on_schema_object {
     all {
+      object_type_plural = "TABLES"
+      in_database        = "DATALAKE_DB"
+    }
+  }
+}
+
+resource "snowflake_grant_privileges_to_account_role" "workbench_datalake_future_tables_read" {
+  account_role_name = snowflake_account_role.workbench.name
+  privileges        = ["SELECT"]
+  on_schema_object {
+    future {
       object_type_plural = "TABLES"
       in_database        = "DATALAKE_DB"
     }
@@ -83,6 +113,28 @@ resource "snowflake_grant_privileges_to_account_role" "workbench_datawarehouse_r
   }
 }
 
+resource "snowflake_grant_privileges_to_account_role" "workbench_datawarehouse_schemas_usage" {
+  account_role_name = snowflake_account_role.workbench.name
+  privileges        = ["USAGE"]
+  on_schema_object {
+    all {
+      object_type_plural = "SCHEMAS"
+      in_database        = "DATAWAREHOUSE_DB"
+    }
+  }
+}
+
+resource "snowflake_grant_privileges_to_account_role" "workbench_datawarehouse_future_schemas_usage" {
+  account_role_name = snowflake_account_role.workbench.name
+  privileges        = ["USAGE"]
+  on_schema_object {
+    future {
+      object_type_plural = "SCHEMAS"
+      in_database        = "DATAWAREHOUSE_DB"
+    }
+  }
+}
+
 resource "snowflake_grant_privileges_to_account_role" "workbench_datawarehouse_tables_read" {
   account_role_name = snowflake_account_role.workbench.name
   privileges        = ["SELECT"]
@@ -94,12 +146,22 @@ resource "snowflake_grant_privileges_to_account_role" "workbench_datawarehouse_t
   }
 }
 
+resource "snowflake_grant_privileges_to_account_role" "workbench_datawarehouse_future_tables_read" {
+  account_role_name = snowflake_account_role.workbench.name
+  privileges        = ["SELECT"]
+  on_schema_object {
+    future {
+      object_type_plural = "TABLES"
+      in_database        = "DATAWAREHOUSE_DB"
+    }
+  }
+}
+
 # dbt creates developer-specific custom schemas at runtime, such as staging_yusuke_shudo.
 # The role therefore needs database-level CREATE SCHEMA permission for its own target schema pattern.
 resource "snowflake_grant_privileges_to_account_role" "workbench_self_schema_write" {
   account_role_name = snowflake_account_role.workbench.name
-
-  privileges = ["USAGE", "CREATE SCHEMA"]
+  privileges = ["CREATE SCHEMA"]
   on_account_object {
     object_type = "DATABASE"
     object_name = "DATAWAREHOUSE_DB"
