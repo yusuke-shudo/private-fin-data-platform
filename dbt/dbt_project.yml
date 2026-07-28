@@ -23,4 +23,9 @@ models:
   private_fin_data_platform:
     staging:
       +database: datawarehouse_db
+      +schema: staging
+      +materialized: table
+    core:
+      +database: datawarehouse_db
+      +schema: core
       +materialized: view
