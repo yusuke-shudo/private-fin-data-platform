@@ -8,10 +8,11 @@ sources:
     tables:
       - name: home_loan_schedule_raw
         description: Raw home loan schedule data from PayPay Bank (SJIS-encoded CSV)
-        meta:
-          primary_key: [file_path, line_number]
+        config:
+          meta:
+            primary_key: [file_path, line_number]
         columns:
-          - name: ingest_at_utc
+          - name: ingested_at_utc
             description: UTC timestamp when data was ingested into Snowflake
             tests:
               - not_null

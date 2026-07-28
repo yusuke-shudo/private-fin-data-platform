@@ -151,7 +151,7 @@ private_fin_data_platform:
       workload_identity_provider: AWS
       # The Snowflake workbench service user created by Terraform already has a
       # default role configured, so leave role unset here.
-      warehouse: workbench_${owner}_wh
+      warehouse: workbench_${owner_slug}_wh
       database: DATAWAREHOUSE_DB
       schema: ${owner_slug}
       threads: 4

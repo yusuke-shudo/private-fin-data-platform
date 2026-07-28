@@ -22,7 +22,7 @@ final AS (
     NULLIF(col_array[5]::VARCHAR, '-')::NUMBER AS extra_interest_amount,
     col_array[6]::NUMBER(4, 2) AS annual_interest_rate,
     col_array[7]::NUMBER AS remaining_balance,
-    ingest_at_utc
+    ingested_at_utc
   FROM
     csv_split
 )

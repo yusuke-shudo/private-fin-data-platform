@@ -24,7 +24,7 @@ models:
     staging:
       +database: datawarehouse_db
       +schema: staging
-      +materialized: table
+      +materialized: view
     core:
       +database: datawarehouse_db
       +schema: core
