@@ -4,7 +4,7 @@ schemachange による DATALAKE_DB スキーマ定義。
 
 ## Current Schema (Final State after all migrations)
 
-### home_loan_schedule_raw
+### paypay_bank.home_loan_schedule_raw
 ```sql
 CREATE TABLE datalake_db.paypay_bank.home_loan_schedule_raw (
   ingested_at_utc  TIMESTAMP_NTZ  NOT NULL,
@@ -17,7 +17,7 @@ WITH TAG (common_db.governance.object_managed_by = 'schemachange')
 ;
 ```
 
-### home_loan_schedule_json
+### paypay_bank.home_loan_schedule_json
 ```sql
 CREATE TABLE datalake_db.paypay_bank.home_loan_schedule_json (
   ingested_at_utc  TIMESTAMP_NTZ  NOT NULL,
@@ -30,14 +30,40 @@ WITH TAG (common_db.governance.object_managed_by = 'schemachange')
 ;
 ```
 
-### sbi_tokutei_profit_loss_report_raw
+### sbi_securities.domestic_trade_history_raw
 ```sql
-CREATE TABLE datalake_db.sbi_securities.sbi_tokutei_profit_loss_report_raw (
+CREATE TABLE datalake_db.sbi_securities.domestic_trade_history_raw (
   ingested_at_utc  TIMESTAMP_NTZ  NOT NULL,
   file_path        VARCHAR        NOT NULL,
   line_number      NUMBER         NOT NULL,
   raw_text         VARCHAR        NOT NULL,
-  CONSTRAINT pk_sbi_tokutei_profit_loss_report_raw PRIMARY KEY (file_path, line_number) RELY
+  CONSTRAINT pk_domestic_trade_history_raw PRIMARY KEY (file_path, line_number) RELY
+)
+WITH TAG (common_db.governance.object_managed_by = 'schemachange')
+;
+```
+
+### sbi_securities.foreign_trade_history_raw
+```sql
+CREATE TABLE datalake_db.sbi_securities.foreign_trade_history_raw (
+  ingested_at_utc  TIMESTAMP_NTZ  NOT NULL,
+  file_path        VARCHAR        NOT NULL,
+  line_number      NUMBER         NOT NULL,
+  raw_text         VARCHAR        NOT NULL,
+  CONSTRAINT pk_foreign_trade_history_raw PRIMARY KEY (file_path, line_number) RELY
+)
+WITH TAG (common_db.governance.object_managed_by = 'schemachange')
+;
+```
+
+### sbi_securities.tokutei_profit_loss_report_raw
+```sql
+CREATE TABLE datalake_db.sbi_securities.tokutei_profit_loss_report_raw (
+  ingested_at_utc  TIMESTAMP_NTZ  NOT NULL,
+  file_path        VARCHAR        NOT NULL,
+  line_number      NUMBER         NOT NULL,
+  raw_text         VARCHAR        NOT NULL,
+  CONSTRAINT pk_tokutei_profit_loss_report_raw PRIMARY KEY (file_path, line_number) RELY
 )
 WITH TAG (common_db.governance.object_managed_by = 'schemachange')
 ;

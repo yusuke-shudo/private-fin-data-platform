@@ -6,12 +6,13 @@ sources:
     database: datalake_db
     schema: sbi_securities
     tables:
-      - name: sbi_tokutei_profit_loss_report_raw
+      - name: tokutei_profit_loss_report_raw
         description: Raw Tokutei Profit & Loss Report data from SBI Securities (SJIS-encoded CSV)
-        meta:
-          primary_key: [file_path, line_number]
+        config:
+          meta:
+            primary_key: [file_path, line_number]
         columns:
-          - name: ingest_at_utc
+          - name: ingested_at_utc
             description: UTC timestamp when data was ingested into Snowflake
             tests:
               - not_null

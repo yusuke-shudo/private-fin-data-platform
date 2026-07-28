@@ -10,7 +10,7 @@ AS
 $$
 DECLARE
 
-  sql        VARCHAR;
+  sql  VARCHAR;
 
 BEGIN
 
@@ -22,7 +22,7 @@ BEGIN
     '  ' || :p_target_table_fqn,
     'FROM (',
     '  SELECT',
-    '    CONVERT_TIMEZONE(\'UTC\', CURRENT_TIMESTAMP())::TIMESTAMP_NTZ AS ingest_at_utc,',
+    '    CONVERT_TIMEZONE(\'UTC\', CURRENT_TIMESTAMP())::TIMESTAMP_NTZ AS ingested_at_utc,',
     '    METADATA$FILENAME AS file_path,',
     '    METADATA$FILE_ROW_NUMBER AS line_number,',
     '    $1 AS raw_text',
@@ -75,7 +75,7 @@ BEGIN
     '  ' || tmp_table,
     'FROM (',
     '  SELECT',
-    '    CONVERT_TIMEZONE(\'UTC\', CURRENT_TIMESTAMP())::TIMESTAMP_NTZ AS ingest_at_utc,',
+    '    CONVERT_TIMEZONE(\'UTC\', CURRENT_TIMESTAMP())::TIMESTAMP_NTZ AS ingested_at_utc,',
     '    METADATA$FILENAME AS file_path,',
     '    METADATA$FILE_ROW_NUMBER AS line_number,',
     '    $1 AS raw_text',
@@ -178,7 +178,7 @@ BEGIN
   INSERT INTO
     IDENTIFIER(:p_target_table_fqn)
   SELECT
-    CONVERT_TIMEZONE('UTC', CURRENT_TIMESTAMP())::TIMESTAMP_NTZ AS ingest_at_utc,
+    CONVERT_TIMEZONE('UTC', CURRENT_TIMESTAMP())::TIMESTAMP_NTZ AS ingested_at_utc,
     file_path,
     line_number,
     OBJECT_DELETE(
@@ -218,8 +218,20 @@ BEGIN
   );
 
   CALL datalake_db.common.proc_load_raw_full_refresh(
-    'datalake_db.sbi_securities.sbi_tokutei_profit_loss_report_raw',
-    'datalake_db.sbi_securities.stage_sbi_securities/profit_loss_report/',
+    'datalake_db.sbi_securities.domestic_trade_history_raw',
+    'datalake_db.sbi_securities.stage_sbi_securities/domestic_trade_history/',
+    'datalake_db.common.ff_nodelimiter_sjis'
+  );
+
+  CALL datalake_db.common.proc_load_raw_full_refresh(
+    'datalake_db.sbi_securities.foreign_trade_history_raw',
+    'datalake_db.sbi_securities.stage_sbi_securities/foreign_trade_history/',
+    'datalake_db.common.ff_nodelimiter_sjis'
+  );
+
+  CALL datalake_db.common.proc_load_raw_full_refresh(
+    'datalake_db.sbi_securities.tokutei_profit_loss_report_raw',
+    'datalake_db.sbi_securities.stage_sbi_securities/tokutei_profit_loss_report/',
     'datalake_db.common.ff_nodelimiter_sjis'
   );
 

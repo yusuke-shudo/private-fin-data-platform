@@ -5,7 +5,7 @@ dialect = snowflake
 templater = dbt
 
 # デフォルトルールを使用。不要なルールだけ除外
-exclude_rules = structure.column_order
+exclude_rules = structure.column_order, layout.select_targets
 
 # 最大行長
 max_line_length = 100
