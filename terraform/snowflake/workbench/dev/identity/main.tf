@@ -159,7 +159,7 @@ resource "snowflake_grant_account_role" "workbench_user_role" {
   user_name = snowflake_service_user.workbench.name
 }
 
-resource "snowflake_grant_account_role_to_account_role" "workbench_to_sysadmin" {
+resource "snowflake_grant_account_role" "workbench_to_sysadmin" {
+  role_name        = snowflake_account_role.workbench.name
   parent_role_name = "SYSADMIN"
-  grant_role_name  = snowflake_account_role.workbench.name
 }
