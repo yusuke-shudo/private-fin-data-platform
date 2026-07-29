@@ -1,79 +1,41 @@
 WITH source_data AS (
-  SELECT * FROM {{ source('sbi_securities', 'sbi_tokutei_profit_loss_report_raw') }}
+  SELECT * FROM {{ source('sbi_securities', 'tokutei_profit_loss_report_raw') }}
 ),
 
-csv_split AS (
+extracted_rows AS (
   SELECT
-    SPLIT(REPLACE(raw_text, '"'), ',') AS col_array,
+    IFF(line_number = 5, SPLIT(REPLACE(raw_text, '"'), ','), NULL) AS col_array,
+    IFF(
+      line_number = 5, TO_DATE(col_array[0]::VARCHAR, 'YYYY年MM月DD日'), NULL
+    ) AS settlement_start_date,
+    IFF(
+      line_number = 5, TO_DATE(col_array[1]::VARCHAR, 'YYYY年MM月DD日'), NULL
+    ) AS settlement_end_date,
+    IFF(line_number = 8, raw_text::NUMBER, NULL) AS total_capital_gains_tax,
+    IFF(line_number = 11, raw_text::NUMBER, NULL) AS total_realized_pl,
+    IFF(line_number = 14, raw_text::NUMBER, NULL) AS total_dividend_withholding_tax,
+    IFF(line_number = 17, raw_text::NUMBER, NULL) AS total_gross_dividend,
+    file_path,
     ingested_at_utc
   FROM
     source_data
   WHERE
-    line_number = 5
-),
-
-summary1 AS (
-  SELECT
-    TO_DATE(col_array[0]::VARCHAR, 'YYYY/MM/DD') AS settlement_start_date,
-    TO_DATE(col_array[1]::VARCHAR, 'YYYY/MM/DD') AS settlement_end_date,
-    ingested_at_utc
-  FROM
-    csv_split
-),
-
-summary2 AS (
-  SELECT
-    raw_text::NUMBER AS total_capital_gains_tax
-  FROM
-    source_data
-  WHERE
-    line_number = 8
-),
-
-summary3 AS (
-  SELECT
-    raw_text::NUMBER AS total_realized_pl
-  FROM
-    source_data
-  WHERE
-    line_number = 11
-),
-
-summary4 AS (
-  SELECT
-    raw_text::NUMBER AS total_dividend_withholding_tax
-  FROM
-    source_data
-  WHERE
-    line_number = 14
-),
-
-summary5 AS (
-  SELECT
-    raw_text::NUMBER AS total_gross_dividend
-  FROM
-    source_data
-  WHERE
-    line_number = 17
+    line_number IN (5, 8, 11, 14, 17)
 ),
 
 final AS (
   SELECT
-    summary1.*,
-    summary2.*,
-    summary3.*,
-    summary4.*,
-    summary5.*
+    MAX(settlement_start_date) AS settlement_start_date,
+    MAX(settlement_end_date) AS settlement_end_date,
+    MAX(total_realized_pl) AS total_realized_pl,
+    MAX(total_capital_gains_tax) AS total_capital_gains_tax,
+    MAX(total_gross_dividend) AS total_gross_dividend,
+    MAX(total_dividend_withholding_tax) AS total_dividend_withholding_tax,
+    MAX(ingested_at_utc) AS ingested_at_utc
   FROM
-    summary1
-  CROSS JOIN
-    summary2
-  CROSS JOIN
-    summary3
-  CROSS JOIN
-    summary4
-  CROSS JOIN
-    summary5
+    extracted_rows
+  GROUP BY
+    file_path
 )
 
 SELECT * FROM final

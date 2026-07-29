@@ -5,35 +5,62 @@ models:
     description: Staging model for PayPay Bank home loan schedule (Bronze → Silver)
     columns:
       - name: payment_date
-        description: Date of payment
+        description: Date of payment (約定返済日)
         tests:
           - not_null
       - name: payment_amount
-        description: Total payment amount (principal + interest)
+        description: Total payment amount (principal + interest) (返済金額(元利合計))
         tests:
           - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              inclusive: false
       - name: principal_amount
-        description: Principal portion of payment
+        description: Principal portion of payment (返済金額(元金))
         tests:
           - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              inclusive: false
       - name: interest_amount
-        description: Interest portion of payment
+        description: Interest portion of payment (返済金額(利息))
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              inclusive: false
       - name: extra_principal_amount
-        description: Extra principal payment (if any)
+        description: Extra principal payment (if any) (増額返済金額(元金))
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+              inclusive: false
       - name: extra_interest_amount
-        description: Extra interest payment (if any)
+        description: Extra interest payment (if any) (増額返済金額(利息))
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+              inclusive: false
       - name: annual_interest_rate
-        description: Annual interest rate (%)
+        description: Annual interest rate (%) (金利)
         tests:
           - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              inclusive: false
       - name: remaining_balance
-        description: Remaining loan balance after payment
+        description: Remaining loan balance after payment (返済後残高)
         tests:
           - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
       - name: ingested_at_utc
-        description: UTC timestamp when raw data was ingested into Snowflake
+        description: UTC timestamp when raw data was ingested into Snowflake (データ取込日時(UTC))
         tests:
           - not_null
     tests:
       - dbt_constraints.primary_key:
           column_name: payment_date
+      - dbt_utils.expression_is_true:
+          name: check_payment_amount_equals_principal_plus_interest
+          expression: "payment_amount = principal_amount + interest_amount + COALESCE(extra_principal_amount, 0) + COALESCE(extra_interest_amount, 0)"

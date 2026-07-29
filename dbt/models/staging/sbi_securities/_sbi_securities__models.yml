@@ -2,5 +2,48 @@ version: 2
 
 models:
   - name: stg_sbi_securities__tokutei_profit_loss_report_yearly_summary
-  - name: stg_sbi_securities__tokutei_profit_loss_report_trades
-  - name: stg_sbi_securities__tokutei_profit_loss_report_dividends
+    description: Staging model for SBI Securities Tokutei Profit Loss Report Yearly Summary (Bronze → Silver)
+    columns:
+      - name: settlement_start_date
+        description: Start date of the settlement period (受渡開始年月日)
+        tests:
+          - not_null
+      - name: settlement_end_date
+        description: End date of the settlement period (受渡終了年月日)
+        tests:
+          - not_null
+      - name: total_realized_pl
+        description: Total realized profit or loss amount (実現損益金額合計)
+        tests:
+          - not_null
+      - name: total_capital_gains_tax
+        description: Total capital gains tax withheld (譲渡益税徴収額合計)
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+      - name: total_gross_dividend
+        description: Total gross dividend amount before withholding tax (配当金額等合計(税引き前))
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+      - name: total_dividend_withholding_tax
+        description: Total withholding tax amount on dividends (配当所得税徴収額合計)
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+      - name: ingested_at_utc
+        description: UTC timestamp when raw data was ingested into Snowflake
+        tests:
+          - not_null
+    tests:
+      - dbt_constraints.primary_key:
+          column_name: settlement_start_date
+      - dbt_utils.expression_is_true:
+          name: check_settlement_start_date_is_before_end_date
+          expression: "settlement_start_date <= settlement_end_date"
+      - dbt_utils.expression_is_true:
+          name: check_settlement_dates_are_in_same_year
+          expression: "YEAR(settlement_start_date) = YEAR(settlement_end_date)"

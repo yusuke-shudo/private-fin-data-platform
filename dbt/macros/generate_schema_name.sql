@@ -4,9 +4,9 @@
 
         {{ custom_schema_name | trim | lower }}
 
-    {%- elif custom_schema_name is not none -%}
+    {%- elif target.name == 'dev' and custom_schema_name is not none -%}
 
-        {{ '_' ~ custom_schema_name ~ '_' ~ target.schema | trim | lower }}
+        {{ '_' ~ target.schema ~ '_' ~ custom_schema_name | trim | lower }}
 
     {%- else -%}
 
