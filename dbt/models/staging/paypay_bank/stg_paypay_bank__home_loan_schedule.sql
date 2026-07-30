@@ -4,7 +4,7 @@ WITH source_data AS (
 
 csv_split AS (
   SELECT
-    SPLIT(REPLACE(raw_text, '"'), ',') AS col_array,
+    PARSE_JSON('[' || raw_text || ']') AS col_array,
     ingested_at_utc
   FROM
     source_data

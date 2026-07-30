@@ -1,0 +1,104 @@
+version: 2
+
+models:
+  - name: stg_monex_securities__all_trade_and_cash_history
+    description: Staging model for MONEX Securities All Trade and Cash History (Bronze → Silver)
+    columns:
+      - name: unique_execution_key
+        description: Generated business primary key for this model (Execution ID + Sub ID) (固有約定キー)
+        data_tests:
+          - not_null
+      - name: execution_id
+        description: Synthetic unique identifier based on trade date, ticker code, and transaction type (約定番号)
+        data_tests:
+          - not_null
+      - name: execution_sub_id
+        description: Sequential sub-identifier for trades with identical execution attributes (約定番号枝番)
+        data_tests:
+          - not_null
+      - name: trade_date
+        description: Date when the trade was executed (約定日)
+        data_tests:
+          - not_null
+      - name: settlement_date
+        description: Date when the transaction was settled (受渡日)
+        data_tests:
+          - not_null
+      - name: account_type
+        description: Category of the trading account (e.g., Tokutei, General, NISA) (口座)
+      - name: security_type
+        description: Type of security (e.g., Domestic Stock, Investment Trust) (商品)
+      - name: security_type
+        description: Type of security (e.g., Domestic Stock, Investment Trust) (商品)
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['先物', 'オプション']
+              config:
+                where: "security_type IS NOT NULL"
+      - name: transaction_type
+        description: Type of transaction (e.g., Buy, Sell, Deposit, Withdrawal) (取引)
+        data_tests:
+          - not_null
+      - name: ticker_code
+        description: Unique identifier for the financial security (銘柄コード)
+      - name: security_name
+        description: Name of the financial security or description of cash flow (銘柄名)
+      - name: quantity
+        description: Number of shares or units traded (数量)
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: unit_price
+        description: Execution price per share or unit (単価)
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: commission_amount
+        description: Trading commission fee paid to the broker (手数料)
+      - name: tax_amount
+        description: Tax withheld from the transaction (税金)
+      - name: dividend_and_distribution_amount
+        description: Amount received from interest, dividends, distributions, or redemptions (利金・分配金・償還金)
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: settlement_amount
+        description: Net cash flow of the settlement (受渡金額)
+      - name: open_trade_date
+        description: Date when the margin or credit position was opened (建約定日)
+      - name: open_unit_price
+        description: Execution price per share or unit for the open position (建単価)
+      - name: open_settlement_amount
+        description: Total execution amount when opening the position (建約定金額)
+      - name: open_commission_amount
+        description: Commission fee paid when opening the position (建手数料)
+      - name: open_commission_tax_amount
+        description: Consumption tax on the open position commission fee (建手数料消費税)
+      - name: administrative_fee
+        description: Administrative management fee for credit transactions (事務管理費)
+      - name: stock_transfer_fee
+        description: Fee paid for changing the name of share registration (名義書換料)
+      - name: long_premium_amount
+        description: Interest paid to the lender in margin trading (順日歩)
+      - name: short_premium_amount
+        description: Premium charges for borrowing stock in margin trading (逆日歩)
+      - name: stock_lending_fee
+        description: Stock lending fee paid by the short seller in margin trading (貸株料)
+      - name: miscellaneous_expenses
+        description: Total miscellaneous expenses associated with the trade (諸経費)
+      - name: remarks
+        description: Additional notes or remarks regarding the transaction (備考)
+    tests:
+      - dbt_constraints.primary_key:
+          column_name: unique_execution_key
+      - dbt_utils.expression_is_true:
+          name: check_monex_trade_date_is_before_or_equal_to_settlement_date
+          arguments:
+            expression: "trade_date <= settlement_date"

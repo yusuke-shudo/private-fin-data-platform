@@ -25,7 +25,13 @@ models:
       +database: datawarehouse_db
       +schema: staging
       +materialized: view
-    core:
+    intermediate:
       +database: datawarehouse_db
-      +schema: core
-      +materialized: view
+      +schema: intermediate
+      +materialized: ephemeral
+    mart:
+      +database: datawarehouse_db
+      +schema: mart
+      +materialized: table
+      core:
+        +schema: core

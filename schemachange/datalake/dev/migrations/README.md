@@ -56,6 +56,19 @@ WITH TAG (common_db.governance.object_managed_by = 'schemachange')
 ;
 ```
 
+### sbi_securities.futures_options_trade_history_raw
+```sql
+CREATE TABLE datalake_db.sbi_securities.futures_options_trade_history_raw (
+  ingested_at_utc  TIMESTAMP_NTZ  NOT NULL,
+  file_path        VARCHAR        NOT NULL,
+  line_number      NUMBER         NOT NULL,
+  raw_text         VARCHAR        NOT NULL,
+  CONSTRAINT pk_futures_options_trade_history_raw PRIMARY KEY (file_path, line_number) RELY
+)
+WITH TAG (common_db.governance.object_managed_by = 'schemachange')
+;
+```
+
 ### sbi_securities.tokutei_profit_loss_report_raw
 ```sql
 CREATE TABLE datalake_db.sbi_securities.tokutei_profit_loss_report_raw (
@@ -64,6 +77,19 @@ CREATE TABLE datalake_db.sbi_securities.tokutei_profit_loss_report_raw (
   line_number      NUMBER         NOT NULL,
   raw_text         VARCHAR        NOT NULL,
   CONSTRAINT pk_tokutei_profit_loss_report_raw PRIMARY KEY (file_path, line_number) RELY
+)
+WITH TAG (common_db.governance.object_managed_by = 'schemachange')
+;
+```
+
+### monex_securities.all_trade_and_cash_history_raw
+```sql
+CREATE TABLE datalake_db.monex_securities.all_trade_and_cash_history_raw (
+  ingested_at_utc  TIMESTAMP_NTZ  NOT NULL,
+  file_path        VARCHAR        NOT NULL,
+  line_number      NUMBER         NOT NULL,
+  raw_text         VARCHAR        NOT NULL,
+  CONSTRAINT pk_all_trade_and_cash_history_raw PRIMARY KEY (file_path, line_number) RELY
 )
 WITH TAG (common_db.governance.object_managed_by = 'schemachange')
 ;

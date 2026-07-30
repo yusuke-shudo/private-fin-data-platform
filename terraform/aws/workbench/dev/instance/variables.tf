@@ -32,7 +32,7 @@ variable "az_slot" {
 
 variable "workbench_instance_type" {
   type        = string
-  description = "EC2 instance type for developer workbench instance. NOTE: t4g.micro is insufficient for VS Code tunnel (OOM). Use t4g.small (2GB) or larger."
+  description = "EC2 instance type for developer workbench instance. Minimum t4g.small (2GB) recommended."
   default     = "t4g.small"
 }
 
