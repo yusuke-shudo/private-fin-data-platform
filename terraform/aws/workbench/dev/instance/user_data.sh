@@ -8,6 +8,8 @@ dnf -y update
 dnf -y install dnf-plugins-core git python3.12 python3.12-pip tmux
 dnf config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo
 dnf -y install gh
+dnf config-manager --add-repo https://rpm.releases.hashicorp.com/AmazonLinux/hashicorp.repo
+dnf -y install terraform
 
 # ==============================================================================
 # Configure 2GB swap to reduce OOM risk on small instance types

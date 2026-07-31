@@ -13,6 +13,7 @@ locals {
 
 resource "snowflake_warehouse" "workbench" {
   name                = "${local.workbench_identity_name}_WH"
+  generation          = "1"
   warehouse_size      = "XSMALL"
   auto_suspend        = 60
   initially_suspended = true
