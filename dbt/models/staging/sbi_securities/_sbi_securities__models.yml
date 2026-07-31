@@ -1,0 +1,152 @@
+version: 2
+
+models:
+  - name: stg_sbi_securities__futures_options_trade_history
+    description: Staging model for SBI Securities Futures & Options Trades (Bronze → Silver)
+    columns:
+      - name: contract_name
+        description: Name of the futures or options contract (契約名)
+        data_tests:
+          - not_null
+      - name: sq_date
+        description: Special Quotation settlement date for options or futures (SQ日)
+        data_tests:
+          - not_null
+      - name: market_name
+        description: Name of the exchange or market (市場)
+      - name: executed_at_jst
+        description: Timestamp when the trade was executed (約定日時)
+        data_tests:
+          - not_null
+      - name: trade_date
+        description: Business date of the trade (取引日)
+        data_tests:
+          - not_null
+      - name: settlement_date
+        description: Date when the transaction was settled (受渡日)
+      - name: transaction_type
+        description: Type of transaction (e.g., New Buy, Close Sell) (取引)
+        data_tests:
+          - not_null
+      - name: execution_price
+        description: Price per contract at which the trade executed (約定価格)
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: execution_quantity
+        description: Number of contracts traded (約定数量)
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: false
+      - name: commission_amount
+        description: Trading commission fee paid to the broker (手数料)
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: tax_amount
+        description: Consumption tax on the commission fee (消費税)
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: execution_amount
+        description: Total value of the execution (約定価格 × 約定数量 × 乗数) (約定金額)
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: settlement_amount
+        description: Net cash flow of the settlement (受渡金額)
+      - name: position_open_date
+        description: Original execution date of the position being closed (新規建日)
+      - name: position_open_price
+        description: Original execution price of the position being closed (新規建単価)
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: position_open_commission_amount
+        description: Commission fee paid when the position was opened (新規建手数料)
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: position_open_tax_amount
+        description: Consumption tax on the open position commission fee (新規建消費税)
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: realized_profit_loss
+        description: Realized profit or loss from the closed position (決済損益)
+      - name: ingested_at_utc
+        description: UTC timestamp when raw data was ingested into Snowflake (データ取込日時(UTC))
+        data_tests:
+          - not_null
+    data_tests:
+      - dbt_constraints.primary_key:
+          column_name: unique_execution_key
+      - dbt_utils.expression_is_true:
+          name: check_sbi_fno_trade_date_is_before_or_equal_to_settlement_date
+          arguments:
+            expression: "settlement_date IS NULL OR trade_date <= settlement_date"
+  - name: stg_sbi_securities__tokutei_profit_loss_report_yearly_summary
+    description: Staging model for SBI Securities Tokutei Profit Loss Report Yearly Summary (Bronze → Silver)
+    columns:
+      - name: settlement_start_date
+        description: Start date of the settlement period (受渡開始年月日)
+        data_tests:
+          - not_null
+      - name: settlement_end_date
+        description: End date of the settlement period (受渡終了年月日)
+        data_tests:
+          - not_null
+      - name: total_realized_pl
+        description: Total realized profit or loss amount (実現損益金額合計)
+        data_tests:
+          - not_null
+      - name: total_capital_gains_tax
+        description: Total capital gains tax withheld (譲渡益税徴収額合計)
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: total_gross_dividend
+        description: Total gross dividend amount before withholding tax (配当金額等合計(税引き前))
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: total_dividend_withholding_tax
+        description: Total withholding tax amount on dividends (配当所得税徴収額合計)
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: ingested_at_utc
+        description: UTC timestamp when raw data was ingested into Snowflake (データ取込日時(UTC))
+        data_tests:
+          - not_null
+    data_tests:
+      - dbt_constraints.primary_key:
+          column_name: settlement_start_date
+      - dbt_utils.expression_is_true:
+          name: check_settlement_start_date_is_before_end_date
+          arguments:
+            expression: "settlement_start_date <= settlement_end_date"
+      - dbt_utils.expression_is_true:
+          name: check_settlement_dates_are_in_same_year
+          arguments:
+            expression: "YEAR(settlement_start_date) = YEAR(settlement_end_date)"

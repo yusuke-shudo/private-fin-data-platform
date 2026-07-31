@@ -1,0 +1,74 @@
+version: 2
+
+models:
+  - name: stg_paypay_bank__home_loan_schedule
+    description: Staging model for PayPay Bank home loan schedule (Bronze → Silver)
+    columns:
+      - name: payment_date
+        description: Date of payment (約定返済日)
+        data_tests:
+          - not_null
+      - name: payment_amount
+        description: Total payment amount (principal + interest) (返済金額(元利合計))
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: false
+      - name: principal_amount
+        description: Principal portion of payment (返済金額(元金))
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: false
+      - name: interest_amount
+        description: Interest portion of payment (返済金額(利息))
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: false
+      - name: extra_principal_amount
+        description: Extra principal payment (if any) (増額返済金額(元金))
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: false
+      - name: extra_interest_amount
+        description: Extra interest payment (if any) (増額返済金額(利息))
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: false
+      - name: annual_interest_rate
+        description: Annual interest rate (%) (金利)
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: false
+      - name: remaining_balance
+        description: Remaining loan balance after payment (返済後残高)
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: ingested_at_utc
+        description: UTC timestamp when raw data was ingested into Snowflake (データ取込日時(UTC))
+        data_tests:
+          - not_null
+    data_tests:
+      - dbt_constraints.primary_key:
+          column_name: payment_date
+      - dbt_utils.expression_is_true:
+          name: check_payment_amount_equals_principal_plus_interest
+          arguments:
+            expression: "payment_amount = principal_amount + interest_amount + COALESCE(extra_principal_amount, 0) + COALESCE(extra_interest_amount, 0)"

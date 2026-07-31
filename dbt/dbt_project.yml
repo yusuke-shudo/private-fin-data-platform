@@ -22,6 +22,16 @@ vars:
 models:
   private_fin_data_platform:
     staging:
-      +database: DATAWAREHOUSE_DB
-      +schema: STAGING
+      +database: datawarehouse_db
+      +schema: staging
+      +materialized: view
+    intermediate:
+      +database: datawarehouse_db
+      +schema: intermediate
+      +materialized: ephemeral
+    mart:
+      +database: datawarehouse_db
+      +schema: mart
       +materialized: table
+      core:
+        +schema: core
