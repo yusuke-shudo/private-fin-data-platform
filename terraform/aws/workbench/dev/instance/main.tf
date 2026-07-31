@@ -52,9 +52,10 @@ resource "aws_instance" "workbench" {
   user_data_replace_on_change = true
 
   user_data = base64encode(templatefile("${path.module}/user_data.sh", {
-    owner                 = var.owner
-    sf_organization_name  = var.sf_organization_name
-    sf_account_name       = var.sf_account_name
+    owner_slug           = replace(var.owner, "-", "_")
+    sf_organization_name = var.sf_organization_name
+    sf_account_name      = var.sf_account_name
+    requirements_content = file("${path.module}/requirements.txt")
   }))
 
   root_block_device {

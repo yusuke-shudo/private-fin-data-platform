@@ -10,14 +10,16 @@
 -- ------------------------------------------------------------------------------
 USE ROLE SYSADMIN;
 
-CREATE OR REPLACE WAREHOUSE cicd_infra_wh
+CREATE OR ALTER WAREHOUSE cicd_infra_wh
+  GENERATION = '1'
   WAREHOUSE_SIZE = 'XSMALL'
   AUTO_SUSPEND = 60
   INITIALLY_SUSPENDED = TRUE
   COMMENT = 'Dedicated warehouse for CI/CD infrastructure and schema deployment'
 ;
 
-CREATE OR REPLACE WAREHOUSE cicd_data_wh
+CREATE OR ALTER WAREHOUSE cicd_data_wh
+  GENERATION = '1'
   WAREHOUSE_SIZE = 'XSMALL'
   AUTO_SUSPEND = 60
   INITIALLY_SUSPENDED = TRUE
@@ -29,10 +31,10 @@ CREATE OR REPLACE WAREHOUSE cicd_data_wh
 -- ------------------------------------------------------------------------------
 USE ROLE SECURITYADMIN;
 
-CREATE OR REPLACE ROLE cicd_infra_engineer_role;
+CREATE OR ALTER ROLE cicd_infra_engineer_role;
 GRANT ROLE cicd_infra_engineer_role TO ROLE SYSADMIN;
 
-CREATE OR REPLACE ROLE cicd_data_engineer_role;
+CREATE OR ALTER ROLE cicd_data_engineer_role;
 GRANT ROLE cicd_data_engineer_role TO ROLE SYSADMIN;
 
 GRANT USAGE ON WAREHOUSE cicd_infra_wh TO ROLE cicd_infra_engineer_role;

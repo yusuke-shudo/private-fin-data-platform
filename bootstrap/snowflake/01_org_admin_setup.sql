@@ -10,8 +10,9 @@ ALTER ACCOUNT SET TIMEZONE = 'UTC';
 -- [SYSADMIN] 組織アカウント専用の共通ウェアハウス設定
 USE ROLE SYSADMIN;
 
-CREATE OR REPLACE WAREHOUSE compute_wh
+CREATE OR ALTER WAREHOUSE compute_wh
   GENERATION = '1'
+  WAREHOUSE_SIZE = 'XSMALL'
   AUTO_SUSPEND = 60
   INITIALLY_SUSPENDED = TRUE
   COMMENT = 'The only operational warehouse in the organization account'

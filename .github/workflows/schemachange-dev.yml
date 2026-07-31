@@ -44,7 +44,25 @@ jobs:
             | jq -r '.value')
           echo "SNOWFLAKE_TOKEN=$OIDC_TOKEN" >> $GITHUB_ENV
 
-      - name: Run schemachange for Datalake
+      - name: Verify schemachange for Datalake
+        run: |
+          schemachange verify \
+            --root-folder ./schemachange/datalake/${{ env.TARGET_ENV }}/migrations \
+            --config-folder ./schemachange/datalake/${{ env.TARGET_ENV }}
+        env:
+          SNOWFLAKE_ACCOUNT: ${{ format('{0}-{1}', vars.SF_ORGANIZATION_NAME, vars.SF_ACCOUNT_NAME) }}
+          SNOWFLAKE_TOKEN: ${{ env.SNOWFLAKE_TOKEN }}
+
+      - name: Dry-run schemachange for Datalake
+        run: |
+          schemachange deploy --dry-run \
+            --root-folder ./schemachange/datalake/${{ env.TARGET_ENV }}/migrations \
+            --config-folder ./schemachange/datalake/${{ env.TARGET_ENV }}
+        env:
+          SNOWFLAKE_ACCOUNT: ${{ format('{0}-{1}', vars.SF_ORGANIZATION_NAME, vars.SF_ACCOUNT_NAME) }}
+          SNOWFLAKE_TOKEN: ${{ env.SNOWFLAKE_TOKEN }}
+
+      - name: Deploy schemachange for Datalake
         run: |
           schemachange \
             --root-folder ./schemachange/datalake/${{ env.TARGET_ENV }}/migrations \
@@ -53,7 +71,25 @@ jobs:
           SNOWFLAKE_ACCOUNT: ${{ format('{0}-{1}', vars.SF_ORGANIZATION_NAME, vars.SF_ACCOUNT_NAME) }}
           SNOWFLAKE_TOKEN: ${{ env.SNOWFLAKE_TOKEN }}
 
-      - name: Run schemachange for Datawarehouse
+      - name: Verify schemachange for Datawarehouse
+        run: |
+          schemachange verify \
+            --root-folder ./schemachange/datawarehouse/${{ env.TARGET_ENV }}/migrations \
+            --config-folder ./schemachange/datawarehouse/${{ env.TARGET_ENV }}
+        env:
+          SNOWFLAKE_ACCOUNT: ${{ format('{0}-{1}', vars.SF_ORGANIZATION_NAME, vars.SF_ACCOUNT_NAME) }}
+          SNOWFLAKE_TOKEN: ${{ env.SNOWFLAKE_TOKEN }}
+
+      - name: Dry-run schemachange for Datawarehouse
+        run: |
+          schemachange deploy --dry-run \
+            --root-folder ./schemachange/datawarehouse/${{ env.TARGET_ENV }}/migrations \
+            --config-folder ./schemachange/datawarehouse/${{ env.TARGET_ENV }}
+        env:
+          SNOWFLAKE_ACCOUNT: ${{ format('{0}-{1}', vars.SF_ORGANIZATION_NAME, vars.SF_ACCOUNT_NAME) }}
+          SNOWFLAKE_TOKEN: ${{ env.SNOWFLAKE_TOKEN }}
+
+      - name: Deploy schemachange for Datawarehouse
         run: |
           schemachange \
             --root-folder ./schemachange/datawarehouse/${{ env.TARGET_ENV }}/migrations \
@@ -62,7 +98,25 @@ jobs:
           SNOWFLAKE_ACCOUNT: ${{ format('{0}-{1}', vars.SF_ORGANIZATION_NAME, vars.SF_ACCOUNT_NAME) }}
           SNOWFLAKE_TOKEN: ${{ env.SNOWFLAKE_TOKEN }}
 
-      - name: Run schemachange for Datamart
+      - name: Verify schemachange for Datamart
+        run: |
+          schemachange verify \
+            --root-folder ./schemachange/datamart/${{ env.TARGET_ENV }}/migrations \
+            --config-folder ./schemachange/datamart/${{ env.TARGET_ENV }}
+        env:
+          SNOWFLAKE_ACCOUNT: ${{ format('{0}-{1}', vars.SF_ORGANIZATION_NAME, vars.SF_ACCOUNT_NAME) }}
+          SNOWFLAKE_TOKEN: ${{ env.SNOWFLAKE_TOKEN }}
+
+      - name: Dry-run schemachange for Datamart
+        run: |
+          schemachange deploy --dry-run \
+            --root-folder ./schemachange/datamart/${{ env.TARGET_ENV }}/migrations \
+            --config-folder ./schemachange/datamart/${{ env.TARGET_ENV }}
+        env:
+          SNOWFLAKE_ACCOUNT: ${{ format('{0}-{1}', vars.SF_ORGANIZATION_NAME, vars.SF_ACCOUNT_NAME) }}
+          SNOWFLAKE_TOKEN: ${{ env.SNOWFLAKE_TOKEN }}
+
+      - name: Deploy schemachange for Datamart
         run: |
           schemachange \
             --root-folder ./schemachange/datamart/${{ env.TARGET_ENV }}/migrations \
