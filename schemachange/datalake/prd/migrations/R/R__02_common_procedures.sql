@@ -218,6 +218,12 @@ BEGIN
   );
 
   CALL datalake_db.common.proc_load_raw_full_refresh(
+    'datalake_db.orico_credit.home_reform_loan_schedule_raw',
+    'datalake_db.orico_credit.stage_orico_credit/home_reform_loan_schedule/',
+    'datalake_db.common.ff_nodelimiter'
+  );
+
+  CALL datalake_db.common.proc_load_raw_full_refresh(
     'datalake_db.sbi_securities.domestic_trade_history_raw',
     'datalake_db.sbi_securities.stage_sbi_securities/domestic_trade_history/',
     'datalake_db.common.ff_nodelimiter_sjis'
