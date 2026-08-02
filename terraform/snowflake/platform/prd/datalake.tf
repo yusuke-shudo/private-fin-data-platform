@@ -31,6 +31,22 @@ resource "snowflake_stage_external_s3" "paypay_bank_stage" {
   comment              = local.managed_comment
 }
 
+resource "snowflake_schema" "orico_credit" {
+  name     = "ORICO_CREDIT"
+  database = snowflake_database.datalake.name
+  comment  = local.managed_comment
+}
+
+resource "snowflake_stage_external_s3" "orico_credit_stage" {
+  name                 = "STAGE_ORICO_CREDIT"
+  database             = snowflake_database.datalake.name
+  schema               = snowflake_schema.orico_credit.name
+  url                  = "s3://${var.aws_s3_ap_alias}/orico_credit/"
+  aws_access_point_arn = "arn:aws:s3:ap-northeast-1:${var.aws_account_id}:accesspoint/private-fin-sf-ap"
+  storage_integration  = snowflake_storage_integration_aws.s3_integration.name
+  comment              = local.managed_comment
+}
+
 resource "snowflake_schema" "sbi_securities" {
   name     = "SBI_SECURITIES"
   database = snowflake_database.datalake.name
@@ -70,12 +86,14 @@ locals {
     snowflake_schema.schemachange.fully_qualified_name,
     snowflake_schema.common.fully_qualified_name,
     snowflake_schema.paypay_bank.fully_qualified_name,
+    snowflake_schema.orico_credit.fully_qualified_name,
     snowflake_schema.sbi_securities.fully_qualified_name,
     snowflake_schema.monex_securities.fully_qualified_name,
   ]
 
   datalake_stage_object_managed_by_targets = [
     snowflake_stage_external_s3.paypay_bank_stage.fully_qualified_name,
+    snowflake_stage_external_s3.orico_credit_stage.fully_qualified_name,
     snowflake_stage_external_s3.sbi_stage.fully_qualified_name,
     snowflake_stage_external_s3.monex_stage.fully_qualified_name,
   ]
@@ -101,4 +119,3 @@ resource "snowflake_tag_association" "datalake_stage_object_managed_by" {
   tag_id             = snowflake_tag.object_managed_by.fully_qualified_name
   tag_value          = "terraform"
 }
-
