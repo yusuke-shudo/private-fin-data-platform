@@ -1,0 +1,33 @@
+version: 2
+
+seeds:
+  - name: loan_accounts
+    description: Non-sensitive registry of stable internal identifiers and descriptive attributes for loan accounts
+    columns:
+      - name: loan_account_id
+        description: Stable opaque identifier assigned to a loan account by the data platform
+        data_tests:
+          - dbt_constraints.primary_key
+      - name: source_dataset_key
+        description: Stable logical identifier that maps one source dataset to one loan account
+        data_tests:
+          - not_null
+          - unique
+      - name: source_institution
+        description: Institution that issued the loan
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['paypay_bank', 'orico_credit']
+      - name: loan_type
+        description: Business classification of the loan
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['home_loan', 'home_reform_loan']
+      - name: account_display_name
+        description: Mutable human-readable name used when presenting the loan account
+        data_tests:
+          - not_null
