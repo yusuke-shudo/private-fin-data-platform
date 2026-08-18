@@ -19,6 +19,9 @@ clean-targets:
 vars:
   enable_paypay_home_loan_schedule: false
 
+on-run-end:
+  - "{{ apply_dbt_object_tags(results) }}"
+
 seeds:
   private_fin_data_platform:
     reference:

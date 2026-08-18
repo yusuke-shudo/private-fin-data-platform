@@ -5,11 +5,31 @@ set -eux
 # System package updates and installations
 # ==============================================================================
 dnf -y update
-dnf -y install dnf-plugins-core git python3.12 python3.12-pip tmux
+dnf -y install dnf-plugins-core git python3.12 python3.12-pip tmux wget unzip
 dnf config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo
 dnf -y install gh
 dnf config-manager --add-repo https://rpm.releases.hashicorp.com/AmazonLinux/hashicorp.repo
 dnf -y install terraform
+
+# ==============================================================================
+# Install uv and the Snowflake CLI
+# ==============================================================================
+# uv is the preferred modern Python toolchain for this environment. We install
+# it first and then install the Snowflake CLI via uv so the tooling is managed
+# consistently and can later be migrated away from pip entirely.
+curl -LsSf https://astral.sh/uv/install.sh | sh
+export PATH="$HOME/.local/bin:$PATH"
+if ! command -v uv >/dev/null 2>&1; then
+  echo "uv was not found in PATH after installation" >&2
+  exit 1
+fi
+uv tool install --python python3.12 snowflake-cli
+export PATH="$HOME/.local/bin:$PATH"
+if ! command -v snow >/dev/null 2>&1; then
+  echo "Snowflake CLI was not found in PATH after installation" >&2
+  exit 1
+fi
+snow --version
 
 # ==============================================================================
 # Configure 2GB swap to reduce OOM risk on small instance types
