@@ -1,0 +1,87 @@
+version: 2
+
+models:
+  - name: int_loan_schedules_unioned
+    description: Unified loan repayment schedules across financial institutions and loan types
+    columns:
+      - name: payment_date
+        description: Scheduled payment date
+        data_tests:
+          - not_null
+      - name: source_institution
+        description: Financial institution that issued the loan
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['paypay_bank', 'orico_credit']
+      - name: loan_type
+        description: Type of loan issued by the source institution
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['home_loan', 'home_reform_loan']
+      - name: payment_amount
+        description: Total scheduled payment amount, including principal and interest or equivalent fees
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: false
+      - name: principal_amount
+        description: Principal portion of the scheduled payment
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: false
+      - name: interest_amount
+        description: Interest or equivalent fee portion of the scheduled payment
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: false
+      - name: extra_principal_amount
+        description: Additional principal payment amount, if any
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: false
+      - name: extra_interest_amount
+        description: Additional interest or equivalent fee payment amount, if any
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: false
+      - name: annual_interest_rate
+        description: Annual interest rate as a percentage
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: remaining_balance
+        description: Remaining principal balance after the scheduled payment
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: ingested_at_utc
+        description: UTC timestamp when the source record was ingested into the raw layer
+        data_tests:
+          - not_null
+    data_tests:
+      - dbt_constraints.primary_key:
+          arguments:
+            column_names:
+              - payment_date
+              - source_institution
+              - loan_type

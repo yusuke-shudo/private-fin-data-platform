@@ -1,0 +1,3 @@
+loan_account_id,source_dataset_key,source_institution,loan_type,account_display_name
+loan_0001,paypay_bank_home_loan_1,paypay_bank,home_loan,PayPay Bank Home Loan
+loan_0002,orico_credit_home_reform_loan_1,orico_credit,home_reform_loan,Orico Credit Home Reform Loan

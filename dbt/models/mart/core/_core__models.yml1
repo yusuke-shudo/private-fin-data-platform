@@ -1,0 +1,89 @@
+version: 2
+
+models:
+  - name: fct_loan_schedules
+    description: Unified loan repayment schedule across all financial institutions and loan types
+    columns:
+      - name: payment_date
+        description: Date of payment
+        data_tests:
+          - not_null
+      - name: source_institution
+        description: Financial institution that issued the loan (e.g. paypay_bank, orico_credit)
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['paypay_bank', 'orico_credit']
+      - name: loan_type
+        description: Type of loan (e.g. home_loan, home_reform_loan)
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['home_loan', 'home_reform_loan']
+      - name: payment_amount
+        description: Total payment amount (principal + interest)
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: false
+      - name: principal_amount
+        description: Principal portion of payment
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: false
+      - name: interest_amount
+        description: Interest (or equivalent fee) portion of payment
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: false
+      - name: extra_principal_amount
+        description: Extra principal payment (if any)
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: false
+      - name: extra_interest_amount
+        description: Extra interest payment (if any)
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: false
+      - name: annual_interest_rate
+        description: Annual interest rate (%)
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: true
+      - name: remaining_balance
+        description: Remaining loan balance after payment
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: true
+      - name: ingested_at_utc
+        description: UTC timestamp when the source record was ingested into Snowflake raw layer
+        data_tests:
+          - not_null
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - payment_date
+              - source_institution
+              - loan_type
