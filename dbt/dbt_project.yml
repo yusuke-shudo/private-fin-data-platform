@@ -16,6 +16,18 @@ clean-targets:
   - target
   - dbt_packages
 
+vars:
+  enable_paypay_home_loan_schedule: false
+
+on-run-end:
+  - "{{ apply_dbt_object_tags(results) }}"
+
+seeds:
+  private_fin_data_platform:
+    reference:
+      +database: DATAWAREHOUSE_DB
+      +schema: REFERENCE
+      +quote_columns: false
 models:
   private_fin_data_platform:
     staging:

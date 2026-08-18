@@ -50,6 +50,36 @@ resource "snowflake_grant_privileges_to_account_role" "workbench_warehouse_usage
 }
 
 # ==========================================
+# COMMON_DB 関連の権限設定
+# ==========================================
+
+resource "snowflake_grant_privileges_to_account_role" "workbench_common_usage" {
+  account_role_name = snowflake_account_role.workbench.name
+  privileges        = ["USAGE"]
+  on_account_object {
+    object_type = "DATABASE"
+    object_name = "COMMON_DB"
+  }
+}
+
+resource "snowflake_grant_privileges_to_account_role" "workbench_common_governance_schema_usage" {
+  account_role_name = snowflake_account_role.workbench.name
+  privileges        = ["USAGE"]
+  on_schema {
+    schema_name = "COMMON_DB.GOVERNANCE"
+  }
+}
+
+resource "snowflake_grant_privileges_to_account_role" "workbench_common_object_managed_by_apply" {
+  account_role_name = snowflake_account_role.workbench.name
+  privileges        = ["APPLY"]
+  on_schema_object {
+    object_type = "TAG"
+    object_name = "COMMON_DB.GOVERNANCE.OBJECT_MANAGED_BY"
+  }
+}
+
+# ==========================================
 # DATALAKE_DB 関連の権限設定
 # ==========================================
 
