@@ -127,6 +127,8 @@ After connecting through Session Manager, switch to the development user and clo
 ```bash
 sudo -iu ec2-user
 gh auth login
+git config --global user.name "$(gh api user --jq '.login')"
+git config --global user.email "$(gh api user --jq '.id')+$(gh api user --jq '.login')@users.noreply.github.com"
 gh repo clone yusuke-shudo/private-fin-data-platform ~/private-fin-data-platform
 ```
 
