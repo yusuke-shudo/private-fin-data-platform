@@ -10,7 +10,7 @@ on:
   push:
     branches: [ main ]
     paths:
-      - 'terraform/snowflake/prd/**'
+      - 'terraform/snowflake/platform/prd/**'
       - '.github/workflows/terraform-snowflake-prd.yml'
   workflow_dispatch:
 
