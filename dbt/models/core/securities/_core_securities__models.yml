@@ -14,6 +14,28 @@ models:
         description: Name or identifier of the futures or options contract (契約名)
         data_tests:
           - not_null
+      - name: product_name
+        description: Standardized product name (e.g., 'Nikkei 225', 'Nikkei 225 mini', 'Nikkei 225 micro') (商品名)
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Nikkei 225', 'Nikkei 225 mini', 'Nikkei 225 micro']
+      - name: product_type
+        description: Product type classification (Futures or Options) (商品タイプ)
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Futures', 'Options']
+      - name: contract_month
+        description: Expiration month in YYYY-MM format (契約月)
+        data_tests:
+          - not_null
+      - name: option_type
+        description: Option type if applicable (CALL or PUT) (オプションタイプ)
+      - name: strike_price
+        description: Strike price for options trades (行使価格)
       - name: transaction_type
         description: Type of transaction (e.g., Buy, Sell, New, Close) (取引種別)
         data_tests:
