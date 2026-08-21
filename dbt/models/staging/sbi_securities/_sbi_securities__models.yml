@@ -12,6 +12,16 @@ models:
         description: Line number within the source file (行番号)
         data_tests:
           - not_null
+      - name: executed_at_jst
+        description: Timestamp when the trade was executed (約定日時)
+        data_tests:
+          - not_null
+      - name: trade_date
+        description: Business date of the trade (取引日)
+        data_tests:
+          - not_null
+      - name: settlement_date
+        description: Date when the transaction was settled (受渡日)
       - name: contract_name
         description: Name or identifier of the futures or options contract (契約名)
         data_tests:
@@ -23,6 +33,13 @@ models:
           - accepted_values:
               arguments:
                 values: ['Nikkei 225', 'Nikkei 225 mini', 'Nikkei 225 micro']
+      - name: contract_lot_size
+        description: Lot size of the contract (契約単位)
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [10, 100, 1000]
       - name: product_type
         description: Type of product (Futures or Options) (商品タイプ)
         data_tests:
@@ -30,8 +47,8 @@ models:
           - accepted_values:
               arguments:
                 values: ['Futures', 'Options']
-      - name: contract_month
-        description: Contract month in YYYY-MM format (限月)
+      - name: sq_date
+        description: Special Quotation settlement date for options or futures (SQ日)
         data_tests:
           - not_null
       - name: option_type
@@ -46,26 +63,9 @@ models:
           - dbt_utils.accepted_range:
               arguments:
                 min_value: 0
-              config:
-                where: "strike_price IS NOT NULL"
-      - name: sq_date
-        description: Special Quotation settlement date for options or futures (SQ日)
-        data_tests:
-          - not_null
-      - name: market_name
-        description: Name of the exchange or market (市場)
-      - name: executed_at_jst
-        description: Timestamp when the trade was executed (約定日時)
-        data_tests:
-          - not_null
-      - name: trade_date
-        description: Business date of the trade (取引日)
-        data_tests:
-          - not_null
-      - name: settlement_date
-        description: Date when the transaction was settled (受渡日)
+                inclusive: false
       - name: transaction_type
-        description: Type of transaction (e.g., New Buy, Close Sell) (取引)
+        description: "Type of transaction (e.g., New Buy, Close Sell). Note: 新規買(放棄) (abandonment) is treated as a 0-yen SELL to close an unwanted position (取引). All amounts reflect trader's cash perspective."
         data_tests:
           - not_null
           - accepted_values:
@@ -92,8 +92,12 @@ models:
           - accepted_values:
               arguments:
                 values: ['MANUAL', 'SQ_SETTLEMENT', 'SQ_EXERCISE', 'SQ_ASSIGNMENT', 'SQ_EXPIRY']
+      - name: market_name
+        description: Name of the exchange or market (市場)
+        data_tests:
+          - not_null
       - name: unit_price
-        description: Price per contract at which the trade executed (約定価格)
+        description: "Price per contract at which the trade executed, from trader's perspective. (約定価格)"
         data_tests:
           - not_null
           - dbt_utils.accepted_range:
@@ -107,51 +111,60 @@ models:
               arguments:
                 min_value: 0
                 inclusive: false
+      - name: execution_amount
+        description: "Total value of the execution: FLOOR(unit_price × quantity × contract_lot_size). Represents the notional amount traded from trader's perspective. (約定金額)"
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
       - name: commission_amount
-        description: Trading commission fee paid to the broker (手数料)
+        description: "Trading commission fee paid to the broker at execution. Always non-negative. (手数料)"
         data_tests:
           - not_null
           - dbt_utils.accepted_range:
               arguments:
                 min_value: 0
       - name: tax_amount
-        description: Consumption tax on the commission fee (消費税)
-        data_tests:
-          - not_null
-          - dbt_utils.accepted_range:
-              arguments:
-                min_value: 0
-      - name: execution_amount
-        description: Total value of the execution (約定価格 × 約定数量 × 乗数) (約定金額)
+        description: "Consumption tax on the commission fee. Always non-negative. (消費税)"
         data_tests:
           - not_null
           - dbt_utils.accepted_range:
               arguments:
                 min_value: 0
       - name: settlement_amount
-        description: Net cash flow of the settlement (受渡金額)
+        description: "Net cash flow from trader's perspective: positive = cash inflow (sell), negative = cash outflow (buy). Commissions and taxes already deducted. NULL for Futures OPEN trades. (受渡金額)"
       - name: position_open_date
-        description: Original execution date of the position being closed (新規建日)
+        description: "Original execution date when the position was opened. NULL for OPEN trades. For CLOSE trades, this is the trade_date of the corresponding OPEN trade. (新規建日)"
       - name: position_open_price
-        description: Original execution price of the position being closed (新規建単価)
+        description: "Original execution price when the position was opened. NULL for OPEN trades. For CLOSE trades, this is the unit_price from the corresponding OPEN trade. (新規建単価)"
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: false
+      - name: position_open_execution_amount
+        description: "Execution amount at position open time, calculated for CLOSE trades only. Used to derive realized_profit_loss for closed positions. (新規建約定金額)"
         data_tests:
           - dbt_utils.accepted_range:
               arguments:
                 min_value: 0
       - name: position_open_commission_amount
-        description: Commission fee paid when the position was opened (新規建手数料)
+        description: "Commission fee paid when the position was originally opened. Always non-negative. NULL for OPEN trades. (新規建手数料)"
         data_tests:
           - dbt_utils.accepted_range:
               arguments:
                 min_value: 0
       - name: position_open_tax_amount
-        description: Consumption tax on the open position commission fee (新規建消費税)
+        description: "Consumption tax on the open position commission fee. Always non-negative. NULL for OPEN trades. (新規建消費税)"
         data_tests:
           - dbt_utils.accepted_range:
               arguments:
                 min_value: 0
+      - name: position_open_settlement_amount
+        description: "Settlement amount at position open time from trader's perspective (CLOSE trades only). Represents cash flow that occurred when the position was originally opened. Formula: position_open_execution_amount * trade_side_multiplier - (open_commission + open_tax). Used to calculate realized_profit_loss. (新規建受渡金額)"
       - name: realized_profit_loss
-        description: Realized profit or loss from the closed position (決済損益)
+        description: "Realized profit or loss from CLOSE trades. Formula: settlement_amount + position_open_settlement_amount (for Options only). For Futures, realized_profit_loss = settlement_amount. NULL for OPEN trades. Positive = profit, negative = loss from trader's perspective. (決済損益)"
       - name: ingested_at_utc
         description: UTC timestamp when raw data was ingested into Snowflake (データ取込日時(UTC))
         data_tests:
@@ -162,14 +175,81 @@ models:
             column_names:
               - file_path
               - line_number
+      # Common Tests
       - dbt_utils.expression_is_true:
           name: check_sbi_fno_trade_date_is_before_or_equal_to_settlement_date
           arguments:
-            expression: "settlement_date IS NULL OR trade_date <= settlement_date"
+            expression: "trade_date <= settlement_date"
       - dbt_utils.expression_is_true:
-          name: check_options_must_have_strike_price
+          name: check_sbi_fno_execution_method_for_open_trades
           arguments:
-            expression: "product_type = 'Futures' OR strike_price IS NOT NULL"
+            expression: "NOT (trade_action = 'OPEN') OR execution_method = 'MANUAL'"
+      - dbt_utils.expression_is_true:
+          name: check_sbi_fno_settlement_date_is_not_null_unless_sq_expiry
+          arguments:
+            expression: "execution_method = 'SQ_EXPIRY' OR settlement_date IS NOT NULL"
+      - dbt_utils.expression_is_true:
+          name: check_sbi_fno_zero_amounts_for_sq_expiry
+          arguments:
+            expression: "execution_method <> 'SQ_EXPIRY' OR (unit_price = 0 AND commission_amount = 0 AND tax_amount = 0)"
+      - dbt_utils.expression_is_true:
+          name: check_sbi_fno_open_position_fields_are_null_for_open_trades
+          arguments:
+            expression: "trade_action <> 'OPEN' OR (position_open_date IS NULL AND position_open_price IS NULL AND position_open_execution_amount IS NULL AND position_open_commission_amount IS NULL AND position_open_tax_amount IS NULL AND position_open_settlement_amount IS NULL AND realized_profit_loss IS NULL)"
+      - dbt_utils.expression_is_true:
+          name: check_sbi_fno_execution_amount_formula
+          arguments:
+            expression: "execution_amount = FLOOR(unit_price * quantity * contract_lot_size)"
+      - dbt_utils.expression_is_true:
+          name: check_sbi_fno_position_open_execution_amount_formula
+          arguments:
+            expression: "NOT (trade_action = 'CLOSE') OR position_open_execution_amount = FLOOR(position_open_price * quantity * contract_lot_size)"
+      # Futures Tests
+      - dbt_utils.expression_is_true:
+          name: check_futures_must_have_null_option_type_and_strike_price
+          arguments:
+            expression: "product_type <> 'Futures' OR (option_type IS NULL AND strike_price IS NULL)"
+      - dbt_utils.expression_is_true:
+          name: check_sbi_fno_execution_method_for_futures_close
+          arguments:
+            expression: "NOT (product_type = 'Futures' AND trade_action = 'CLOSE') OR execution_method IN ('MANUAL', 'SQ_SETTLEMENT')"
+      - dbt_utils.expression_is_true:
+          name: check_sbi_fno_settlement_amount_for_futures_open
+          arguments:
+            expression: "NOT (product_type = 'Futures' AND trade_action = 'OPEN') OR settlement_amount IS NULL"
+      - dbt_utils.expression_is_true:
+          name: check_sbi_fno_position_open_settlement_amount_for_futures_close
+          arguments:
+            expression: "NOT (product_type = 'Futures' AND trade_action = 'CLOSE') OR position_open_settlement_amount IS NULL"
+      - dbt_utils.expression_is_true:
+          name: check_sbi_fno_settlement_amount_for_futures_close
+          arguments:
+            expression: "NOT (product_type = 'Futures' AND trade_action = 'CLOSE') OR settlement_amount = ((execution_amount - position_open_execution_amount) * IFF(trade_side = 'BUY', -1, 1) - (position_open_commission_amount + position_open_tax_amount + commission_amount + tax_amount))"
+      - dbt_utils.expression_is_true:
+          name: check_sbi_fno_realized_profit_loss_for_futures_close
+          arguments:
+            expression: "NOT (product_type = 'Futures' AND trade_action = 'CLOSE') OR realized_profit_loss = settlement_amount"
+      # Options Tests
+      - dbt_utils.expression_is_true:
+          name: check_options_must_have_option_type_and_strike_price
+          arguments:
+            expression: "product_type <> 'Options' OR (option_type IS NOT NULL AND strike_price IS NOT NULL)"
+      - dbt_utils.expression_is_true:
+          name: check_sbi_fno_execution_method_for_options_close
+          arguments:
+            expression: "NOT (product_type = 'Options' AND trade_action = 'CLOSE') OR execution_method IN ('MANUAL', 'SQ_EXERCISE', 'SQ_ASSIGNMENT', 'SQ_EXPIRY')"
+      - dbt_utils.expression_is_true:
+          name: check_sbi_fno_position_open_settlement_amount_for_options_close
+          arguments:
+            expression: "NOT (product_type = 'Options' AND trade_action = 'CLOSE') OR position_open_settlement_amount = (position_open_execution_amount * IFF(trade_side = 'SELL', -1, 1) - (position_open_commission_amount + position_open_tax_amount))"
+      - dbt_utils.expression_is_true:
+          name: check_sbi_fno_settlement_amount_for_options
+          arguments:
+            expression: "product_type <> 'Options' OR settlement_amount = (execution_amount * IFF(trade_side = 'SELL', 1, -1) - (commission_amount + tax_amount))"
+      - dbt_utils.expression_is_true:
+          name: check_sbi_fno_realized_profit_loss_for_options_close
+          arguments:
+            expression: "NOT (product_type = 'Options' AND trade_action = 'CLOSE') OR realized_profit_loss = settlement_amount + position_open_settlement_amount"
   - name: stg_sbi_securities__tokutei_profit_loss_report_yearly_summary
     description: Staging model for SBI Securities Tokutei Profit Loss Report Yearly Summary (Bronze → Silver)
     columns:
