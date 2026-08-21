@@ -1,0 +1,102 @@
+version: 2
+
+models:
+  - name: int_securities_futures_options_trades_unioned
+    description: Intermediate model consolidating SBI and MONEX Futures & Options trades with normalized structure
+    columns:
+      - name: trade_date
+        description: Date when the trade was executed (取引日)
+        data_tests:
+          - not_null
+      - name: settlement_date
+        description: Date when the transaction was settled (受渡日)
+      - name: contract_name
+        description: Name or identifier of the futures or options contract (契約名)
+        data_tests:
+          - not_null
+      - name: transaction_type
+        description: Type of transaction (e.g., Buy, Sell, Close) (取引)
+        data_tests:
+          - not_null
+      - name: trade_side
+        description: Side of the trade from trader perspective (BUY or SELL) (売買方向)
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['BUY', 'SELL']
+      - name: trade_action
+        description: Action of the trade (OPEN or CLOSE) (取引アクション)
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['OPEN', 'CLOSE']
+      - name: execution_method
+        description: Method of execution (MANUAL, SQ_SETTLEMENT, SQ_EXERCISE, SQ_ASSIGNMENT, SQ_EXPIRY) (実行方法)
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['MANUAL', 'SQ_SETTLEMENT', 'SQ_EXERCISE', 'SQ_ASSIGNMENT', 'SQ_EXPIRY']
+      - name: source_institution
+        description: Source institution identifier (e.g., 'sbi_securities', 'monex_securities') (ソース機関)
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['sbi_securities', 'monex_securities']
+      - name: seq_no
+        description: Sequential number within the same trade context (取引シーケンス番号)
+        data_tests:
+          - not_null
+      - name: file_path
+        description: Source file path in external stage (ファイルパス)
+      - name: line_number
+        description: Line number within the source file (行番号)
+      - name: quantity
+        description: Number of contracts traded (数量)
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: false
+      - name: unit_price
+        description: Execution price per contract (単価)
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: commission_amount
+        description: Trading commission fee paid to the broker (手数料)
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: tax_amount
+        description: Tax withheld from the transaction (税金)
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: settlement_amount
+        description: Net cash flow of the settlement (受渡金額)
+      - name: ingested_at_utc
+        description: UTC timestamp when raw data was ingested into Snowflake (データ取込日時(UTC))
+        data_tests:
+          - not_null
+    data_tests:
+      - dbt_constraints.primary_key:
+          arguments:
+            column_names:
+              - trade_date
+              - contract_name
+              - transaction_type
+              - source_institution
+              - seq_no
+      - dbt_utils.expression_is_true:
+          name: check_fno_trade_date_is_before_or_equal_to_settlement_date
+          arguments:
+            expression: "settlement_date IS NULL OR trade_date <= settlement_date"

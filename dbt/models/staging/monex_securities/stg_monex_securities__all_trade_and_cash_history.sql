@@ -4,8 +4,9 @@ WITH source_data AS (
 
 csv_split AS (
   SELECT
-    PARSE_JSON('[' || raw_text || ']') AS col_array,
+    file_path,
     line_number,
+    PARSE_JSON('[' || raw_text || ']') AS col_array,
     ingested_at_utc
   FROM
     source_data
@@ -13,8 +14,10 @@ csv_split AS (
     line_number > 2
 ),
 
-parsed_records AS (
+final AS (
   SELECT
+    file_path,
+    line_number,
     TO_DATE(col_array[0]::VARCHAR, 'YYYY/MM/DD') AS trade_date,
     TO_DATE(col_array[1]::VARCHAR, 'YYYY/MM/DD') AS settlement_date,
     NULLIF(TRIM(col_array[2]::VARCHAR), '') AS account_type,
@@ -40,30 +43,9 @@ parsed_records AS (
     NULLIF(REPLACE(col_array[22]::VARCHAR, ',', ''), '')::NUMBER AS stock_lending_fee,
     NULLIF(REPLACE(col_array[23]::VARCHAR, ',', ''), '')::NUMBER AS miscellaneous_expenses,
     NULLIF(TRIM(col_array[24]::VARCHAR), '') AS remarks,
-    line_number,
-    ingested_at_utc,
+    ingested_at_utc
   FROM
     csv_split
-),
-
-numbered_trades AS (
-  SELECT
-    TO_CHAR(trade_date, 'YYYYMMDD') || '-' || COALESCE(ticker_code, 'CASH') || '-' || transaction_type AS execution_id,
-    ROW_NUMBER() OVER (
-      PARTITION BY execution_id
-      ORDER BY line_number
-    )::VARCHAR AS execution_sub_id,
-    *
-  FROM
-    parsed_records
-),
-
-final AS (
-  SELECT
-    execution_id || '-' || execution_sub_id AS unique_execution_key,
-    *
-  FROM
-    numbered_trades
 )
 
 SELECT * FROM final

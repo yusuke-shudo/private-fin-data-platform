@@ -4,6 +4,9 @@ WITH all_history AS (
 
 final AS (
   SELECT
+    file_path,
+    line_number,
+    trade_date,
     settlement_date,
     transaction_type,
     settlement_amount,
@@ -11,7 +14,7 @@ final AS (
   FROM
     all_history
   WHERE
-    product_name IS NULL
+    security_type IS NULL
 )
 
 SELECT * FROM final

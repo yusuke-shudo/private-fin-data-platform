@@ -1,13 +1,15 @@
 version: 2
 
 models:
-  - name: int_loan_schedules_unioned
-    description: Unified loan repayment schedules across financial institutions with loan account identifiers
+  - name: dim_loan_accounts
+    description: Master dimension of loan accounts with stable identifiers and attributes
     columns:
       - name: loan_account_id
         description: Stable opaque identifier assigned to a loan account by the data platform
         data_tests:
           - not_null
+          - unique
+          - dbt_constraints.primary_key
       - name: source_institution
         description: Institution that issued the loan
         data_tests:
@@ -22,12 +24,38 @@ models:
           - accepted_values:
               arguments:
                 values: ['home_loan', 'home_reform_loan']
+      - name: account_display_name
+        description: Mutable human-readable name used when presenting the loan account
+        data_tests:
+          - not_null
+
+  - name: fct_loan_schedules
+    description: Fact table of loan payment schedules with payment and balance history at payment date grain
+    columns:
+      - name: loan_account_id
+        description: Foreign key to dim_loan_accounts; identifies the loan account entity
+        data_tests:
+          - not_null
+      - name: source_institution
+        description: Institution that issued the loan (denormalized from dim_loan_accounts)
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['paypay_bank', 'orico_credit']
+      - name: loan_type
+        description: Business classification of the loan (denormalized from dim_loan_accounts)
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['home_loan', 'home_reform_loan']
       - name: payment_date
-        description: Scheduled payment date
+        description: Calendar date on which the payment was due or made; part of composite primary key
         data_tests:
           - not_null
       - name: payment_amount
-        description: Total scheduled payment amount, including principal and interest or equivalent fees
+        description: Total scheduled payment amount, including principal and interest or equivalent fees in JPY
         data_tests:
           - not_null
           - dbt_utils.accepted_range:
@@ -35,7 +63,7 @@ models:
                 min_value: 0
                 inclusive: false
       - name: principal_amount
-        description: Principal portion of the scheduled payment
+        description: Principal portion of the scheduled payment in JPY
         data_tests:
           - not_null
           - dbt_utils.accepted_range:
@@ -43,7 +71,7 @@ models:
                 min_value: 0
                 inclusive: false
       - name: interest_amount
-        description: Interest or equivalent fee portion of the scheduled payment
+        description: Interest or equivalent fee portion of the scheduled payment in JPY
         data_tests:
           - not_null
           - dbt_utils.accepted_range:
@@ -51,28 +79,28 @@ models:
                 min_value: 0
                 inclusive: false
       - name: extra_principal_amount
-        description: Additional principal payment amount, if any
+        description: Additional principal payment amount if any in JPY
         data_tests:
           - dbt_utils.accepted_range:
               arguments:
                 min_value: 0
                 inclusive: false
       - name: extra_interest_amount
-        description: Additional interest or equivalent fee payment amount, if any
+        description: Additional interest or equivalent fee payment amount if any in JPY
         data_tests:
           - dbt_utils.accepted_range:
               arguments:
                 min_value: 0
                 inclusive: false
       - name: annual_interest_rate
-        description: Annual interest rate as a percentage
+        description: Annual interest rate as a decimal percentage (e.g., 0.025 for 2.5%)
         data_tests:
           - not_null
           - dbt_utils.accepted_range:
               arguments:
                 min_value: 0
       - name: remaining_balance
-        description: Remaining principal balance after the scheduled payment
+        description: Remaining principal balance after the scheduled payment in JPY
         data_tests:
           - not_null
           - dbt_utils.accepted_range:

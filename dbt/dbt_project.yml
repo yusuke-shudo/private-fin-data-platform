@@ -38,9 +38,15 @@ models:
       +database: datawarehouse_db
       +schema: intermediate
       +materialized: ephemeral
-    mart:
+    core:
       +database: datawarehouse_db
-      +schema: mart
+      +schema: core
       +materialized: table
-      core:
-        +schema: core
+    semantic_models:
+      +database: datawarehouse_db
+      +schema: semantic_models
+      +materialized: semantic_view
+    reports:
+      +database: datamart_db
+      +schema: reports
+      +materialized: table
