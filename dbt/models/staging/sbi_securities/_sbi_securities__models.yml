@@ -250,6 +250,7 @@ models:
           name: check_sbi_fno_realized_profit_loss_for_options_close
           arguments:
             expression: "NOT (product_type = 'Options' AND trade_action = 'CLOSE') OR realized_profit_loss = settlement_amount + position_open_settlement_amount"
+
   - name: stg_sbi_securities__tokutei_profit_loss_report_yearly_summary
     description: Staging model for SBI Securities Tokutei Profit Loss Report Yearly Summary (Bronze → Silver)
     columns:

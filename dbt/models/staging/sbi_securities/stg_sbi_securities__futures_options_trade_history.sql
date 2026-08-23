@@ -49,17 +49,17 @@ final AS (
     ) AS strike_price,
     col_array[4]::VARCHAR AS transaction_type,
     CASE
-      WHEN transaction_type = '新規買' THEN 'BUY'
-      WHEN transaction_type = '新規売' THEN 'SELL'
-      WHEN transaction_type = '新規買(放棄)' THEN 'SELL'
-      WHEN transaction_type = '新規売(消滅)' THEN 'BUY'
-      WHEN transaction_type IN ('決済買', '決済買(割当)') THEN 'BUY'
-      WHEN transaction_type IN ('決済売', '決済売(清算)', '決済売(行使)') THEN 'SELL'
+      WHEN transaction_type IN (
+        '新規買', '決済買', '決済買(割当)', '新規売(消滅)'
+      ) THEN 'BUY'
+      WHEN transaction_type IN (
+        '新規売', '決済売', '決済売(清算)', '決済売(行使)', '新規買(放棄)'
+      ) THEN 'SELL'
     END AS trade_side,
     CASE
       WHEN transaction_type IN ('新規買', '新規売') THEN 'OPEN'
       WHEN transaction_type IN (
-        '新規買(放棄)', '新規売(消滅)', '決済買', '決済買(割当)', '決済売', '決済売(清算)', '決済売(行使)'
+        '決済買', '決済売', '決済買(割当)', '決済売(清算)', '決済売(行使)', '新規売(消滅)', '新規買(放棄)'
       ) THEN 'CLOSE'
     END AS trade_action,
     CASE
@@ -67,7 +67,7 @@ final AS (
       WHEN transaction_type = '決済売(清算)' THEN 'SQ_SETTLEMENT'
       WHEN transaction_type = '決済売(行使)' THEN 'SQ_EXERCISE'
       WHEN transaction_type = '決済買(割当)' THEN 'SQ_ASSIGNMENT'
-      WHEN transaction_type IN ('新規買(放棄)', '新規売(消滅)') THEN 'SQ_EXPIRY'
+      WHEN transaction_type IN ('新規売(消滅)', '新規買(放棄)') THEN 'SQ_EXPIRY'
     END AS execution_method,
     col_array[2]::VARCHAR AS market_name,
     col_array[5]::NUMBER(18, 4) AS unit_price,
