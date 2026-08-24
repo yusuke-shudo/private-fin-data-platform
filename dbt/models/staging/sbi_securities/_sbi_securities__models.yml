@@ -47,6 +47,13 @@ models:
           - accepted_values:
               arguments:
                 values: ['Futures', 'Options']
+      - name: sq_week
+        description: Special Quotation settlement week for options or futures (SQ週)
+        data_tests:
+          - not_null
+          - matches_regex:
+              arguments:
+                pattern: '^[0-9]{2}/(0[1-9]|1[0-2])-[1-5]W$'
       - name: sq_date
         description: Special Quotation settlement date for options or futures (SQ日)
         data_tests:
@@ -71,13 +78,6 @@ models:
           - accepted_values:
               arguments:
                 values: ['新規買', '新規売', '決済売', '決済買', '新規買(放棄)', '新規売(消滅)', '決済売(清算)', '決済売(行使)', '決済買(割当)']
-      - name: trade_side
-        description: Side of the trade from trader perspective (BUY or SELL) (売買方向)
-        data_tests:
-          - not_null
-          - accepted_values:
-              arguments:
-                values: ['BUY', 'SELL']
       - name: trade_action
         description: Action of the trade (OPEN or CLOSE) (取引アクション)
         data_tests:
@@ -85,6 +85,13 @@ models:
           - accepted_values:
               arguments:
                 values: ['OPEN', 'CLOSE']
+      - name: trade_side
+        description: Side of the trade from trader perspective (BUY or SELL) (売買方向)
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['BUY', 'SELL']
       - name: execution_method
         description: Method of execution (MANUAL, SQ_SETTLEMENT, SQ_EXERCISE, SQ_ASSIGNMENT, SQ_EXPIRY) (実行方法)
         data_tests:

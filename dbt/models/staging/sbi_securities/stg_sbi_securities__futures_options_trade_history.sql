@@ -37,6 +37,11 @@ final AS (
       WHEN contract_name LIKE '%先物%' THEN 'Futures'
       WHEN contract_name LIKE '%ＯＰ%' THEN 'Options'
     END AS product_type,
+    IFF(
+      contract_name LIKE '%週限%',
+      REGEXP_REPLACE(contract_name, '^.*(..)年(..)月(.)週限.*$', '\\1/\\2-\\3W'),
+      REGEXP_REPLACE(contract_name, '^.*(..)年(..)月.*$', '\\1/\\2-2W')
+    ) AS sq_week,
     TO_DATE(col_array[18]::VARCHAR, 'YYYY/MM/DD') AS sq_date,
     CASE
       WHEN contract_name LIKE '%コール%' THEN 'CALL'
@@ -49,6 +54,12 @@ final AS (
     ) AS strike_price,
     col_array[4]::VARCHAR AS transaction_type,
     CASE
+      WHEN transaction_type IN ('新規買', '新規売') THEN 'OPEN'
+      WHEN transaction_type IN (
+        '決済買', '決済売', '決済買(割当)', '決済売(清算)', '決済売(行使)', '新規売(消滅)', '新規買(放棄)'
+      ) THEN 'CLOSE'
+    END AS trade_action,
+    CASE
       WHEN transaction_type IN (
         '新規買', '決済買', '決済買(割当)', '新規売(消滅)'
       ) THEN 'BUY'
@@ -56,12 +67,6 @@ final AS (
         '新規売', '決済売', '決済売(清算)', '決済売(行使)', '新規買(放棄)'
       ) THEN 'SELL'
     END AS trade_side,
-    CASE
-      WHEN transaction_type IN ('新規買', '新規売') THEN 'OPEN'
-      WHEN transaction_type IN (
-        '決済買', '決済売', '決済買(割当)', '決済売(清算)', '決済売(行使)', '新規売(消滅)', '新規買(放棄)'
-      ) THEN 'CLOSE'
-    END AS trade_action,
     CASE
       WHEN transaction_type IN ('新規買', '新規売', '決済買', '決済売') THEN 'MANUAL'
       WHEN transaction_type = '決済売(清算)' THEN 'SQ_SETTLEMENT'
@@ -87,7 +92,8 @@ final AS (
     NULLIF(col_array[16]::VARCHAR, '--')::NUMBER AS position_open_tax_amount,
     IFF(
       product_type = 'Options' AND trade_action = 'CLOSE',
-      FLOOR(position_open_price * quantity * contract_lot_size) * IFF(trade_side = 'SELL', -1, 1) - (position_open_commission_amount + position_open_tax_amount),
+      FLOOR(position_open_price * quantity * contract_lot_size) * IFF(trade_side = 'SELL', -1, 1)
+      - (position_open_commission_amount + position_open_tax_amount),
       NULL
     ) AS position_open_settlement_amount,
     NULLIF(col_array[17]::VARCHAR, '--')::NUMBER AS realized_profit_loss,

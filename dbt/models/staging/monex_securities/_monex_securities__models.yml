@@ -174,13 +174,6 @@ models:
           - accepted_values:
               arguments:
                 values: ['買建', '売建', '決済売', '転売', '買戻', 'ＳＱ決済売', '権利割当', '権利消滅', '権利放棄']
-      - name: trade_side
-        description: Side of the trade from trader perspective (BUY or SELL) (売買方向)
-        data_tests:
-          - not_null
-          - accepted_values:
-              arguments:
-                values: ['BUY', 'SELL']
       - name: trade_action
         description: Action of the trade (OPEN or CLOSE) (取引アクション)
         data_tests:
@@ -188,6 +181,13 @@ models:
           - accepted_values:
               arguments:
                 values: ['OPEN', 'CLOSE']
+      - name: trade_side
+        description: Side of the trade from trader perspective (BUY or SELL) (売買方向)
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['BUY', 'SELL']
       - name: execution_method
         description: Method of execution (MANUAL, SQ_SETTLEMENT, SQ_EXERCISE, SQ_ASSIGNMENT, SQ_EXPIRY) (実行方法)
         data_tests:

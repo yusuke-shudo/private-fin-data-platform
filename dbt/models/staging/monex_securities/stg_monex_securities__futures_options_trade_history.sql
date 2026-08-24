@@ -40,16 +40,16 @@ final AS (
     ) AS strike_price,
     transaction_type,
     CASE
+      WHEN transaction_type IN ('買建', '売建') THEN 'OPEN'
+      WHEN transaction_type IN ('買戻', '転売', '決済売', 'ＳＱ決済売') THEN 'CLOSE'
+      WHEN transaction_type IN ('権利割当', '権利消滅', '権利放棄') THEN 'CLOSE'
+    END AS trade_action,
+    CASE
       WHEN transaction_type IN ('買建', '買戻') THEN 'BUY'
       WHEN transaction_type IN ('売建', '転売', '決済売', 'ＳＱ決済売') THEN 'SELL'
       WHEN transaction_type IN ('権利割当', '権利消滅') THEN 'BUY'
       WHEN transaction_type = '権利放棄' THEN 'SELL'
     END AS trade_side,
-    CASE
-      WHEN transaction_type IN ('買建', '売建') THEN 'OPEN'
-      WHEN transaction_type IN ('買戻', '転売', '決済売', 'ＳＱ決済売') THEN 'CLOSE'
-      WHEN transaction_type IN ('権利割当', '権利消滅', '権利放棄') THEN 'CLOSE'
-    END AS trade_action,
     CASE
       WHEN transaction_type IN ('買建', '売建', '買戻', '転売', '決済売') THEN 'MANUAL'
       WHEN transaction_type = 'ＳＱ決済売' THEN 'SQ_SETTLEMENT'
@@ -63,7 +63,7 @@ final AS (
     tax_amount,
     IFF(
       product_type = 'Options' AND trade_side = 'BUY',
-      - settlement_amount,
+      -settlement_amount,
       settlement_amount
     ) AS settlement_amount,
     ingested_at_utc
