@@ -83,7 +83,8 @@ jobs:
 
       - name: dbt Build (Dev)
         working-directory: ./dbt
-        run: dbt build --target dev
+        run: dbt build --target dev --debug
+        timeout-minutes: 30
         env:
           SNOWFLAKE_TOKEN: ${{ env.SNOWFLAKE_TOKEN }}
 
