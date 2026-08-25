@@ -7,8 +7,6 @@ models:
       - name: loan_account_id
         description: Stable opaque identifier assigned to a loan account by the data platform
         data_tests:
-          - not_null
-          - unique
           - dbt_constraints.primary_key
       - name: source_institution
         description: Institution that issued the loan

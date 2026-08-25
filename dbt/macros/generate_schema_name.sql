@@ -4,10 +4,6 @@
 
         {{ '_' ~ target.schema ~ '_' ~ custom_schema_name | trim | lower }}
 
-    {%- elif target.name == 'cicd' and custom_schema_name is not none -%}
-
-        {{ custom_schema_name | trim | lower }}
-
     {%- elif custom_schema_name is not none -%}
 
         {{ custom_schema_name | trim | upper }}

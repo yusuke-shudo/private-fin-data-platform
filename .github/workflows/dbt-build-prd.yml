@@ -57,9 +57,9 @@ jobs:
           mkdir -p ~/.dbt
           cat > ~/.dbt/profiles.yml << EOF
           private_fin_data_platform:
-            target: prod
+            target: cicd_prd
             outputs:
-              prod:
+              cicd_prd:
                 type: snowflake
                 account: ${{ format('{0}-{1}', vars.SF_ORGANIZATION_NAME, vars.SF_ACCOUNT_NAME) }}
                 user: cicd_data_engineer_user
@@ -81,7 +81,7 @@ jobs:
 
       - name: dbt Build (Prd)
         working-directory: ./dbt
-        run: dbt build --target prod --debug
+        run: dbt build --target cicd_prd
         timeout-minutes: 30
         env:
           SNOWFLAKE_TOKEN: ${{ env.SNOWFLAKE_TOKEN }}
