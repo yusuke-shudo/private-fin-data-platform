@@ -40,7 +40,11 @@ jobs:
       - name: Install dbt and dependencies
         run: |
           pip install --upgrade pip
-          pip install dbt-snowflake==${{ env.DBT_VERSION }} dbt-constraints dbt_utils
+          pip install dbt-snowflake==${{ env.DBT_VERSION }}
+
+      - name: Install dbt packages
+        working-directory: ./dbt
+        run: dbt deps
 
       - name: Mint Snowflake OIDC Token
         run: |
