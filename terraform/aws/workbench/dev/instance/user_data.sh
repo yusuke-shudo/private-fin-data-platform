@@ -93,6 +93,32 @@ chown ec2-user:ec2-user /home/ec2-user/.dbt/profiles.yml
 chmod 600 /home/ec2-user/.dbt/profiles.yml
 
 # ==============================================================================
+# Generate Snowflake CLI config.toml for AWS IAM Workload Identity
+# ==============================================================================
+owner_slug_upper=$(echo "${owner_slug}" | tr '[:lower:]' '[:upper:]')
+
+mkdir -p /home/ec2-user/.config/snowflake
+cat >/home/ec2-user/.config/snowflake/config.toml <<EOF
+default_connection_name = "default"
+
+[cli.logs]
+save_logs = true
+path = "/home/ec2-user/.config/snowflake/logs"
+level = "info"
+
+[connections.default]
+account = "${sf_organization_name}-${sf_account_name}"
+user = "WORKBENCH_$${owner_slug_upper}_USER"
+warehouse = "WORKBENCH_$${owner_slug_upper}_WH"
+role = "WORKBENCH_$${owner_slug_upper}_ROLE"
+authenticator = "WORKLOAD_IDENTITY"
+workload_identity_provider = "AWS"
+EOF
+
+chown -R ec2-user:ec2-user /home/ec2-user/.config/snowflake
+chmod 600 /home/ec2-user/.config/snowflake/config.toml
+
+# ==============================================================================
 # MANUAL STEPS (after EC2 startup):
 # ==============================================================================
 # 1. On EC2 (SSM), run: gh auth login
