@@ -68,6 +68,16 @@ resource "snowflake_grant_privileges_to_account_role" "datawarehouse_cicd_databa
   }
 }
 
+# DATABASE CREATE SCHEMA (for dbt temporary schemas)
+resource "snowflake_grant_privileges_to_account_role" "datawarehouse_cicd_create_schema" {
+  account_role_name = "CICD_DATA_ENGINEER_ROLE"
+  privileges        = ["CREATE SCHEMA"]
+  on_account_object {
+    object_type = "DATABASE"
+    object_name = snowflake_database.datawarehouse.name
+  }
+}
+
 # STAGING schema
 resource "snowflake_grant_privileges_to_account_role" "datawarehouse_staging_usage" {
   account_role_name = "CICD_DATA_ENGINEER_ROLE"
