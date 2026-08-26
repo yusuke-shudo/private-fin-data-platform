@@ -58,7 +58,7 @@ sudo -u ec2-user bash <<'PIP_INSTALL'
 set -eux
 export PATH="$HOME/.local/bin:$PATH"
 uv venv /home/ec2-user/dbt-env --python python3.12
-/home/ec2-user/dbt-env/bin/uv pip install-r /tmp/requirements.txt
+uv pip install --python /home/ec2-user/dbt-env/bin/python -r /tmp/requirements.txt
 PIP_INSTALL
 
 # ==============================================================================
