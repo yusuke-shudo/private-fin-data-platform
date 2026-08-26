@@ -59,3 +59,63 @@ resource "snowflake_tag_association" "common_schema_managed_by" {
   tag_value          = "terraform"
 }
 
+# ==============================================================================
+# Grants for cicd_data_engineer_role (dbt operations - tags & utilities)
+# ==============================================================================
+
+# DATABASE USAGE
+resource "snowflake_grant_privileges_to_account_role" "common_cicd_database" {
+  account_role_name = "CICD_DATA_ENGINEER_ROLE"
+  privileges        = ["USAGE"]
+  on_account_object {
+    object_type = "DATABASE"
+    object_name = snowflake_database.common.name
+  }
+}
+
+# GOVERNANCE schema (tags used by dbt_constraints)
+resource "snowflake_grant_privileges_to_account_role" "common_cicd_governance_usage" {
+  account_role_name = "CICD_DATA_ENGINEER_ROLE"
+  privileges        = ["USAGE"]
+  on_schema {
+    schema_name = "${snowflake_database.common.name}.${snowflake_schema.governance.name}"
+  }
+}
+
+# Tag privileges
+resource "snowflake_grant_privileges_to_account_role" "common_cicd_tags_apply" {
+  account_role_name = "CICD_DATA_ENGINEER_ROLE"
+  privileges        = ["APPLY"]
+  on_schema_object {
+    object_type = "TAG"
+    object_name = snowflake_tag.database_managed_by.fully_qualified_name
+  }
+}
+
+resource "snowflake_grant_privileges_to_account_role" "common_cicd_schema_managed_by_tag_apply" {
+  account_role_name = "CICD_DATA_ENGINEER_ROLE"
+  privileges        = ["APPLY"]
+  on_schema_object {
+    object_type = "TAG"
+    object_name = snowflake_tag.schema_managed_by.fully_qualified_name
+  }
+}
+
+resource "snowflake_grant_privileges_to_account_role" "common_cicd_object_managed_by_tag_apply" {
+  account_role_name = "CICD_DATA_ENGINEER_ROLE"
+  privileges        = ["APPLY"]
+  on_schema_object {
+    object_type = "TAG"
+    object_name = snowflake_tag.object_managed_by.fully_qualified_name
+  }
+}
+
+# UTILS schema (shared utility functions)
+resource "snowflake_grant_privileges_to_account_role" "common_cicd_utils_usage" {
+  account_role_name = "CICD_DATA_ENGINEER_ROLE"
+  privileges        = ["USAGE"]
+  on_schema {
+    schema_name = "${snowflake_database.common.name}.${snowflake_schema.utils.name}"
+  }
+}
+

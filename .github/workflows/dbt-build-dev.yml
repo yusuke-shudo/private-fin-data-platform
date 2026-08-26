@@ -115,7 +115,10 @@ jobs:
   dbt_deploy_dev:
     name: dbt Deploy Dev (DBT PROJECT)
     needs: [dbt_build_dev]
-    if: needs.dbt_build_dev.result == 'success'
+    # Temporarily disabled: FROM 'file://...' is not a valid CREATE DBT PROJECT
+    # source (only internal stages, dbt workspaces, or git stages are supported).
+    # Redesign pending: dedicated internal stage/schema tied to the dev_dbt branch.
+    if: false
     runs-on: ubuntu-latest
     environment: dev-data
 

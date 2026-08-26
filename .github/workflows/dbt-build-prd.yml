@@ -97,7 +97,10 @@ jobs:
   dbt_deploy_prd:
     name: dbt Deploy Prd (DBT PROJECT)
     needs: [dbt_build_prd]
-    if: needs.dbt_build_prd.result == 'success'
+    # Temporarily disabled: FROM 'file://...' is not a valid CREATE DBT PROJECT
+    # source (only internal stages, dbt workspaces, or git stages are supported).
+    # Redesign pending: dedicated internal stage/schema for prd deployment.
+    if: false
     runs-on: ubuntu-latest
     environment: prd-data
 

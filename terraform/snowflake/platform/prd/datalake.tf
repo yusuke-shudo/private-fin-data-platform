@@ -119,3 +119,59 @@ resource "snowflake_tag_association" "datalake_stage_object_managed_by" {
   tag_id             = snowflake_tag.object_managed_by.fully_qualified_name
   tag_value          = "terraform"
 }
+
+# ==============================================================================
+# Grants for cicd_data_engineer_role (dbt operations - read source data)
+# ==============================================================================
+
+# DATABASE USAGE
+resource "snowflake_grant_privileges_to_account_role" "datalake_cicd_database" {
+  account_role_name = "CICD_DATA_ENGINEER_ROLE"
+  privileges        = ["USAGE"]
+  on_account_object {
+    object_type = "DATABASE"
+    object_name = snowflake_database.datalake.name
+  }
+}
+
+# USAGE on all current schemas in the database
+resource "snowflake_grant_privileges_to_account_role" "datalake_cicd_all_schemas_usage" {
+  account_role_name = "CICD_DATA_ENGINEER_ROLE"
+  privileges        = ["USAGE"]
+  on_schema {
+    all_schemas_in_database = snowflake_database.datalake.name
+  }
+}
+
+# USAGE on future schemas in the database
+resource "snowflake_grant_privileges_to_account_role" "datalake_cicd_future_schemas_usage" {
+  account_role_name = "CICD_DATA_ENGINEER_ROLE"
+  privileges        = ["USAGE"]
+  on_schema {
+    future_schemas_in_database = snowflake_database.datalake.name
+  }
+}
+
+# SELECT on all current tables in the database
+resource "snowflake_grant_privileges_to_account_role" "datalake_cicd_select_tables" {
+  account_role_name = "CICD_DATA_ENGINEER_ROLE"
+  privileges        = ["SELECT"]
+  on_schema_object {
+    all {
+      object_type_plural = "TABLES"
+      in_database        = snowflake_database.datalake.name
+    }
+  }
+}
+
+# SELECT on future tables in the database
+resource "snowflake_grant_privileges_to_account_role" "datalake_cicd_select_future_tables" {
+  account_role_name = "CICD_DATA_ENGINEER_ROLE"
+  privileges        = ["SELECT"]
+  on_schema_object {
+    future {
+      object_type_plural = "TABLES"
+      in_database        = snowflake_database.datalake.name
+    }
+  }
+}
