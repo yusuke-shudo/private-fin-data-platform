@@ -57,14 +57,15 @@ EOF
 sudo -u ec2-user bash <<'PIP_INSTALL'
 set -eux
 export PATH="$HOME/.local/bin:$PATH"
-uv pip install --user --python python3.12 -r /tmp/requirements.txt
+uv venv /home/ec2-user/dbt-env --python python3.12
+/home/ec2-user/dbt-env/bin/uv pip install-r /tmp/requirements.txt
 PIP_INSTALL
 
 # ==============================================================================
 # Configure ec2-user shell environment (PATH and DBT variables)
 # ==============================================================================
 sudo -u ec2-user bash <<'ENV_CONFIG'
-echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+echo 'export PATH="$HOME/dbt-env/bin:$PATH"' >> ~/.bashrc
 echo 'export DBT_LOG_PATH="$HOME/private-fin-data-platform/dbt/logs"' >> ~/.bashrc
 ENV_CONFIG
 
