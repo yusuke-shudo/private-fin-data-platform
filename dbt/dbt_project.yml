@@ -28,10 +28,25 @@ seeds:
       +database: DATAWAREHOUSE_DB
       +schema: REFERENCE
       +quote_columns: false
-
 models:
   private_fin_data_platform:
     staging:
-      +database: DATAWAREHOUSE_DB
-      +schema: STAGING
+      +database: datawarehouse_db
+      +schema: staging
+      +materialized: view
+    intermediate:
+      +database: datawarehouse_db
+      +schema: intermediate
+      +materialized: ephemeral
+    core:
+      +database: datawarehouse_db
+      +schema: core
+      +materialized: table
+    semantic_models:
+      +database: datawarehouse_db
+      +schema: semantic_models
+      +materialized: semantic_view
+    reports:
+      +database: datamart_db
+      +schema: reports
       +materialized: table

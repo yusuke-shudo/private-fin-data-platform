@@ -1,0 +1,30 @@
+version: 2
+
+sources:
+  - name: orico_credit
+    description: Orico Credit raw data source
+    database: datalake_db
+    schema: orico_credit
+    tables:
+      - name: home_reform_loan_schedule_raw
+        description: Raw home reform loan schedule data from Orico Credit
+        config:
+          meta:
+            primary_key: [file_path, line_number]
+        columns:
+          - name: ingested_at_utc
+            description: UTC timestamp when data was ingested into Snowflake
+            tests:
+              - not_null
+          - name: file_path
+            description: S3 path of source file
+            tests:
+              - not_null
+          - name: line_number
+            description: Line number within source file
+            tests:
+              - not_null
+          - name: raw_text
+            description: Raw CSV row as text (unmodified from source)
+            tests:
+              - not_null

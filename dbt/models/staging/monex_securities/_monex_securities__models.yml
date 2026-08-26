@@ -1,0 +1,324 @@
+version: 2
+
+models:
+  - name: stg_monex_securities__all_trade_and_cash_history
+    description: Staging model for MONEX Securities All Trade and Cash History (Bronze → Silver)
+    columns:
+      - name: file_path
+        description: Source file path in external stage (ファイルパス)
+        data_tests:
+          - not_null
+      - name: line_number
+        description: Line number within the source file (行番号)
+        data_tests:
+          - not_null
+      - name: trade_date
+        description: Date when the trade was executed (約定日)
+        data_tests:
+          - not_null
+      - name: settlement_date
+        description: Date when the transaction was settled (受渡日)
+        data_tests:
+          - not_null
+      - name: account_type
+        description: Category of the trading account (e.g., Tokutei, General, NISA) (口座)
+      - name: security_type
+        description: Type of security (e.g., Domestic Stock, Investment Trust, Futures, Options) (商品)
+      - name: transaction_type
+        description: Type of transaction (e.g., Buy, Sell, Deposit, Withdrawal) (取引)
+        data_tests:
+          - not_null
+      - name: ticker_code
+        description: Unique identifier for the financial security (銘柄コード)
+      - name: security_name
+        description: Name of the financial security or description of cash flow (銘柄名)
+      - name: quantity
+        description: Number of shares or units traded (数量)
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: unit_price
+        description: Execution price per share or unit (単価)
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: commission_amount
+        description: Trading commission fee paid to the broker (手数料)
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: tax_amount
+        description: Tax withheld from the transaction (税金)
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: dividend_and_distribution_amount
+        description: Amount received from interest, dividends, distributions, or redemptions (利金・分配金・償還金)
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: settlement_amount
+        description: Net cash flow of the settlement (受渡金額)
+      - name: open_trade_date
+        description: Date when the margin or credit position was opened (建約定日)
+      - name: open_unit_price
+        description: Execution price per share or unit for the open position (建単価)
+      - name: open_settlement_amount
+        description: Total execution amount when opening the position (建約定金額)
+      - name: open_commission_amount
+        description: Commission fee paid when opening the position (建手数料)
+      - name: open_commission_tax_amount
+        description: Consumption tax on the open position commission fee (建手数料消費税)
+      - name: administrative_fee
+        description: Administrative management fee for credit transactions (事務管理費)
+      - name: stock_transfer_fee
+        description: Fee paid for changing the name of share registration (名義書換料)
+      - name: long_premium_amount
+        description: Interest paid to the lender in margin trading (順日歩)
+      - name: short_premium_amount
+        description: Premium charges for borrowing stock in margin trading (逆日歩)
+      - name: stock_lending_fee
+        description: Stock lending fee paid by the short seller in margin trading (貸株料)
+      - name: miscellaneous_expenses
+        description: Total miscellaneous expenses associated with the trade (諸経費)
+      - name: remarks
+        description: Additional notes or remarks regarding the transaction (備考)
+      - name: ingested_at_utc
+        description: UTC timestamp when raw data was ingested into Snowflake (データ取込日時(UTC))
+        data_tests:
+          - not_null
+    data_tests:
+      - dbt_constraints.primary_key:
+          arguments:
+            column_names:
+              - file_path
+              - line_number
+      - dbt_utils.expression_is_true:
+          name: check_monex_trade_date_is_before_or_equal_to_settlement_date
+          arguments:
+            expression: "trade_date <= settlement_date"
+
+  - name: stg_monex_securities__futures_options_trade_history
+    description: Staging model for MONEX Securities Futures & Options Trades (Bronze → Silver)
+    columns:
+      - name: file_path
+        description: Source file path in external stage (ファイルパス)
+        data_tests:
+          - not_null
+      - name: line_number
+        description: Line number within the source file (行番号)
+        data_tests:
+          - not_null
+      - name: trade_date
+        description: Business date of the trade (約定日)
+        data_tests:
+          - not_null
+      - name: settlement_date
+        description: Date when the transaction was settled (受渡日)
+        data_tests:
+          - not_null
+      - name: contract_name
+        description: Name or identifier of the futures or options contract (契約名)
+        data_tests:
+          - not_null
+      - name: product_name
+        description: Standardized product name (e.g., Nikkei 225, Nikkei 225 mini, Nikkei 225 micro) (商品名)
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Nikkei 225', 'Nikkei 225 mini', 'Nikkei 225 micro']
+      - name: contract_lot_size
+        description: Lot size of the contract (契約単位)
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [10, 100, 1000]
+      - name: product_type
+        description: Type of product (Futures or Options) (商品タイプ)
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Futures', 'Options']
+      - name: sq_week
+        description: Special Quotation settlement week for options or futures (SQ週)
+        data_tests:
+          - not_null
+          - matches_regex:
+              arguments:
+                pattern: '^[0-9]{2}/(0[1-9]|1[0-2])-[1-5]W$'
+      - name: option_type
+        description: Option type (CALL or PUT), NULL for futures (オプションタイプ)
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['CALL', 'PUT']
+      - name: strike_price
+        description: Strike price for options, NULL for futures (権利行使価格)
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: false
+      - name: transaction_type
+        description: "Type of transaction (e.g., New Buy, Close Sell). Note: 権利放棄 (abandonment) is treated as a 0-yen SELL to close an unwanted position (取引). All amounts reflect trader's cash perspective."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['買建', '売建', '決済売', '転売', '買戻', 'ＳＱ決済売', '権利割当', '権利消滅', '権利放棄']
+      - name: trade_action
+        description: Action of the trade (OPEN or CLOSE) (取引アクション)
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['OPEN', 'CLOSE']
+      - name: trade_side
+        description: Side of the trade from trader perspective (BUY or SELL) (売買方向)
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['BUY', 'SELL']
+      - name: execution_method
+        description: Method of execution (MANUAL, SQ_SETTLEMENT, SQ_EXERCISE, SQ_ASSIGNMENT, SQ_EXPIRY) (実行方法)
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['MANUAL', 'SQ_SETTLEMENT', 'SQ_EXERCISE', 'SQ_ASSIGNMENT', 'SQ_EXPIRY']
+      - name: unit_price
+        description: "Price per contract at which the trade executed, from trader's perspective. (約定価格)"
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: quantity
+        description: Number of contracts traded (約定数量)
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: false
+      - name: execution_amount
+        description: "Total value of the execution: FLOOR(unit_price × quantity × contract_lot_size). Represents the notional amount traded from trader's perspective. (約定金額)"
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: commission_amount
+        description: "Trading commission fee paid to the broker at execution. Always non-negative. (手数料)"
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: tax_amount
+        description: "Consumption tax on the commission fee. Always non-negative. (消費税)"
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: settlement_amount
+        description: "Net cash flow from trader's perspective: positive = cash inflow (sell), negative = cash outflow (buy). Commissions and taxes already deducted. NULL for Futures OPEN trades. (受渡金額)"
+      - name: ingested_at_utc
+        description: UTC timestamp when raw data was ingested into Snowflake (データ取込日時(UTC))
+        data_tests:
+          - not_null
+    data_tests:
+      - dbt_constraints.primary_key:
+          arguments:
+            column_names:
+              - file_path
+              - line_number
+      # Common Tests
+      - dbt_utils.expression_is_true:
+          name: check_sbi_fno_trade_date_is_before_or_equal_to_settlement_date
+          arguments:
+            expression: "trade_date <= settlement_date"
+      - dbt_utils.expression_is_true:
+          name: check_sbi_fno_execution_method_for_open_trades
+          arguments:
+            expression: "NOT (trade_action = 'OPEN') OR execution_method = 'MANUAL'"
+      - dbt_utils.expression_is_true:
+          name: check_sbi_fno_zero_amounts_for_sq_expiry
+          arguments:
+            expression: "execution_method <> 'SQ_EXPIRY' OR (unit_price = 0 AND commission_amount = 0 AND tax_amount = 0)"
+      # Futures Tests
+      - dbt_utils.expression_is_true:
+          name: check_futures_must_have_null_option_type_and_strike_price
+          arguments:
+            expression: "product_type <> 'Futures' OR (option_type IS NULL AND strike_price IS NULL)"
+      - dbt_utils.expression_is_true:
+          name: check_sbi_fno_execution_method_for_futures_close
+          arguments:
+            expression: "NOT (product_type = 'Futures' AND trade_action = 'CLOSE') OR execution_method IN ('MANUAL', 'SQ_SETTLEMENT')"
+      - dbt_utils.expression_is_true:
+          name: check_sbi_fno_settlement_amount_for_futures_open
+          arguments:
+            expression: "NOT (product_type = 'Futures' AND trade_action = 'OPEN') OR settlement_amount IS NULL"
+      # Options Tests
+      - dbt_utils.expression_is_true:
+          name: check_options_must_have_option_type_and_strike_price
+          arguments:
+            expression: "product_type <> 'Options' OR (option_type IS NOT NULL AND strike_price IS NOT NULL)"
+      - dbt_utils.expression_is_true:
+          name: check_sbi_fno_execution_method_for_options_close
+          arguments:
+            expression: "NOT (product_type = 'Options' AND trade_action = 'CLOSE') OR execution_method IN ('MANUAL', 'SQ_EXERCISE', 'SQ_ASSIGNMENT', 'SQ_EXPIRY')"
+      - dbt_utils.expression_is_true:
+          name: check_sbi_fno_settlement_amount_for_options
+          arguments:
+            expression: "NOT (product_type = 'Options' AND execution_method != 'SQ_ASSIGNMENT') OR settlement_amount = (execution_amount * IFF(trade_side = 'SELL', 1, -1) - (commission_amount + tax_amount))"
+
+  - name: stg_monex_securities__cash_history
+    description: Staging model for MONEX Securities Cash History (Cash flows and balances) (Bronze → Silver)
+    columns:
+      - name: file_path
+        description: Source file path in external stage (ファイルパス)
+        data_tests:
+          - not_null
+      - name: line_number
+        description: Line number within the source file (行番号)
+        data_tests:
+          - not_null
+      - name: trade_date
+        description: Date when the cash flow occurred (約定日)
+        data_tests:
+          - not_null
+      - name: settlement_date
+        description: Date when the cash transaction was settled (受渡日)
+        data_tests:
+          - not_null
+      - name: transaction_type
+        description: Type of transaction (e.g., Deposit, Withdrawal, Interest, Dividend) (取引)
+        data_tests:
+          - not_null
+      - name: settlement_amount
+        description: Net cash flow amount (受渡金額)
+      - name: ingested_at_utc
+        description: UTC timestamp when raw data was ingested into Snowflake (データ取込日時(UTC))
+        data_tests:
+          - not_null
+    data_tests:
+      - dbt_constraints.primary_key:
+          arguments:
+            column_names:
+              - file_path
+              - line_number
+      - dbt_utils.expression_is_true:
+          name: check_monex_cash_trade_date_is_before_or_equal_to_settlement_date
+          arguments:
+            expression: "trade_date <= settlement_date"

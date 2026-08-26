@@ -1,0 +1,154 @@
+name: dbt Build & Deploy (Prd)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'dbt/**'
+      - '.github/workflows/dbt-build-prd.yml'
+  workflow_dispatch:
+
+env:
+  TARGET_ENV: "prd"
+  PYTHON_VERSION: "3.12"
+  DBT_VERSION: "1.12.0"
+  DBT_PROJECT_NAME: "private_fin_data_platform_prd"
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  dbt_build_prd:
+    name: dbt Build Prd
+    runs-on: ubuntu-latest
+    environment: prd-data
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dbt and dependencies
+        run: |
+          pip install --upgrade pip
+          pip install dbt-snowflake==${{ env.DBT_VERSION }}
+
+      - name: Install dbt packages
+        working-directory: ./dbt
+        run: dbt deps
+
+      - name: Mint Snowflake OIDC Token
+        run: |
+          OIDC_TOKEN=$(curl -sLS \
+            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=snowflakecomputing.com" \
+            | jq -r '.value')
+          echo "SNOWFLAKE_TOKEN=$OIDC_TOKEN" >> $GITHUB_ENV
+
+      - name: Generate dbt profiles.yml
+        run: |
+          mkdir -p ~/.dbt
+          cat > ~/.dbt/profiles.yml << EOF
+          private_fin_data_platform:
+            target: cicd_prd
+            outputs:
+              cicd_prd:
+                type: snowflake
+                account: ${{ format('{0}-{1}', vars.SF_ORGANIZATION_NAME, vars.SF_ACCOUNT_NAME) }}
+                user: cicd_data_engineer_user
+                authenticator: workload_identity
+                workload_identity_provider: OIDC
+                token: "{{ env_var('SNOWFLAKE_TOKEN') }}"
+                role: cicd_data_engineer_role
+                warehouse: cicd_data_wh
+                database: DATAWAREHOUSE_DB
+                schema: STAGING
+                threads: 4
+          EOF
+
+      - name: dbt Debug
+        working-directory: ./dbt
+        run: dbt debug
+        env:
+          SNOWFLAKE_TOKEN: ${{ env.SNOWFLAKE_TOKEN }}
+
+      - name: dbt Build (Prd)
+        working-directory: ./dbt
+        run: dbt build --target cicd_prd
+        timeout-minutes: 30
+        env:
+          SNOWFLAKE_TOKEN: ${{ env.SNOWFLAKE_TOKEN }}
+
+      - name: Upload dbt artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dbt-artifacts-prd
+          path: dbt/target/
+          retention-days: 7
+
+  dbt_deploy_prd:
+    name: dbt Deploy Prd (DBT PROJECT)
+    needs: [dbt_build_prd]
+    # Temporarily disabled: FROM 'file://...' is not a valid CREATE DBT PROJECT
+    # source (only internal stages, dbt workspaces, or git stages are supported).
+    # Redesign pending: dedicated internal stage/schema for prd deployment.
+    if: false
+    runs-on: ubuntu-latest
+    environment: prd-data
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v7
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install snowflake-cli
+
+      - name: Mint Snowflake OIDC Token
+        run: |
+          OIDC_TOKEN=$(curl -sLS \
+            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=snowflakecomputing.com" \
+            | jq -r '.value')
+          echo "SNOWFLAKE_TOKEN=$OIDC_TOKEN" >> $GITHUB_ENV
+
+      - name: Generate Snowflake CLI config.toml
+        run: |
+          mkdir -p ~/.config/snowflake
+          cat > ~/.config/snowflake/config.toml << EOF
+          default_connection_name = "default"
+
+          [connections.default]
+          account = "${{ format('{0}-{1}', vars.SF_ORGANIZATION_NAME, vars.SF_ACCOUNT_NAME) }}"
+          user = "cicd_data_engineer_user"
+          role = "cicd_data_engineer_role"
+          warehouse = "cicd_data_wh"
+          authenticator = "WORKLOAD_IDENTITY"
+          workload_identity_provider = "OIDC"
+          token = "$SNOWFLAKE_TOKEN"
+          database = "DATAWAREHOUSE_DB"
+          schema = "STAGING"
+          EOF
+          chmod 600 ~/.config/snowflake/config.toml
+
+      - name: Deploy DBT PROJECT to Prd
+        run: |
+          snow sql -q "CREATE OR REPLACE DBT PROJECT \"DATAWAREHOUSE_DB\".\"STAGING\".\"${{ env.DBT_PROJECT_NAME }}\" FROM 'file:///github/workspace/dbt';"
+
+      - name: Verify DBT PROJECT Creation
+        run: |
+          snow sql -q "SHOW DBT PROJECTS LIKE '${{ env.DBT_PROJECT_NAME }}';"

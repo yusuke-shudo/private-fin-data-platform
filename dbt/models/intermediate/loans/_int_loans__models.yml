@@ -1,0 +1,30 @@
+version: 2
+
+models:
+  - name: int_loan_schedules_unioned
+    description: Unified loan repayment schedules across financial institutions with loan account identifiers
+    columns:
+      - name: loan_account_id
+        description: Stable opaque identifier assigned to a loan account by the data platform
+      - name: source_institution
+        description: Institution that issued the loan
+      - name: loan_type
+        description: Business classification of the loan
+      - name: payment_date
+        description: Scheduled payment date
+      - name: payment_amount
+        description: Total scheduled payment amount, including principal and interest or equivalent fees
+      - name: principal_amount
+        description: Principal portion of the scheduled payment
+      - name: interest_amount
+        description: Interest or equivalent fee portion of the scheduled payment
+      - name: extra_principal_amount
+        description: Additional principal payment amount, if any
+      - name: extra_interest_amount
+        description: Additional interest or equivalent fee payment amount, if any
+      - name: annual_interest_rate
+        description: Annual interest rate as a percentage
+      - name: remaining_balance
+        description: Remaining principal balance after the scheduled payment
+      - name: ingested_at_utc
+        description: UTC timestamp when the source record was ingested into the raw layer
