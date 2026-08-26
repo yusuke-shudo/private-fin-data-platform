@@ -57,7 +57,7 @@ EOF
 sudo -u ec2-user bash <<'PIP_INSTALL'
 set -eux
 export PATH="$HOME/.local/bin:$PATH"
-uv pip install -r /tmp/requirements.txt
+uv pip install --system -r /tmp/requirements.txt
 PIP_INSTALL
 
 # ==============================================================================
