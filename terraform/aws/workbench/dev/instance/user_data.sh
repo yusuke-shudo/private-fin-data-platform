@@ -12,11 +12,8 @@ dnf config-manager --add-repo https://rpm.releases.hashicorp.com/AmazonLinux/has
 dnf -y install terraform
 
 # ==============================================================================
-# Install uv and the Snowflake CLI
+# Install uv
 # ==============================================================================
-# uv is the preferred modern Python toolchain for this environment. We install
-# it first and then install the Snowflake CLI via uv so the tooling is managed
-# consistently and can later be migrated away from pip entirely.
 sudo -u ec2-user bash <<'UV_INSTALL'
 set -eux
 curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -25,15 +22,7 @@ if ! command -v uv >/dev/null 2>&1; then
   echo "uv was not found in PATH after installation" >&2
   exit 1
 fi
-uv tool install --python python3.12 snowflake-cli
-if ! command -v snow >/dev/null 2>&1; then
-  echo "Snowflake CLI was not found in PATH after installation" >&2
-  exit 1
-fi
-snow --version
 UV_INSTALL
-
-# Add uv to ec2-user's PATH in bashrc for future shell sessions
 echo 'export PATH="$HOME/.local/bin:$PATH"' >> /home/ec2-user/.bashrc
 
 # ==============================================================================
@@ -60,11 +49,15 @@ fi
 # ==============================================================================
 # Python tools installation
 # ==============================================================================
-python3.12 -m pip install --upgrade pip
 cat << EOF > /tmp/requirements.txt
 ${requirements_content}
 EOF
-python3.12 -m pip install -r /tmp/requirements.txt
+
+sudo -u ec2-user bash <<'PIP_INSTALL'
+set -eux
+export PATH="$HOME/.local/bin:$PATH"
+uv pip install -r /tmp/requirements.txt
+PIP_INSTALL
 
 # ==============================================================================
 # Configure persistent dbt log path
