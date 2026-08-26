@@ -17,6 +17,8 @@ dnf -y install terraform
 # uv is the preferred modern Python toolchain for this environment. We install
 # it first and then install the Snowflake CLI via uv so the tooling is managed
 # consistently and can later be migrated away from pip entirely.
+sudo -u ec2-user bash <<'UV_INSTALL'
+set -eux
 curl -LsSf https://astral.sh/uv/install.sh | sh
 export PATH="$HOME/.local/bin:$PATH"
 if ! command -v uv >/dev/null 2>&1; then
@@ -24,12 +26,15 @@ if ! command -v uv >/dev/null 2>&1; then
   exit 1
 fi
 uv tool install --python python3.12 snowflake-cli
-export PATH="$HOME/.local/bin:$PATH"
 if ! command -v snow >/dev/null 2>&1; then
   echo "Snowflake CLI was not found in PATH after installation" >&2
   exit 1
 fi
 snow --version
+UV_INSTALL
+
+# Add uv to ec2-user's PATH in bashrc for future shell sessions
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> /home/ec2-user/.bashrc
 
 # ==============================================================================
 # Configure 2GB swap to reduce OOM risk on small instance types
