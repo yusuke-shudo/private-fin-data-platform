@@ -57,15 +57,16 @@ EOF
 sudo -u ec2-user bash <<'PIP_INSTALL'
 set -eux
 export PATH="$HOME/.local/bin:$PATH"
-uv pip install --system --python python3.12 -r /tmp/requirements.txt
+uv pip install --user --python python3.12 -r /tmp/requirements.txt
 PIP_INSTALL
 
 # ==============================================================================
-# Configure persistent dbt log path
+# Configure ec2-user shell environment (PATH and DBT variables)
 # ==============================================================================
-sudo -u ec2-user bash <<'DBT_LOG_CONFIG'
+sudo -u ec2-user bash <<'ENV_CONFIG'
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
 echo 'export DBT_LOG_PATH="$HOME/private-fin-data-platform/dbt/logs"' >> ~/.bashrc
-DBT_LOG_CONFIG
+ENV_CONFIG
 
 # ==============================================================================
 # Generate dbt profiles.yml for AWS IAM Workload Identity
