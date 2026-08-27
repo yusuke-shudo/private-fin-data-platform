@@ -70,7 +70,7 @@ PIP_INSTALL
 # Configure ec2-user shell environment (PATH and DBT variables)
 # ==============================================================================
 sudo -u ec2-user bash <<'ENV_CONFIG'
-echo 'export PATH="$HOME/dbt-env/bin:$PATH"' >> ~/.bashrc
+echo 'export PATH="/usr/local/bin:$HOME/sf-env/bin:$PATH"' >> ~/.bashrc
 echo 'export DBT_LOG_PATH="$HOME/private-fin-data-platform/dbt/logs"' >> ~/.bashrc
 ENV_CONFIG
 
