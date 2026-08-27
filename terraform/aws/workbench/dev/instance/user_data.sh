@@ -48,17 +48,22 @@ if ! grep -q '^/swapfile none swap sw 0 0$' /etc/fstab; then
 fi
 
 # ==============================================================================
-# Python tools installation
+# Python tools installation (Production-like System + Isolated CLI)
 # ==============================================================================
 cat << EOF > /tmp/requirements.txt
 ${requirements_content}
 EOF
 
+/home/ec2-user/.local/bin/uv pip install \
+  --system \
+  --python python3.12 \
+  -r /tmp/requirements.txt
+
 sudo -u ec2-user bash <<'PIP_INSTALL'
 set -eux
 export PATH="$HOME/.local/bin:$PATH"
-uv venv /home/ec2-user/dbt-env --python python3.12
-uv pip install --python /home/ec2-user/dbt-env/bin/python -r /tmp/requirements.txt
+uv venv /home/ec2-user/sf-env --python python3.12
+uv pip install --python /home/ec2-user/sf-env/bin/python "snowflake-cli"
 PIP_INSTALL
 
 # ==============================================================================
