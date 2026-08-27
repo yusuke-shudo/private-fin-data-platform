@@ -12,24 +12,19 @@ dnf config-manager --add-repo https://rpm.releases.hashicorp.com/AmazonLinux/has
 dnf -y install terraform
 
 # ==============================================================================
-# Install uv and the Snowflake CLI
+# Install uv
 # ==============================================================================
-# uv is the preferred modern Python toolchain for this environment. We install
-# it first and then install the Snowflake CLI via uv so the tooling is managed
-# consistently and can later be migrated away from pip entirely.
+sudo -u ec2-user bash <<'UV_INSTALL'
+set -eux
 curl -LsSf https://astral.sh/uv/install.sh | sh
 export PATH="$HOME/.local/bin:$PATH"
 if ! command -v uv >/dev/null 2>&1; then
   echo "uv was not found in PATH after installation" >&2
   exit 1
 fi
-uv tool install --python python3.12 snowflake-cli
-export PATH="$HOME/.local/bin:$PATH"
-if ! command -v snow >/dev/null 2>&1; then
-  echo "Snowflake CLI was not found in PATH after installation" >&2
-  exit 1
-fi
-snow --version
+UV_INSTALL
+
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> /home/ec2-user/.bashrc
 
 # ==============================================================================
 # Configure 2GB swap to reduce OOM risk on small instance types
@@ -53,20 +48,31 @@ if ! grep -q '^/swapfile none swap sw 0 0$' /etc/fstab; then
 fi
 
 # ==============================================================================
-# Python tools installation
+# Python tools installation (Production-like System + Isolated CLI)
 # ==============================================================================
-python3.12 -m pip install --upgrade pip
 cat << EOF > /tmp/requirements.txt
 ${requirements_content}
 EOF
-python3.12 -m pip install -r /tmp/requirements.txt
+
+/home/ec2-user/.local/bin/uv pip install \
+  --system \
+  --python python3.12 \
+  -r /tmp/requirements.txt
+
+sudo -u ec2-user bash <<'PIP_INSTALL'
+set -eux
+export PATH="$HOME/.local/bin:$PATH"
+uv venv /home/ec2-user/sf-env --python python3.12
+uv pip install --python /home/ec2-user/sf-env/bin/python "snowflake-cli"
+PIP_INSTALL
 
 # ==============================================================================
-# Configure persistent dbt log path
+# Configure ec2-user shell environment (PATH and DBT variables)
 # ==============================================================================
-sudo -u ec2-user bash <<'DBT_LOG_CONFIG'
+sudo -u ec2-user bash <<'ENV_CONFIG'
+echo 'export PATH="/usr/local/bin:$HOME/sf-env/bin:$PATH"' >> ~/.bashrc
 echo 'export DBT_LOG_PATH="$HOME/private-fin-data-platform/dbt/logs"' >> ~/.bashrc
-DBT_LOG_CONFIG
+ENV_CONFIG
 
 # ==============================================================================
 # Generate dbt profiles.yml for AWS IAM Workload Identity
