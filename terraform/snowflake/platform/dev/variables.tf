@@ -2,6 +2,11 @@ variable "env" {
   type = string
 }
 
+variable "project_prefix" {
+  type        = string
+  description = "AWS側リソース名の接頭辞。AWS側Terraformと同じGitHub変数 PROJECT_PREFIX を注入する"
+}
+
 variable "sf_organization_name" {
   type = string
 }

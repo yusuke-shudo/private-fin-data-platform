@@ -10,7 +10,7 @@ on:
   push:
     branches: [ main ]
     paths:
-      - 'terraform/aws/prd/**'
+      - 'terraform/aws/platform/prd/**'
       - '.github/workflows/terraform-aws-prd.yml'
   workflow_dispatch:
 
