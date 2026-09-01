@@ -64,6 +64,7 @@ jobs:
         run: terraform plan -no-color -out=tfplan
         env:
           TF_VAR_env:                           ${{ env.TARGET_ENV }}
+          TF_VAR_project_prefix:                ${{ vars.PROJECT_PREFIX }}
           TF_VAR_managed_repo:                  ${{ github.repository }}
           TF_VAR_managed_ref:                   ${{ github.sha }}
           TF_VAR_sf_organization_name:          ${{ vars.SF_ORGANIZATION_NAME }}
@@ -79,6 +80,7 @@ jobs:
         run: terraform apply -no-color tfplan
         env:
           TF_VAR_env:                           ${{ env.TARGET_ENV }}
+          TF_VAR_project_prefix:                ${{ vars.PROJECT_PREFIX }}
           TF_VAR_managed_repo:                  ${{ github.repository }}
           TF_VAR_managed_ref:                   ${{ github.sha }}
           TF_VAR_sf_organization_name:          ${{ vars.SF_ORGANIZATION_NAME }}
