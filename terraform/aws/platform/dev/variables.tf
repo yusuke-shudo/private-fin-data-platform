@@ -20,8 +20,8 @@ variable "sf_external_id" {
   default     = ""
 }
 
-variable "snowpipe_queue_arn" {
+variable "snowpipe_sns_subscriber_principal_arn" {
   type        = string
-  description = "SnowflakeがSnowpipe auto-ingest用に生成するSQSキューのARN。1 Snowflakeアカウント・1リージョンにつき共有される単一のキューであり、pipe固有ではない。GitHub変数 AWS_S3_SNOWPIPE_QUEUE_ARN から注入。最初のpipe作成前は空文字でよい"
+  description = "SnowflakeのSQSキューがSnowpipe用SNSトピックをSubscribeするために必要なIAMプリンシパルARN。SYSTEM$GET_AWS_SNS_IAM_POLICYの戻り値から取得し、GitHub変数 AWS_SNS_SNOWFLAKE_SUBSCRIBER_ARN 経由で注入する。未取得の間は空文字でよい"
   default     = ""
 }

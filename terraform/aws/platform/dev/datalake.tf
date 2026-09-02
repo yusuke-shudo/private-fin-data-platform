@@ -15,6 +15,9 @@ locals {
   datalake_sf_role_name = "${local.datalake_bucket_name}-sf-role"
   datalake_sf_ap_name   = "${local.datalake_bucket_name}-sf-ap"
   datalake_sf_ap_arn    = "arn:aws:s3:${local.aws_region}:${local.account_id}:accesspoint/${local.datalake_sf_ap_name}"
+
+  # Snowpipe auto-ingest 用 SNS トピック。Snowflake側 pipes.tf でも同じ規則でARNを組み立てる
+  snowpipe_sns_topic_name = "${local.datalake_bucket_name}-snowpipe-events"
 }
 
 # =========================================================================
@@ -230,36 +233,67 @@ resource "aws_s3_bucket_policy" "datalake" {
 }
 
 # =========================================================================
-# S3 イベント通知（Snowpipe auto-ingest 用）
+# S3 イベント通知（Snowpipe auto-ingest 用、SNS経由）
 #
-# Snowflakeは「1 AWSリージョンにつきSQSキューは1つ」を使い回す仕様のため
-# (https://docs.snowflake.com/en/user-guide/data-load-snowpipe-auto-s3)、
-# snowpipe_queue_arn は特定のpipe専用ではなく、このSnowflakeアカウント・
-# このリージョン向けの共有キューARN。新しいpipeを追加する際も変数は増やさず、
-# 下の queue ブロックを一つ足すだけでよい。
+# 経緯: 当初 S3→SQS直結(queueブロック)を試みたが、Snowflakeの外部ステージが
+# S3アクセスポイントのエイリアスをURLに使っているため、Snowflake側が実バケットの
+# ARNを正しく解決できず、Snowflake管理のSQSキューのリソースポリシーに実バケットが
+# 登録されない状態になった。結果、PutBucketNotificationConfigurationが
+# 「Unable to validate the following destination configurations」で失敗する
+# (Terraform・AWSコンソール双方で再現)。
 #
-# 前提: Snowpipe対象のS3バケットは全て同一リージョン(ap-northeast-1)。
-# 別リージョンにバケットを追加する場合はキューARNが変わるため、
-# snowpipe_queue_arn をリージョンキーの map(string) 化する等の見直しが必要。
-#
-# 通知設定は bucket ごとに1つの aws_s3_bucket_notification に集約する必要がある
-# (S3 APIの notification configuration は部分更新ではなく丸ごと置換のため)。
-#
-# デプロイ順序: Snowflake側で最初のpipeを作成し、出力される notification_channel
-# (SQSキューARN)を GitHub変数 AWS_S3_SNOWPIPE_QUEUE_ARN に設定してから、
-# このリソースを apply する。未設定(空文字)の間は queue ブロックが生成されず、
-# 通知は無効のまま。
+# そのためS3→SNSは実バケットARNを使い私たちが完全に管理し、Snowflakeには
+# 「このSNSトピックをSubscribeする権限」だけを渡す構成にする。
+# トピック名は命名規則から機械的に決まるため、bootstrap的なARNの受け渡しは不要。
+# Snowflake側がSubscribeするためのPrincipalは、SYSTEM$GET_AWS_SNS_IAM_POLICYの
+# 出力から取得して後述の変数で渡す。
 # =========================================================================
-resource "aws_s3_bucket_notification" "datalake" {
+resource "aws_sns_topic" "snowpipe" {
   provider = aws.resource_creation
-  bucket   = aws_s3_bucket.datalake.id
+  name     = local.snowpipe_sns_topic_name
+}
 
-  dynamic "queue" {
-    for_each = var.snowpipe_queue_arn != "" ? [var.snowpipe_queue_arn] : []
-    content {
-      queue_arn     = queue.value
-      events        = ["s3:ObjectCreated:*"]
-      filter_prefix = "monex_securities/all_trade_and_cash_history/"
-    }
+resource "aws_sns_topic_policy" "snowpipe" {
+  provider = aws.resource_creation
+  arn      = aws_sns_topic.snowpipe.arn
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = concat(
+      [
+        {
+          Sid       = "AllowS3Publish"
+          Effect    = "Allow"
+          Principal = { Service = "s3.amazonaws.com" }
+          Action    = "SNS:Publish"
+          Resource  = aws_sns_topic.snowpipe.arn
+          Condition = {
+            ArnLike      = { "aws:SourceArn" = aws_s3_bucket.datalake.arn }
+            StringEquals = { "aws:SourceAccount" = local.account_id }
+          }
+        }
+      ],
+      # Snowflakeが SYSTEM$GET_AWS_SNS_IAM_POLICY() で要求するSubscribe許可。
+      var.snowpipe_sns_subscriber_principal_arn != "" ? [
+        {
+          Sid       = "AllowSnowflakeSubscribe"
+          Effect    = "Allow"
+          Principal = { AWS = var.snowpipe_sns_subscriber_principal_arn }
+          Action    = "SNS:Subscribe"
+          Resource  = aws_sns_topic.snowpipe.arn
+        }
+      ] : []
+    )
+  })
+}
+
+resource "aws_s3_bucket_notification" "datalake" {
+  provider   = aws.resource_creation
+  bucket     = aws_s3_bucket.datalake.id
+  depends_on = [aws_sns_topic_policy.snowpipe]
+
+  topic {
+    topic_arn     = aws_sns_topic.snowpipe.arn
+    events        = ["s3:ObjectCreated:*"]
+    filter_prefix = "monex_securities/all_trade_and_cash_history/"
   }
 }

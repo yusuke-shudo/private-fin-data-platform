@@ -4,23 +4,35 @@
 # 日次一括ロード(proc_task_load_raw_0300)から切り離し、S3 への新規配置を
 # トリガーに増分ロードする。TRUNCATE は行わず、新規ファイルのみ追記される。
 #
-# 注意: Snowflakeは「1アカウント・1AWSリージョンにつきSQSキューを1つ」使い回す。
-# https://docs.snowflake.com/en/user-guide/data-load-snowpipe-auto-s3
-# そのため notification_channel の値は pipe 固有ではなく、今後 pipe を追加しても
-# 同じ値になる想定。AWS側の変数名も snowpipe_queue_arn（汎用名）としている。
+# S3→SNS→SQS 経由で構成する(S3→SQS直結ではない)。
+# 理由: 外部ステージがS3アクセスポイントのエイリアスをURLに使っているため、
+# Snowflakeが自動生成するSQSキューのリソースポリシーに実バケットを正しく登録でき
+# ず、S3→SQS直結だと PutBucketNotificationConfiguration が
+# "Unable to validate the following destination configurations" で失敗した
+# (Terraform・AWSコンソール双方で再現)。
+# SNSを介すことで、S3→SNSの許可は私たちが実バケットARNで直接書ける
+# (terraform/aws/platform/<env>/datalake.tf)ので、この問題を回避できる。
 #
-# デプロイ手順(初回のみ、鶏卵問題があるため2段階になる):
-#   1. 本ファイルを apply しパイプを作成する
-#   2. 出力 snowpipe_queue_arn の値を GitHub 変数
-#      AWS_S3_SNOWPIPE_QUEUE_ARN に設定する
-#   3. terraform/aws/platform/<env>/datalake.tf の S3 イベント通知を apply する
+# トピック名はAWS側と同じ命名規則から機械的に決まるので、bootstrap的な
+# ARNの受け渡しは不要。ただし Snowflake がこのトピックをSubscribeするには
+# AWS側でSubscribe許可を追加する必要がある。
+#
+# デプロイ手順:
+#   1. AWS側をapplyしてSNSトピックとS3→SNSのイベント通知を作成する
+#   2. SELECT SYSTEM$GET_AWS_SNS_IAM_POLICY('<topic_arn>'); を実行し、
+#      返ってくるポリシーの Principal ARN を控える
+#   3. その値を GitHub変数 AWS_SNS_SNOWFLAKE_SUBSCRIBER_ARN に設定し、
+#      AWS側(datalake.tf)を再applyしてSNSトピックポリシーにSubscribe許可を追加する
+#   4. 本ファイルをapplyしてaws_sns_topic_arn付きのpipeを作り直す。
+#      SnowflakeがSNSトピックをSubscribeする
 # =========================================================================
 resource "snowflake_pipe" "monex_all_trade_and_cash_history" {
-  database    = snowflake_database.datalake.name
-  schema      = snowflake_schema.monex_securities.name
-  name        = "PIPE_MONEX_ALL_TRADE_AND_CASH_HISTORY"
-  auto_ingest = true
-  comment     = "Snowpipe auto-ingest sample for MONEX all_trade_and_cash_history_raw | ${local.managed_comment}"
+  database          = snowflake_database.datalake.name
+  schema            = snowflake_schema.monex_securities.name
+  name              = "PIPE_MONEX_ALL_TRADE_AND_CASH_HISTORY"
+  auto_ingest       = true
+  aws_sns_topic_arn = local.snowpipe_sns_topic_arn
+  comment           = "Snowpipe auto-ingest sample for MONEX all_trade_and_cash_history_raw (via SNS) | ${local.managed_comment}"
 
   # Snowpipeは通常のCOPY INTOと違い ON_ERROR=ABORT_STATEMENT 等の一部オプションを
   # サポートしない。エラー時はファイル単位でスキップされる。
