@@ -1,7 +1,8 @@
 # AWS側 terraform/aws/platform/<env>/datalake.tf と命名規則を共有する
 locals {
-  datalake_sf_role_arn = "arn:aws:iam::${var.aws_account_id}:role/${var.project_prefix}-${var.env}-datalake-sf-role"
-  datalake_sf_ap_arn   = "arn:aws:s3:ap-northeast-1:${var.aws_account_id}:accesspoint/${var.project_prefix}-${var.env}-datalake-sf-ap"
+  datalake_sf_role_arn   = "arn:aws:iam::${var.aws_account_id}:role/${var.project_prefix}-${var.env}-datalake-sf-role"
+  datalake_sf_ap_arn     = "arn:aws:s3:ap-northeast-1:${var.aws_account_id}:accesspoint/${var.project_prefix}-${var.env}-datalake-sf-ap"
+  snowpipe_sns_topic_arn = "arn:aws:sns:ap-northeast-1:${var.aws_account_id}:${var.project_prefix}-${var.env}-datalake-snowpipe-events"
 }
 
 resource "time_sleep" "wait_for_aws_propagation" {

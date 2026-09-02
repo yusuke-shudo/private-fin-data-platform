@@ -15,6 +15,9 @@ locals {
   datalake_sf_role_name = "${local.datalake_bucket_name}-sf-role"
   datalake_sf_ap_name   = "${local.datalake_bucket_name}-sf-ap"
   datalake_sf_ap_arn    = "arn:aws:s3:${local.aws_region}:${local.account_id}:accesspoint/${local.datalake_sf_ap_name}"
+
+  # Snowpipe auto-ingest 用 SNS トピック。Snowflake側 pipes.tf でも同じ規則でARNを組み立てる
+  snowpipe_sns_topic_name = "${local.datalake_bucket_name}-snowpipe-events"
 }
 
 # =========================================================================
@@ -227,4 +230,71 @@ resource "aws_s3_bucket_policy" "datalake" {
       }
     ]
   })
+}
+
+# =========================================================================
+# S3 イベント通知（Snowpipe auto-ingest 用、SNS経由）
+#
+# 経緯: 当初 S3→SQS直結(queueブロック)を試みたが、Snowflakeの外部ステージが
+# S3アクセスポイントのエイリアスをURLに使っているため、Snowflake側が実バケットの
+# ARNを正しく解決できず、Snowflake管理のSQSキューのリソースポリシーに実バケットが
+# 登録されない状態になった。結果、PutBucketNotificationConfigurationが
+# 「Unable to validate the following destination configurations」で失敗する
+# (Terraform・AWSコンソール双方で再現)。
+#
+# そのためS3→SNSは実バケットARNを使い私たちが完全に管理し、Snowflakeには
+# 「このSNSトピックをSubscribeする権限」だけを渡す構成にする。
+# トピック名は命名規則から機械的に決まるため、bootstrap的なARNの受け渡しは不要。
+# SubscribeするPrincipalはStorage Integrationと同じSnowflake IAMユーザー
+# (GitHub変数 SF_USER_ARN)であることをSnowpipeのエラーログで確認済み。
+# =========================================================================
+resource "aws_sns_topic" "snowpipe" {
+  provider = aws.resource_creation
+  name     = local.snowpipe_sns_topic_name
+}
+
+resource "aws_sns_topic_policy" "snowpipe" {
+  provider = aws.resource_creation
+  arn      = aws_sns_topic.snowpipe.arn
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = concat(
+      [
+        {
+          Sid       = "AllowS3Publish"
+          Effect    = "Allow"
+          Principal = { Service = "s3.amazonaws.com" }
+          Action    = "SNS:Publish"
+          Resource  = aws_sns_topic.snowpipe.arn
+          Condition = {
+            ArnLike      = { "aws:SourceArn" = aws_s3_bucket.datalake.arn }
+            StringEquals = { "aws:SourceAccount" = local.account_id }
+          }
+        }
+      ],
+      # Snowflakeのアカウント共通IAMユーザーにSNSトピックのSubscribeを許可する。
+      var.sf_user_arn != "" ? [
+        {
+          Sid       = "AllowSnowflakeSubscribe"
+          Effect    = "Allow"
+          Principal = { AWS = var.sf_user_arn }
+          Action    = "SNS:Subscribe"
+          Resource  = aws_sns_topic.snowpipe.arn
+        }
+      ] : []
+    )
+  })
+}
+
+resource "aws_s3_bucket_notification" "datalake" {
+  provider   = aws.resource_creation
+  bucket     = aws_s3_bucket.datalake.id
+  depends_on = [aws_sns_topic_policy.snowpipe]
+
+  topic {
+    id            = "snowpipe-monex-all-trade-and-cash-history"
+    topic_arn     = aws_sns_topic.snowpipe.arn
+    events        = ["s3:ObjectCreated:*"]
+    filter_prefix = "monex_securities/all_trade_and_cash_history/"
+  }
 }
