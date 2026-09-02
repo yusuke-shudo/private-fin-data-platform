@@ -55,6 +55,15 @@ jobs:
             -backend-config="use_lockfile=true" \
             -backend-config="encrypt=true"
 
+      - name: Recover stale Monex Snowpipe tag association state
+        run: |
+          address='snowflake_tag_association.monex_pipe_managed_by'
+          if terraform state list | grep -Fx "$address"; then
+            terraform state rm "$address"
+          else
+            echo "No stale state found for $address"
+          fi
+
       - name: Terraform Plan to Snowflake Dev
         run: terraform plan -no-color -out=tfplan
         env:
