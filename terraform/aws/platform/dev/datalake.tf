@@ -228,3 +228,37 @@ resource "aws_s3_bucket_policy" "datalake" {
     ]
   })
 }
+
+# =========================================================================
+# S3 イベント通知（Snowpipe auto-ingest 用）
+#
+# Snowflakeは「1 AWSリージョンにつきSQSキューは1つ」を使い回す仕様のため
+# (https://docs.snowflake.com/en/user-guide/data-load-snowpipe-auto-s3)、
+# snowpipe_queue_arn は特定のpipe専用ではなく、このSnowflakeアカウント・
+# このリージョン向けの共有キューARN。新しいpipeを追加する際も変数は増やさず、
+# 下の queue ブロックを一つ足すだけでよい。
+#
+# 前提: Snowpipe対象のS3バケットは全て同一リージョン(ap-northeast-1)。
+# 別リージョンにバケットを追加する場合はキューARNが変わるため、
+# snowpipe_queue_arn をリージョンキーの map(string) 化する等の見直しが必要。
+#
+# 通知設定は bucket ごとに1つの aws_s3_bucket_notification に集約する必要がある
+# (S3 APIの notification configuration は部分更新ではなく丸ごと置換のため)。
+#
+# デプロイ順序: Snowflake側で最初のpipeを作成し、出力される notification_channel
+# (SQSキューARN)を GitHub変数 AWS_S3_SNOWPIPE_QUEUE_ARN に設定してから、
+# このリソースを apply する。未設定(空文字)の間は queue ブロックが生成されず、
+# 通知は無効のまま。
+# =========================================================================
+resource "aws_s3_bucket_notification" "datalake" {
+  bucket = aws_s3_bucket.datalake.id
+
+  dynamic "queue" {
+    for_each = var.snowpipe_queue_arn != "" ? [var.snowpipe_queue_arn] : []
+    content {
+      queue_arn     = queue.value
+      events        = ["s3:ObjectCreated:*"]
+      filter_prefix = "monex_securities/all_trade_and_cash_history/"
+    }
+  }
+}

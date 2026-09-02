@@ -247,11 +247,8 @@ BEGIN
     'datalake_db.common.ff_nodelimiter_sjis'
   );
 
-  CALL datalake_db.common.proc_load_raw_full_refresh(
-    'datalake_db.monex_securities.all_trade_and_cash_history_raw',
-    'datalake_db.monex_securities.stage_monex_securities/all_trade_and_cash_history/',
-    'datalake_db.common.ff_nodelimiter_sjis'
-  );
+  -- datalake_db.monex_securities.all_trade_and_cash_history_raw は Snowpipe (auto-ingest) に移行済み。
+  -- terraform/snowflake/platform/<env>/pipes.tf 参照。
 
   RETURN 'SUCCESS';
 
