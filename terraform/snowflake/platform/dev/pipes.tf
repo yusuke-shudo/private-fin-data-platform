@@ -11,7 +11,7 @@
 #
 # デプロイ手順(初回のみ、鶏卵問題があるため2段階になる):
 #   1. 本ファイルを apply しパイプを作成する
-#   2. 出力 monex_pipe_notification_channel の値を GitHub 変数
+#   2. 出力 snowpipe_queue_arn の値を GitHub 変数
 #      AWS_S3_SNOWPIPE_QUEUE_ARN に設定する
 #   3. terraform/aws/platform/<env>/datalake.tf の S3 イベント通知を apply する
 # =========================================================================
