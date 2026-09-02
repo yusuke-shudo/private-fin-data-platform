@@ -22,18 +22,20 @@ resource "snowflake_pipe" "monex_all_trade_and_cash_history" {
   auto_ingest = true
   comment     = "Snowpipe auto-ingest sample for MONEX all_trade_and_cash_history_raw | ${local.managed_comment}"
 
+  # Snowpipeは通常のCOPY INTOと違い ON_ERROR=ABORT_STATEMENT 等の一部オプションを
+  # サポートしない。エラー時はファイル単位でスキップされる。
+  # https://docs.snowflake.com/en/sql-reference/sql/create-pipe#usage-notes
   copy_statement = <<-SQL
     COPY INTO ${snowflake_database.datalake.name}.${snowflake_schema.monex_securities.name}.ALL_TRADE_AND_CASH_HISTORY_RAW
     FROM (
       SELECT
-        CONVERT_TIMEZONE('UTC', CURRENT_TIMESTAMP())::TIMESTAMP_NTZ,
+        CONVERT_TIMEZONE('UTC', METADATA$START_SCAN_TIME)::TIMESTAMP_NTZ,
         METADATA$FILENAME,
         METADATA$FILE_ROW_NUMBER,
         $1
       FROM @${snowflake_stage_external_s3.monex_stage.fully_qualified_name}/all_trade_and_cash_history/
     )
     FILE_FORMAT = (FORMAT_NAME = '${snowflake_database.datalake.name}.COMMON.FF_NODELIMITER_SJIS')
-    ON_ERROR = ABORT_STATEMENT
   SQL
 
   # ステージのクラウド接続情報が変わった場合はパイプを作り直す
