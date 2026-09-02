@@ -54,7 +54,6 @@ jobs:
           TF_VAR_project_prefix:                        ${{ vars.PROJECT_PREFIX }}
           TF_VAR_sf_user_arn:                           ${{ vars.SF_USER_ARN }}
           TF_VAR_sf_external_id:                        ${{ vars.SF_EXTERNAL_ID }}
-          TF_VAR_snowpipe_sns_subscriber_principal_arn: ${{ vars.AWS_SNS_SNOWFLAKE_SUBSCRIBER_ARN }}
 
       - name: Terraform Apply to AWS Dev
         run: terraform apply -no-color tfplan
@@ -63,4 +62,3 @@ jobs:
           TF_VAR_project_prefix:                        ${{ vars.PROJECT_PREFIX }}
           TF_VAR_sf_user_arn:                           ${{ vars.SF_USER_ARN }}
           TF_VAR_sf_external_id:                        ${{ vars.SF_EXTERNAL_ID }}
-          TF_VAR_snowpipe_sns_subscriber_principal_arn: ${{ vars.AWS_SNS_SNOWFLAKE_SUBSCRIBER_ARN }}

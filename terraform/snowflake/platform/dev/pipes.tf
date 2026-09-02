@@ -14,16 +14,12 @@
 # (terraform/aws/platform/<env>/datalake.tf)ので、この問題を回避できる。
 #
 # トピック名はAWS側と同じ命名規則から機械的に決まるので、bootstrap的な
-# ARNの受け渡しは不要。ただし Snowflake がこのトピックをSubscribeするには
-# AWS側でSubscribe許可を追加する必要がある。
+# ARNの受け渡しは不要。AWS側のトピックポリシーは既存のSF_USER_ARN
+# (Storage Integrationと同じSnowflake IAMユーザー)にSubscribeを許可する。
 #
 # デプロイ手順:
 #   1. AWS側をapplyしてSNSトピックとS3→SNSのイベント通知を作成する
-#   2. SELECT SYSTEM$GET_AWS_SNS_IAM_POLICY('<topic_arn>'); を実行し、
-#      返ってくるポリシーの Principal ARN を控える
-#   3. その値を GitHub変数 AWS_SNS_SNOWFLAKE_SUBSCRIBER_ARN に設定し、
-#      AWS側(datalake.tf)を再applyしてSNSトピックポリシーにSubscribe許可を追加する
-#   4. 本ファイルをapplyしてaws_sns_topic_arn付きのpipeを作り直す。
+#   2. 本ファイルをapplyしてaws_sns_topic_arn付きのpipeを作り直す。
 #      SnowflakeがSNSトピックをSubscribeする
 # =========================================================================
 resource "snowflake_pipe" "monex_all_trade_and_cash_history" {

@@ -245,8 +245,8 @@ resource "aws_s3_bucket_policy" "datalake" {
 # そのためS3→SNSは実バケットARNを使い私たちが完全に管理し、Snowflakeには
 # 「このSNSトピックをSubscribeする権限」だけを渡す構成にする。
 # トピック名は命名規則から機械的に決まるため、bootstrap的なARNの受け渡しは不要。
-# Snowflake側がSubscribeするためのPrincipalは、SYSTEM$GET_AWS_SNS_IAM_POLICYの
-# 出力から取得して後述の変数で渡す。
+# SubscribeするPrincipalはStorage Integrationと同じSnowflake IAMユーザー
+# (GitHub変数 SF_USER_ARN)であることをSnowpipeのエラーログで確認済み。
 # =========================================================================
 resource "aws_sns_topic" "snowpipe" {
   provider = aws.resource_creation
@@ -272,12 +272,12 @@ resource "aws_sns_topic_policy" "snowpipe" {
           }
         }
       ],
-      # Snowflakeが SYSTEM$GET_AWS_SNS_IAM_POLICY() で要求するSubscribe許可。
-      var.snowpipe_sns_subscriber_principal_arn != "" ? [
+      # Snowflakeのアカウント共通IAMユーザーにSNSトピックのSubscribeを許可する。
+      var.sf_user_arn != "" ? [
         {
           Sid       = "AllowSnowflakeSubscribe"
           Effect    = "Allow"
-          Principal = { AWS = var.snowpipe_sns_subscriber_principal_arn }
+          Principal = { AWS = var.sf_user_arn }
           Action    = "SNS:Subscribe"
           Resource  = aws_sns_topic.snowpipe.arn
         }
@@ -292,6 +292,7 @@ resource "aws_s3_bucket_notification" "datalake" {
   depends_on = [aws_sns_topic_policy.snowpipe]
 
   topic {
+    id            = "snowpipe-monex-all-trade-and-cash-history"
     topic_arn     = aws_sns_topic.snowpipe.arn
     events        = ["s3:ObjectCreated:*"]
     filter_prefix = "monex_securities/all_trade_and_cash_history/"

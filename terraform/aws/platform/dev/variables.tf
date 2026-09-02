@@ -19,9 +19,3 @@ variable "sf_external_id" {
   description = "SnowflakeのStorage Integrationから発行される外部ID"
   default     = ""
 }
-
-variable "snowpipe_sns_subscriber_principal_arn" {
-  type        = string
-  description = "SnowflakeのSQSキューがSnowpipe用SNSトピックをSubscribeするために必要なIAMプリンシパルARN。SYSTEM$GET_AWS_SNS_IAM_POLICYの戻り値から取得し、GitHub変数 AWS_SNS_SNOWFLAKE_SUBSCRIBER_ARN 経由で注入する。未取得の間は空文字でよい"
-  default     = ""
-}
