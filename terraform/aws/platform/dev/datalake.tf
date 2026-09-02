@@ -251,7 +251,8 @@ resource "aws_s3_bucket_policy" "datalake" {
 # 通知は無効のまま。
 # =========================================================================
 resource "aws_s3_bucket_notification" "datalake" {
-  bucket = aws_s3_bucket.datalake.id
+  provider = aws.resource_creation
+  bucket   = aws_s3_bucket.datalake.id
 
   dynamic "queue" {
     for_each = var.snowpipe_queue_arn != "" ? [var.snowpipe_queue_arn] : []
