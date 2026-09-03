@@ -59,6 +59,24 @@ resource "aws_s3_bucket_versioning" "datalake" {
   }
 }
 
+resource "aws_s3_bucket_notification" "datalake" {
+  provider = aws.resource_creation
+  bucket   = aws_s3_bucket.datalake.id
+
+  dynamic "queue" {
+    for_each = var.snowflake_s3_event_queue_arn != "" ? {
+      paypay_bank_masters  = "paypay_bank/masters/"
+      orico_credit_masters = "orico_credit/masters/"
+    } : {}
+    content {
+      id            = "directory-${replace(queue.value, "/", "-")}"
+      queue_arn     = var.snowflake_s3_event_queue_arn
+      events        = ["s3:ObjectCreated:*", "s3:ObjectRemoved:*"]
+      filter_prefix = queue.value
+    }
+  }
+}
+
 # =========================================================================
 # Snowflake連携用 IAMロール
 # =========================================================================

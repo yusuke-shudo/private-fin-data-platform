@@ -19,3 +19,9 @@ variable "sf_external_id" {
   description = "SnowflakeのStorage Integrationから発行される外部ID"
   default     = ""
 }
+
+variable "snowflake_s3_event_queue_arn" {
+  type        = string
+  description = "SnowflakeのDirectory Table自動更新用SQSキューARN。DESC STAGEのdirectory_notification_channelから取得し、GitHub変数 AWS_SNOWFLAKE_S3_EVENT_QUEUE_ARN で注入する。未設定の間はS3通知を作成しない"
+  default     = ""
+}
