@@ -22,7 +22,6 @@ provider "snowflake" {
   preview_features_enabled = [
     "snowflake_stage_resource",
     "snowflake_storage_integration_aws_resource",
-    "snowflake_stage_external_s3_resource",
-    "snowflake_pipe_resource"
+    "snowflake_stage_external_s3_resource"
   ]
 }
