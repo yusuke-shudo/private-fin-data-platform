@@ -213,43 +213,43 @@ BEGIN
 
   CALL datalake_db.common.proc_load_raw_full_refresh(
     'datalake_db.paypay_bank.home_loan_schedule_raw',
-    'datalake_db.paypay_bank.stage_paypay_bank/home_loan_schedule/',
+    'datalake_db.paypay_bank.stage_paypay_bank/masters/home_loan_schedule/',
     'datalake_db.common.ff_nodelimiter_sjis'
   );
 
   CALL datalake_db.common.proc_load_raw_full_refresh(
     'datalake_db.orico_credit.home_reform_loan_schedule_raw',
-    'datalake_db.orico_credit.stage_orico_credit/home_reform_loan_schedule/',
+    'datalake_db.orico_credit.stage_orico_credit/masters/home_reform_loan_schedule/',
     'datalake_db.common.ff_nodelimiter'
   );
 
   CALL datalake_db.common.proc_load_raw_full_refresh(
     'datalake_db.sbi_securities.domestic_trade_history_raw',
-    'datalake_db.sbi_securities.stage_sbi_securities/domestic_trade_history/',
+    'datalake_db.sbi_securities.stage_sbi_securities/batch/domestic_trade_history/',
     'datalake_db.common.ff_nodelimiter_sjis'
   );
 
   CALL datalake_db.common.proc_load_raw_full_refresh(
     'datalake_db.sbi_securities.foreign_trade_history_raw',
-    'datalake_db.sbi_securities.stage_sbi_securities/foreign_trade_history/',
+    'datalake_db.sbi_securities.stage_sbi_securities/batch/foreign_trade_history/',
     'datalake_db.common.ff_nodelimiter_sjis'
   );
 
   CALL datalake_db.common.proc_load_raw_full_refresh(
     'datalake_db.sbi_securities.futures_options_trade_history_raw',
-    'datalake_db.sbi_securities.stage_sbi_securities/futures_options_trade_history/',
+    'datalake_db.sbi_securities.stage_sbi_securities/batch/futures_options_trade_history/',
     'datalake_db.common.ff_nodelimiter_sjis'
   );
 
   CALL datalake_db.common.proc_load_raw_full_refresh(
     'datalake_db.sbi_securities.tokutei_profit_loss_report_raw',
-    'datalake_db.sbi_securities.stage_sbi_securities/tokutei_profit_loss_report/',
+    'datalake_db.sbi_securities.stage_sbi_securities/batch/tokutei_profit_loss_report/',
     'datalake_db.common.ff_nodelimiter_sjis'
   );
 
   CALL datalake_db.common.proc_load_raw_full_refresh(
     'datalake_db.monex_securities.all_trade_and_cash_history_raw',
-    'datalake_db.monex_securities.stage_monex_securities/all_trade_and_cash_history/',
+    'datalake_db.monex_securities.stage_monex_securities/history/all_trade_and_cash_history/',
     'datalake_db.common.ff_nodelimiter_sjis'
   );
 
