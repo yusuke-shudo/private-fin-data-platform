@@ -151,7 +151,7 @@ BEGIN
     '    @' || :p_stage_path,
     '  )',
     'FILE_FORMAT = (',
-    '  FORMAT_NAME = \'' || :p_file_format_fqn || '\'',',
+    '  FORMAT_NAME = \'' || :p_file_format_fqn || '\'',
     ')',
     'ON_ERROR = ABORT_STATEMENT'
   );
