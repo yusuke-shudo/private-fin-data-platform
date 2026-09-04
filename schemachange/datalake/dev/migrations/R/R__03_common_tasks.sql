@@ -11,7 +11,7 @@ CREATE OR REPLACE TASK datalake_db.common.task_load_csv_to_json_full_refresh
 AS
 CALL datalake_db.common.proc_load_csv_to_json_full_refresh(
   'datalake_db.paypay_bank.home_loan_schedule_json',
-  'datalake_db.paypay_bank.stage_paypay_bank/home_loan_schedule/',
+  'datalake_db.paypay_bank.stage_paypay_bank/masters/home_loan_schedule/',
   'datalake_db.common.ff_csv_parse_header_sjis',
   '.*\\.csv'
 );

@@ -19,6 +19,11 @@ variable "aws_account_id" {
   type = string
 }
 
+variable "sf_external_id" {
+  type        = string
+  description = "SnowflakeのStorage Integrationから発行される外部ID。direct integrationでも同じ値を明示指定する"
+}
+
 variable "aws_s3_ap_alias" {
   type        = string
   description = "GitHubのEnvironment変数（AWS_S3_AP_ALIAS）から注入されるAWSアクセスポイントのエイリアス"

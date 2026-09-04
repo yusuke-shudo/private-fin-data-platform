@@ -11,10 +11,11 @@ locals {
   aws_region = "ap-northeast-1"
   account_id = data.aws_caller_identity.current.account_id
 
-  datalake_bucket_name  = "${var.project_prefix}-${var.env}-datalake"
-  datalake_sf_role_name = "${local.datalake_bucket_name}-sf-role"
-  datalake_sf_ap_name   = "${local.datalake_bucket_name}-sf-ap"
-  datalake_sf_ap_arn    = "arn:aws:s3:${local.aws_region}:${local.account_id}:accesspoint/${local.datalake_sf_ap_name}"
+  datalake_bucket_name         = "${var.project_prefix}-${var.env}-datalake"
+  datalake_sf_role_name        = "${local.datalake_bucket_name}-sf-role"
+  datalake_direct_sf_role_name = "${local.datalake_bucket_name}-direct-sf-role"
+  datalake_sf_ap_name          = "${local.datalake_bucket_name}-sf-ap"
+  datalake_sf_ap_arn           = "arn:aws:s3:${local.aws_region}:${local.account_id}:accesspoint/${local.datalake_sf_ap_name}"
 }
 
 # =========================================================================
@@ -58,6 +59,24 @@ resource "aws_s3_bucket_versioning" "datalake" {
   }
 }
 
+resource "aws_s3_bucket_notification" "datalake" {
+  provider = aws.resource_creation
+  bucket   = aws_s3_bucket.datalake.id
+
+  dynamic "queue" {
+    for_each = var.snowflake_s3_event_queue_arn != "" ? {
+      paypay_bank_masters  = "paypay_bank/masters/"
+      orico_credit_masters = "orico_credit/masters/"
+    } : {}
+    content {
+      id            = "directory-${replace(queue.value, "/", "-")}"
+      queue_arn     = var.snowflake_s3_event_queue_arn
+      events        = ["s3:ObjectCreated:*", "s3:ObjectRemoved:*"]
+      filter_prefix = queue.value
+    }
+  }
+}
+
 # =========================================================================
 # Snowflake連携用 IAMロール
 # =========================================================================
@@ -96,6 +115,86 @@ resource "aws_iam_role" "datalake_sf" {
 resource "time_sleep" "datalake_sf_role_propagation" {
   depends_on      = [aws_iam_role.datalake_sf]
   create_duration = "30s"
+}
+
+resource "aws_iam_role" "datalake_direct_sf" {
+  provider = aws.resource_creation
+  name     = local.datalake_direct_sf_role_name
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      merge(
+        {
+          Action = "sts:AssumeRole"
+          Effect = "Allow"
+          Principal = {
+            AWS = var.sf_user_arn != "" ? var.sf_user_arn : "arn:aws:iam::${local.account_id}:root"
+          }
+        },
+        var.sf_external_id != "" ? {
+          Condition = {
+            StringEquals = {
+              "sts:ExternalId" = var.sf_external_id
+            }
+          }
+        } : {}
+      )
+    ]
+  })
+  tags = {
+    Name        = local.datalake_direct_sf_role_name
+    Environment = var.env
+    ManagedBy   = "Terraform"
+  }
+}
+
+resource "aws_iam_role_policy" "datalake_direct_sf_read" {
+  provider = aws.resource_creation
+  name     = "${local.datalake_direct_sf_role_name}-read"
+  role     = aws_iam_role.datalake_direct_sf.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "AllowDatalakeBucketLocation"
+        Effect = "Allow"
+        Action = [
+          "s3:GetBucketLocation"
+        ]
+        Resource = aws_s3_bucket.datalake.arn
+      },
+      {
+        Sid    = "AllowDatalakeDirectPrefixList"
+        Effect = "Allow"
+        Action = [
+          "s3:ListBucket"
+        ]
+        Resource = aws_s3_bucket.datalake.arn
+        Condition = {
+          StringLike = {
+            "s3:prefix" = [
+              "paypay_bank/masters/*",
+              "orico_credit/masters/*",
+              "monex_securities/history/*"
+            ]
+          }
+        }
+      },
+      {
+        Sid    = "AllowDatalakeDirectPrefixRead"
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:GetObjectVersion"
+        ]
+        Resource = [
+          "${aws_s3_bucket.datalake.arn}/paypay_bank/masters/*",
+          "${aws_s3_bucket.datalake.arn}/orico_credit/masters/*",
+          "${aws_s3_bucket.datalake.arn}/monex_securities/history/*"
+        ]
+      }
+    ]
+  })
 }
 
 # =========================================================================
@@ -175,7 +274,8 @@ resource "aws_s3_bucket_policy" "datalake" {
             "aws:PrincipalArn" = [
               "arn:aws:iam::${local.account_id}:root",
               "arn:aws:iam::${local.account_id}:role/aws-reserved/sso.amazonaws.com/*/*",
-              "arn:aws:iam::${local.account_id}:role/github-actions-resource-creation-role"
+              "arn:aws:iam::${local.account_id}:role/github-actions-resource-creation-role",
+              aws_iam_role.datalake_direct_sf.arn
             ]
           }
         }
