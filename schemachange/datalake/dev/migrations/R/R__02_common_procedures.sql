@@ -1,11 +1,11 @@
 CREATE OR REPLACE PROCEDURE datalake_db.common.proc_load_raw_full_refresh(
-	p_target_table_fqn  VARCHAR,
-	p_stage_path        VARCHAR,
-	p_file_format_fqn   VARCHAR
+  p_target_table_fqn  VARCHAR,
+  p_stage_path        VARCHAR,
+  p_file_format_fqn   VARCHAR
 )
-	RETURNS VARCHAR
-	LANGUAGE SQL
-	EXECUTE AS OWNER
+  RETURNS VARCHAR
+  LANGUAGE SQL
+  EXECUTE AS OWNER
 AS
 $$
 DECLARE
@@ -22,7 +22,7 @@ BEGIN
     '  ' || :p_target_table_fqn,
     'FROM (',
     '  SELECT',
-    '    CONVERT_TIMEZONE(\'UTC\', CURRENT_TIMESTAMP())::TIMESTAMP_NTZ AS ingested_at_utc,',
+    '    CONVERT_TIMEZONE(\'UTC\', METADATA$START_SCAN_TIME)::TIMESTAMP_NTZ AS ingested_at_utc,',
     '    METADATA$FILENAME AS file_path,',
     '    METADATA$FILE_ROW_NUMBER AS line_number,',
     '    $1 AS raw_text',
@@ -47,13 +47,13 @@ ALTER PROCEDURE datalake_db.common.proc_load_raw_full_refresh(VARCHAR, VARCHAR, 
 ;
 
 CREATE OR REPLACE PROCEDURE datalake_db.common.proc_load_raw_full_refresh_with_transaction(
-	p_target_table_fqn  VARCHAR,
-	p_stage_path        VARCHAR,
-	p_file_format_fqn   VARCHAR
+  p_target_table_fqn  VARCHAR,
+  p_stage_path        VARCHAR,
+  p_file_format_fqn   VARCHAR
 )
-	RETURNS VARCHAR
-	LANGUAGE SQL
-	EXECUTE AS OWNER
+  RETURNS VARCHAR
+  LANGUAGE SQL
+  EXECUTE AS OWNER
 AS
 $$
 DECLARE
@@ -75,7 +75,7 @@ BEGIN
     '  ' || tmp_table,
     'FROM (',
     '  SELECT',
-    '    CONVERT_TIMEZONE(\'UTC\', CURRENT_TIMESTAMP())::TIMESTAMP_NTZ AS ingested_at_utc,',
+    '    CONVERT_TIMEZONE(\'UTC\', METADATA$START_SCAN_TIME)::TIMESTAMP_NTZ AS ingested_at_utc,',
     '    METADATA$FILENAME AS file_path,',
     '    METADATA$FILE_ROW_NUMBER AS line_number,',
     '    $1 AS raw_text',
@@ -127,14 +127,18 @@ CREATE OR REPLACE PROCEDURE datalake_db.common.proc_load_raw_master_full_refresh
 AS
 $$
 DECLARE
-  snapshot_table_fqn VARCHAR DEFAULT :p_target_table_fqn || '_snapshot';
-  sql                VARCHAR;
+
+  snapshot_table_fqn  VARCHAR  DEFAULT :p_target_table_fqn || '_snapshot';
+  sql                 VARCHAR;
+
 BEGIN
   -- Temporary delay for validating events arriving during task execution.
   CALL SYSTEM$WAIT(10, 'SECONDS');
 
-  CREATE OR REPLACE TEMP TABLE IDENTIFIER(:snapshot_table_fqn)
-  LIKE IDENTIFIER(:p_target_table_fqn)
+  CREATE OR REPLACE TEMP TABLE
+    IDENTIFIER(:snapshot_table_fqn)
+  LIKE
+    IDENTIFIER(:p_target_table_fqn)
   ;
 
   sql := CONCAT_WS(
@@ -157,22 +161,25 @@ BEGIN
   );
   EXECUTE IMMEDIATE :sql;
 
+
   BEGIN TRANSACTION;
 
-  DELETE FROM IDENTIFIER(:p_target_table_fqn);
-
-  INSERT INTO IDENTIFIER(:p_target_table_fqn)
-  SELECT *
-  FROM IDENTIFIER(:snapshot_table_fqn)
+  DELETE FROM
+    IDENTIFIER(:p_target_table_fqn)
+  ;
+  INSERT INTO
+    IDENTIFIER(:p_target_table_fqn)
+  SELECT
+    *
+  FROM
+    IDENTIFIER(:snapshot_table_fqn)
   ;
 
   COMMIT;
 
+
   RETURN 'SUCCESS';
-EXCEPTION
-  WHEN OTHER THEN
-    ROLLBACK;
-    RAISE;
+
 END;
 $$
 ;
@@ -182,14 +189,14 @@ ALTER PROCEDURE datalake_db.common.proc_load_raw_master_full_refresh_with_transa
 ;
 
 CREATE OR REPLACE PROCEDURE datalake_db.common.proc_load_csv_to_json_full_refresh(
-	p_target_table_fqn  VARCHAR,
-	p_stage_path        VARCHAR,
-	p_file_format_fqn   VARCHAR,
-	p_file_pattern      VARCHAR
+  p_target_table_fqn  VARCHAR,
+  p_stage_path        VARCHAR,
+  p_file_format_fqn   VARCHAR,
+  p_file_pattern      VARCHAR
 )
-	RETURNS VARCHAR
-	LANGUAGE SQL
-	EXECUTE AS OWNER
+  RETURNS VARCHAR
+  LANGUAGE SQL
+  EXECUTE AS OWNER
 AS
 $$
 DECLARE
@@ -265,9 +272,9 @@ ALTER PROCEDURE datalake_db.common.proc_load_csv_to_json_full_refresh(VARCHAR, V
 ;
 
 CREATE OR REPLACE PROCEDURE datalake_db.common.proc_task_load_raw_0300()
-	RETURNS VARCHAR
-	LANGUAGE SQL
-	EXECUTE AS OWNER
+  RETURNS VARCHAR
+  LANGUAGE SQL
+  EXECUTE AS OWNER
 AS
 $$
 DECLARE
@@ -329,9 +336,9 @@ ALTER PROCEDURE datalake_db.common.proc_task_load_raw_0300()
 ;
 
 CREATE OR REPLACE PROCEDURE datalake_db.common.proc_load_raw_masters_from_stream(
-  p_stream_fqn       VARCHAR,
-  p_stage_fqn        VARCHAR,
-  p_dataset_config   VARIANT
+  p_stream_fqn      VARCHAR,
+  p_stage_fqn       VARCHAR,
+  p_dataset_config  VARIANT
 )
   RETURNS VARCHAR
   LANGUAGE SQL
@@ -339,80 +346,92 @@ CREATE OR REPLACE PROCEDURE datalake_db.common.proc_load_raw_masters_from_stream
 AS
 $$
 DECLARE
-  dataset_record       VARIANT;
-  dataset_prefix       VARCHAR;
-  file_format_fqn      VARCHAR;
-  target_table_fqn     VARCHAR;
-  latest_relative_path VARCHAR;
-  event_snapshot       VARIANT;
-  processed_count      NUMBER DEFAULT 0;
-BEGIN
-  SELECT ARRAY_AGG(
-    OBJECT_CONSTRUCT(
-      'relative_path', relative_path,
-      'last_modified', last_modified
-    )
-  )
-  INTO :event_snapshot
-  FROM IDENTIFIER(:p_stream_fqn)
-  WHERE metadata$action = 'INSERT'
-  ;
 
-  CREATE OR REPLACE TEMP TABLE master_stream_snapshot (
-    relative_path VARCHAR,
-    last_modified TIMESTAMP_LTZ
+  work_table_fqn        VARCHAR;
+  dataname              VARCHAR;
+  dataset_config_item   VARIANT;
+  file_format_fqn       VARCHAR;
+  target_table_fqn      VARCHAR;
+  v_relative_path       VARCHAR;
+  v_last_modified       TIMESTAMP_TZ;
+  processed_count       NUMBER  DEFAULT 0;
+  failed_count          NUMBER  DEFAULT 0;
+
+BEGIN
+
+  -- Determine work table FQN from stream FQN
+  -- Example: datalake_db.paypay_bank.stream_paypay_bank_masters_direct_dir
+  --       -> datalake_db.paypay_bank.work_stream_paypay_bank_masters_direct_dir
+  work_table_fqn := REPLACE(
+    :p_stream_fqn,
+    'stream_',
+    'work_stream_'
   );
 
-  INSERT INTO master_stream_snapshot (relative_path, last_modified)
+  -- Insert all stream events into work table
+  INSERT INTO IDENTIFIER(:work_table_fqn) (relative_path, last_modified)
   SELECT
-    value:relative_path::VARCHAR,
-    value:last_modified::TIMESTAMP_LTZ
-  FROM TABLE(FLATTEN(INPUT => :event_snapshot))
+    relative_path,
+    last_modified
+  FROM
+    IDENTIFIER(:p_stream_fqn)
   ;
 
-  FOR dataset_record IN (
-    SELECT value
-    FROM TABLE(FLATTEN(INPUT => :p_dataset_config))
+  -- Process work table records (only INSERT actions, and latest per relative_path)
+  FOR v_relative_path, v_last_modified IN (
+    SELECT
+      relative_path,
+      last_modified
+    FROM
+      IDENTIFIER(:work_table_fqn)
+    WHERE
+      metadata$action = 'INSERT'
+    QUALIFY
+      ROW_NUMBER() OVER (PARTITION BY relative_path ORDER BY last_modified DESC) = 1
+    ORDER BY
+      last_modified ASC
   ) DO
-    dataset_prefix := dataset_record:value:path_prefix::VARCHAR;
-    target_table_fqn := dataset_record:value:target_table::VARCHAR;
-    file_format_fqn := dataset_record:value:file_format::VARCHAR;
-    latest_relative_path := NULL;
 
-    SELECT MAX_BY(relative_path, last_modified)
-    INTO :latest_relative_path
-    FROM master_stream_snapshot
-    WHERE relative_path LIKE :dataset_prefix || '%'
-    ;
+    BEGIN
 
-    IF (latest_relative_path IS NOT NULL) THEN
-      CALL datalake_db.common.proc_load_raw_master_full_refresh_with_transaction(
-        :target_table_fqn,
-        :p_stage_fqn || '/' || :latest_relative_path,
-        :file_format_fqn
-      );
-      processed_count := processed_count + 1;
-    END IF;
+      -- Extract data name from relative_path (first directory level)
+      -- Example: home_loan_schedule/home_loan_schedule_raw.csv -> home_loan_schedule
+      dataname := SPLIT_PART(:v_relative_path, '/', 1);
+      dataset_config_item := :p_dataset_config[:dataname];
+
+      -- If config exists for this data name, process it
+      IF (dataset_config_item IS NOT NULL) THEN
+        target_table_fqn := dataset_config_item:target_table::VARCHAR;
+        file_format_fqn := dataset_config_item:file_format::VARCHAR;
+
+        CALL datalake_db.common.proc_load_raw_master_full_refresh_with_transaction(
+          :target_table_fqn,
+          :p_stage_fqn || '/' || :v_relative_path,
+          :file_format_fqn
+        );
+        processed_count := processed_count + 1;
+      END IF;
+
+      -- Delete all records (both INSERT and DELETE) with the same relative_path
+      -- This happens regardless of whether the file was processed or matched
+      DELETE FROM
+        IDENTIFIER(:work_table_fqn)
+      WHERE
+        relative_path = :v_relative_path
+      ;
+
+    EXCEPTION
+      WHEN OTHER THEN
+        -- Log error but continue processing other records
+        failed_count := failed_count + 1;
+        CONTINUE;
+
+    END;
+
   END FOR;
 
-  CREATE OR REPLACE TEMP TABLE master_stream_consumed_events (
-    relative_path VARCHAR,
-    last_modified TIMESTAMP_LTZ
-  );
+  RETURN 'PROCESSED:' || processed_count || ', FAILED:' || failed_count;
 
-  INSERT INTO master_stream_consumed_events (relative_path, last_modified)
-  SELECT stream_event.relative_path, stream_event.last_modified
-  FROM IDENTIFIER(:p_stream_fqn)
-    AS stream_event
-  WHERE EXISTS (
-    SELECT 1
-    FROM master_stream_snapshot
-    WHERE master_stream_snapshot.relative_path = stream_event.relative_path
-      AND stream_event.last_modified <= master_stream_snapshot.last_modified
-  )
-  ;
-
-  RETURN 'PROCESSED_DATASETS:' || processed_count;
 EXCEPTION
   WHEN OTHER THEN
     RAISE;
