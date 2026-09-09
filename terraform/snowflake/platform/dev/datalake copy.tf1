@@ -126,6 +126,16 @@ resource "snowflake_stage_external_s3" "sbi_securities_stream_triggered" {
   }
 }
 
+resource "snowflake_stage_external_s3" "sbi_securities_batch" {
+  name                 = "STAGE_SBI_SECURITIES_BATCH"
+  database             = snowflake_database.datalake.name
+  schema               = snowflake_schema.sbi_securities.name
+  url                  = "s3://${var.aws_s3_ap_alias}/sbi_securities/batch/"
+  aws_access_point_arn = local.datalake_sf_ap_arn
+  storage_integration  = snowflake_storage_integration_aws.si_s3_accesspoint_datalake.name
+  comment              = local.managed_comment
+}
+
 resource "snowflake_schema" "monex_securities" {
   name     = "MONEX_SECURITIES"
   database = snowflake_database.datalake.name
@@ -175,6 +185,21 @@ locals {
     snowflake_schema.orico_credit.fully_qualified_name,
     snowflake_schema.sbi_securities.fully_qualified_name,
     snowflake_schema.monex_securities.fully_qualified_name,
+  ]
+
+  datalake_stage_object_managed_by_targets = [
+    snowflake_stage_external_s3.paypay_bank_snowpipe.fully_qualified_name,
+    snowflake_stage_external_s3.paypay_bank_stream_triggered.fully_qualified_name,
+    snowflake_stage_external_s3.paypay_bank_batch.fully_qualified_name,
+    snowflake_stage_external_s3.orico_credit_snowpipe.fully_qualified_name,
+    snowflake_stage_external_s3.orico_credit_stream_triggered.fully_qualified_name,
+    snowflake_stage_external_s3.orico_credit_batch.fully_qualified_name,
+    snowflake_stage_external_s3.sbi_securities_snowpipe.fully_qualified_name,
+    snowflake_stage_external_s3.sbi_securities_stream_triggered.fully_qualified_name,
+    snowflake_stage_external_s3.sbi_securities_batch.fully_qualified_name,
+    snowflake_stage_external_s3.monex_securities_snowpipe.fully_qualified_name,
+    snowflake_stage_external_s3.monex_securities_stream_triggered.fully_qualified_name,
+    snowflake_stage_external_s3.monex_securities_batch.fully_qualified_name,
   ]
 }
 
