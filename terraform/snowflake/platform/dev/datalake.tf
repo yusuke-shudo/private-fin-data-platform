@@ -25,76 +25,10 @@ resource "snowflake_schema" "paypay_bank" {
   comment  = local.managed_comment
 }
 
-resource "snowflake_stage_external_s3" "paypay_bank_snowpipe" {
-  name                = "STAGE_PAYPAY_BANK_SNOWPIPE"
-  database            = snowflake_database.datalake.name
-  schema              = snowflake_schema.paypay_bank.name
-  url                 = "${local.datalake_direct_s3_url}paypay_bank/snowpipe/"
-  storage_integration = snowflake_storage_integration_aws.si_s3_direct_datalake.name
-  comment             = local.managed_comment
-}
-
-resource "snowflake_stage_external_s3" "paypay_bank_stream_triggered" {
-  name                = "STAGE_PAYPAY_BANK_STREAM_TRIGGERED"
-  database            = snowflake_database.datalake.name
-  schema              = snowflake_schema.paypay_bank.name
-  url                 = "${local.datalake_direct_s3_url}paypay_bank/stream_triggered/"
-  storage_integration = snowflake_storage_integration_aws.si_s3_direct_datalake.name
-  comment             = local.managed_comment
-  directory {
-    enable            = true
-    auto_refresh      = "true"
-    refresh_on_create = "true"
-  }
-}
-
-resource "snowflake_stage_external_s3" "paypay_bank_batch" {
-  name                 = "STAGE_PAYPAY_BANK_BATCH"
-  database             = snowflake_database.datalake.name
-  schema               = snowflake_schema.paypay_bank.name
-  url                  = "s3://${var.aws_s3_ap_alias}/paypay_bank/batch/"
-  aws_access_point_arn = local.datalake_sf_ap_arn
-  storage_integration  = snowflake_storage_integration_aws.si_s3_accesspoint_datalake.name
-  comment              = local.managed_comment
-}
-
 resource "snowflake_schema" "orico_credit" {
   name     = "ORICO_CREDIT"
   database = snowflake_database.datalake.name
   comment  = local.managed_comment
-}
-
-resource "snowflake_stage_external_s3" "orico_credit_snowpipe" {
-  name                = "STAGE_ORICO_CREDIT_SNOWPIPE"
-  database            = snowflake_database.datalake.name
-  schema              = snowflake_schema.orico_credit.name
-  url                 = "${local.datalake_direct_s3_url}orico_credit/snowpipe/"
-  storage_integration = snowflake_storage_integration_aws.si_s3_direct_datalake.name
-  comment             = local.managed_comment
-}
-
-resource "snowflake_stage_external_s3" "orico_credit_stream_triggered" {
-  name                = "STAGE_ORICO_CREDIT_STREAM_TRIGGERED"
-  database            = snowflake_database.datalake.name
-  schema              = snowflake_schema.orico_credit.name
-  url                 = "${local.datalake_direct_s3_url}orico_credit/stream_triggered/"
-  storage_integration = snowflake_storage_integration_aws.si_s3_direct_datalake.name
-  comment             = local.managed_comment
-  directory {
-    enable            = true
-    auto_refresh      = "true"
-    refresh_on_create = "true"
-  }
-}
-
-resource "snowflake_stage_external_s3" "orico_credit_batch" {
-  name                 = "STAGE_ORICO_CREDIT_BATCH"
-  database             = snowflake_database.datalake.name
-  schema               = snowflake_schema.orico_credit.name
-  url                  = "s3://${var.aws_s3_ap_alias}/orico_credit/batch/"
-  aws_access_point_arn = local.datalake_sf_ap_arn
-  storage_integration  = snowflake_storage_integration_aws.si_s3_accesspoint_datalake.name
-  comment              = local.managed_comment
 }
 
 resource "snowflake_schema" "sbi_securities" {
@@ -103,57 +37,10 @@ resource "snowflake_schema" "sbi_securities" {
   comment  = local.managed_comment
 }
 
-resource "snowflake_stage_external_s3" "sbi_securities_stream_triggered" {
-  name                = "STAGE_SBI_SECURITIES_STREAM_TRIGGERED"
-  database            = snowflake_database.datalake.name
-  schema              = snowflake_schema.sbi_securities.name
-  url                 = "${local.datalake_direct_s3_url}sbi_securities/stream_triggered/"
-  storage_integration = snowflake_storage_integration_aws.si_s3_direct_datalake.name
-  comment             = local.managed_comment
-  directory {
-    enable            = true
-    auto_refresh      = "true"
-    refresh_on_create = "true"
-  }
-}
-
 resource "snowflake_schema" "monex_securities" {
   name     = "MONEX_SECURITIES"
   database = snowflake_database.datalake.name
   comment  = local.managed_comment
-}
-
-resource "snowflake_stage_external_s3" "monex_securities_snowpipe" {
-  name                = "STAGE_MONEX_SECURITIES_SNOWPIPE"
-  database            = snowflake_database.datalake.name
-  schema              = snowflake_schema.monex_securities.name
-  url                 = "${local.datalake_direct_s3_url}monex_securities/snowpipe/"
-  storage_integration = snowflake_storage_integration_aws.si_s3_direct_datalake.name
-  comment             = local.managed_comment
-}
-
-resource "snowflake_stage_external_s3" "monex_securities_stream_triggered" {
-  name                = "STAGE_MONEX_SECURITIES_STREAM_TRIGGERED"
-  database            = snowflake_database.datalake.name
-  schema              = snowflake_schema.monex_securities.name
-  url                 = "${local.datalake_direct_s3_url}monex_securities/stream_triggered/"
-  storage_integration = snowflake_storage_integration_aws.si_s3_direct_datalake.name
-  comment             = local.managed_comment
-  directory {
-    enable            = true
-    auto_refresh      = "true"
-    refresh_on_create = "true"
-  }
-}
-
-resource "snowflake_stage_external_s3" "monex_securities_batch" {
-  name                 = "STAGE_MONEX_SECURITIES_BATCH"
-  database             = snowflake_database.datalake.name
-  schema               = snowflake_schema.monex_securities.name
-  url                  = "s3://${var.aws_s3_ap_alias}/monex_securities/batch/"
-  aws_access_point_arn = local.datalake_sf_ap_arn
-  storage_integration  = snowflake_storage_integration_aws.si_s3_accesspoint_datalake.name
-  comment              = local.managed_comment
 }
 
 locals {
