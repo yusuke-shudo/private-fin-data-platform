@@ -103,15 +103,6 @@ resource "snowflake_schema" "sbi_securities" {
   comment  = local.managed_comment
 }
 
-resource "snowflake_stage_external_s3" "sbi_securities_snowpipe" {
-  name                = "STAGE_SBI_SECURITIES_SNOWPIPE"
-  database            = snowflake_database.datalake.name
-  schema              = snowflake_schema.sbi_securities.name
-  url                 = "${local.datalake_direct_s3_url}sbi_securities/snowpipe/"
-  storage_integration = snowflake_storage_integration_aws.si_s3_direct_datalake.name
-  comment             = local.managed_comment
-}
-
 resource "snowflake_stage_external_s3" "sbi_securities_stream_triggered" {
   name                = "STAGE_SBI_SECURITIES_STREAM_TRIGGERED"
   database            = snowflake_database.datalake.name
