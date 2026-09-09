@@ -57,12 +57,10 @@ jobs:
 
       - name: Remove old stage resources from state
         run: |
-          terraform state list | grep -E '(paypay_bank_stage|paypay_bank_masters_direct_dir_stage|orico_credit_stage|orico_credit_masters_direct_dir_stage|sbi_stage|monex_history_direct_stage|monex_stage)' | while read resource; do
-            terraform state rm "$resource" || true
-          done
+          terraform state rm snowflake_tag_association.datalake_stage_object_managed_by
 
       - name: Terraform Plan to Snowflake Dev1
-        run: terraform plan -input=false -no-color -out=tfplan -target=time_sleep.wait_for_aws_propagation
+        run: terraform plan -input=false -no-color -out=tfplan -target=snowflake_tag_association.datalake_stage_object_managed_by
         env:
           TF_LOG:                               DEBUG
           TF_LOG_PATH:                          terraform.log
