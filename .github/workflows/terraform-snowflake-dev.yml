@@ -55,6 +55,18 @@ jobs:
             -backend-config="use_lockfile=true" \
             -backend-config="encrypt=true"
 
+      - name: Remove old stage resources from state
+        run: |
+          terraform state rm \
+            'snowflake_stage_external_s3.paypay_bank_stage' \
+            'snowflake_stage_external_s3.paypay_bank_masters_direct_dir_stage' \
+            'snowflake_stage_external_s3.orico_credit_stage' \
+            'snowflake_stage_external_s3.orico_credit_masters_direct_dir_stage' \
+            'snowflake_stage_external_s3.sbi_stage' \
+            'snowflake_stage_external_s3.monex_history_direct_stage' \
+            'snowflake_stage_external_s3.monex_stage' \
+          || true
+
       - name: Terraform Plan to Snowflake Dev
         run: terraform plan -no-color -out=tfplan
         env:
@@ -67,7 +79,8 @@ jobs:
           TF_VAR_sf_organization_name:          ${{ vars.SF_ORGANIZATION_NAME }}
           TF_VAR_sf_account_name:               ${{ vars.SF_ACCOUNT_NAME }}
           TF_VAR_aws_account_id:                ${{ vars.AWS_ACCOUNT_ID }}
-          TF_VAR_sf_external_id:                ${{ vars.SF_EXTERNAL_ID }}
+          TF_VAR_sf_external_id_accesspoint:    ${{ vars.SF_EXTERNAL_ID_ACCESSPOINT }}
+          TF_VAR_sf_external_id_direct:         ${{ vars.SF_EXTERNAL_ID_DIRECT }}
           TF_VAR_aws_s3_ap_alias:               ${{ vars.AWS_S3_AP_ALIAS }}
           SNOWFLAKE_USER:                       "cicd_infra_engineer_user"
           SNOWFLAKE_AUTHENTICATOR:              "WORKLOAD_IDENTITY"
@@ -85,7 +98,8 @@ jobs:
           TF_VAR_sf_organization_name:          ${{ vars.SF_ORGANIZATION_NAME }}
           TF_VAR_sf_account_name:               ${{ vars.SF_ACCOUNT_NAME }}
           TF_VAR_aws_account_id:                ${{ vars.AWS_ACCOUNT_ID }}
-          TF_VAR_sf_external_id:                ${{ vars.SF_EXTERNAL_ID }}
+          TF_VAR_sf_external_id_accesspoint:    ${{ vars.SF_EXTERNAL_ID_ACCESSPOINT }}
+          TF_VAR_sf_external_id_direct:         ${{ vars.SF_EXTERNAL_ID_DIRECT }}
           TF_VAR_aws_s3_ap_alias:               ${{ vars.AWS_S3_AP_ALIAS }}
           SNOWFLAKE_USER:                       "cicd_infra_engineer_user"
           SNOWFLAKE_AUTHENTICATOR:              "WORKLOAD_IDENTITY"
