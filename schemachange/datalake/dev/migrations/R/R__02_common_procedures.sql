@@ -27,7 +27,7 @@ BEGIN
     '    METADATA$FILE_ROW_NUMBER AS line_number,',
     '    $1 AS raw_text',
     '  FROM',
-    '    @' || :p_stage_path,
+    '    \'@' || :p_stage_path || '\'',
     '  )',
     'FILE_FORMAT = (',
     '  FORMAT_NAME = \'' || :p_file_format_fqn || '\'',
@@ -80,7 +80,7 @@ BEGIN
     '    METADATA$FILE_ROW_NUMBER AS line_number,',
     '    $1 AS raw_text',
     '  FROM',
-    '    @' || :p_stage_path,
+    '    \'@' || :p_stage_path || '\'',
     '  )',
     'FILE_FORMAT = (',
     '  FORMAT_NAME = \'' || :p_file_format_fqn || '\'',
@@ -132,8 +132,6 @@ DECLARE
   sql                 VARCHAR;
 
 BEGIN
-  -- Temporary delay for validating events arriving during task execution.
-  CALL SYSTEM$WAIT(10, 'SECONDS');
 
   CREATE OR REPLACE TEMP TABLE
     IDENTIFIER(:snapshot_table_fqn)
@@ -152,7 +150,7 @@ BEGIN
     '    METADATA$FILE_ROW_NUMBER AS line_number,',
     '    $1 AS raw_text',
     '  FROM',
-    '    @' || :p_stage_path,
+    '    \'@' || :p_stage_path || '\'',
     '  )',
     'FILE_FORMAT = (',
     '  FORMAT_NAME = \'' || :p_file_format_fqn || '\'',
@@ -233,7 +231,7 @@ BEGIN
     'COPY INTO',
     '  ' || tmp_table,
     'FROM',
-    '  @' || :p_stage_path,
+    '  \'@' || :p_stage_path || '\'',
     'FILE_FORMAT = (',
     '  FORMAT_NAME = \'' || :p_file_format_fqn || '\',',
     '  ERROR_ON_COLUMN_COUNT_MISMATCH = FALSE',
@@ -284,12 +282,6 @@ DECLARE
 BEGIN
 
   CALL datalake_db.common.proc_load_raw_full_refresh(
-    'datalake_db.paypay_bank.home_loan_schedule_raw',
-    'datalake_db.paypay_bank.stage_paypay_bank/masters/home_loan_schedule/',
-    'datalake_db.common.ff_nodelimiter_sjis'
-  );
-
-  CALL datalake_db.common.proc_load_raw_full_refresh(
     'datalake_db.orico_credit.home_reform_loan_schedule_raw',
     'datalake_db.orico_credit.stage_orico_credit/masters/home_reform_loan_schedule/',
     'datalake_db.common.ff_nodelimiter'
@@ -337,6 +329,7 @@ ALTER PROCEDURE datalake_db.common.proc_task_load_raw_0300()
 
 CREATE OR REPLACE PROCEDURE datalake_db.common.proc_load_raw_masters_from_stream(
   p_stream_fqn      VARCHAR,
+  p_work_table_fqn  VARCHAR,
   p_stage_fqn       VARCHAR,
   p_dataset_config  VARIANT
 )
@@ -347,82 +340,71 @@ AS
 $$
 DECLARE
 
-  work_table_fqn        VARCHAR;
-  dataname              VARCHAR;
-  dataset_config_item   VARIANT;
-  file_format_fqn       VARCHAR;
-  target_table_fqn      VARCHAR;
-  v_relative_path       VARCHAR;
-  v_last_modified       TIMESTAMP_TZ;
-  processed_count       NUMBER  DEFAULT 0;
-  failed_count          NUMBER  DEFAULT 0;
+  rs RESULTSET DEFAULT (
+    SELECT
+      relative_path,
+      last_modified
+    FROM
+      IDENTIFIER(:p_work_table_fqn)
+    WHERE
+      action = 'INSERT'
+    QUALIFY
+      ROW_NUMBER() OVER (
+        PARTITION BY SPLIT_PART(relative_path, '/', 1)
+        ORDER BY last_modified DESC
+      ) = 1
+    ORDER BY
+      last_modified
+  );
+  cur CURSOR FOR rs;
+
+  v_relative_path      VARCHAR;
+  v_last_modified      TIMESTAMP_TZ;
+  dataname             VARCHAR;
+  dataset_config_item  VARIANT;
+
+  processed_count  NUMBER  DEFAULT 0;
+  failed_count     NUMBER  DEFAULT 0;
 
 BEGIN
 
-  -- Determine work table FQN from stream FQN
-  -- Example: datalake_db.paypay_bank.stream_paypay_bank_masters_direct_dir
-  --       -> datalake_db.paypay_bank.work_stream_paypay_bank_masters_direct_dir
-  work_table_fqn := REPLACE(
-    :p_stream_fqn,
-    'stream_',
-    'work_stream_'
-  );
-
-  -- Insert all stream events into work table
-  INSERT INTO IDENTIFIER(:work_table_fqn) (relative_path, last_modified)
+  INSERT INTO
+    IDENTIFIER(:p_work_table_fqn)
   SELECT
     relative_path,
+    metadata$action,
     last_modified
   FROM
     IDENTIFIER(:p_stream_fqn)
   ;
 
-  -- Process work table records (only INSERT actions, and latest per relative_path)
-  FOR v_relative_path, v_last_modified IN (
-    SELECT
-      relative_path,
-      last_modified
-    FROM
-      IDENTIFIER(:work_table_fqn)
-    WHERE
-      metadata$action = 'INSERT'
-    QUALIFY
-      ROW_NUMBER() OVER (PARTITION BY relative_path ORDER BY last_modified DESC) = 1
-    ORDER BY
-      last_modified ASC
-  ) DO
+  FOR row_variable IN cur DO
+
+    v_relative_path := row_variable.relative_path;
+    v_last_modified := row_variable.last_modified;
 
     BEGIN
 
-      -- Extract data name from relative_path (first directory level)
-      -- Example: home_loan_schedule/home_loan_schedule_raw.csv -> home_loan_schedule
       dataname := SPLIT_PART(:v_relative_path, '/', 1);
       dataset_config_item := :p_dataset_config[:dataname];
 
-      -- If config exists for this data name, process it
       IF (dataset_config_item IS NOT NULL) THEN
-        target_table_fqn := dataset_config_item:target_table::VARCHAR;
-        file_format_fqn := dataset_config_item:file_format::VARCHAR;
-
         CALL datalake_db.common.proc_load_raw_master_full_refresh_with_transaction(
-          :target_table_fqn,
+          :dataset_config_item:target_table_fqn::VARCHAR,
           :p_stage_fqn || '/' || :v_relative_path,
-          :file_format_fqn
+          :dataset_config_item:file_format_fqn::VARCHAR
         );
         processed_count := processed_count + 1;
       END IF;
 
-      -- Delete all records (both INSERT and DELETE) with the same relative_path
-      -- This happens regardless of whether the file was processed or matched
       DELETE FROM
-        IDENTIFIER(:work_table_fqn)
+        IDENTIFIER(:p_work_table_fqn)
       WHERE
-        relative_path = :v_relative_path
+        relative_path LIKE :dataname || '/%'
       ;
 
     EXCEPTION
       WHEN OTHER THEN
-        -- Log error but continue processing other records
         failed_count := failed_count + 1;
         CONTINUE;
 
