@@ -217,27 +217,6 @@ resource "snowflake_tag_association" "datalake_schema_managed_by" {
   tag_value          = "terraform"
 }
 
-resource "snowflake_tag_association" "datalake_stage_object_managed_by" {
-  object_identifiers = local.datalake_stage_object_managed_by_targets
-  object_type        = "STAGE"
-  tag_id             = snowflake_tag.object_managed_by.fully_qualified_name
-  tag_value          = "terraform"
-  depends_on = [
-    snowflake_stage_external_s3.paypay_bank_snowpipe,
-    snowflake_stage_external_s3.paypay_bank_stream_triggered,
-    snowflake_stage_external_s3.paypay_bank_batch,
-    snowflake_stage_external_s3.orico_credit_snowpipe,
-    snowflake_stage_external_s3.orico_credit_stream_triggered,
-    snowflake_stage_external_s3.orico_credit_batch,
-    snowflake_stage_external_s3.sbi_securities_snowpipe,
-    snowflake_stage_external_s3.sbi_securities_stream_triggered,
-    snowflake_stage_external_s3.sbi_securities_batch,
-    snowflake_stage_external_s3.monex_securities_snowpipe,
-    snowflake_stage_external_s3.monex_securities_stream_triggered,
-    snowflake_stage_external_s3.monex_securities_batch,
-  ]
-}
-
 # ==============================================================================
 # Grants for cicd_data_engineer_role (dbt operations - read source data)
 # ==============================================================================
