@@ -57,15 +57,9 @@ jobs:
 
       - name: Remove old stage resources from state
         run: |
-          terraform state rm \
-            'snowflake_stage_external_s3.paypay_bank_stage' \
-            'snowflake_stage_external_s3.paypay_bank_masters_direct_dir_stage' \
-            'snowflake_stage_external_s3.orico_credit_stage' \
-            'snowflake_stage_external_s3.orico_credit_masters_direct_dir_stage' \
-            'snowflake_stage_external_s3.sbi_stage' \
-            'snowflake_stage_external_s3.monex_history_direct_stage' \
-            'snowflake_stage_external_s3.monex_stage' \
-          || true
+          terraform state list | grep -E '(paypay_bank_stage|paypay_bank_masters_direct_dir_stage|orico_credit_stage|orico_credit_masters_direct_dir_stage|sbi_stage|monex_history_direct_stage|monex_stage)' | while read resource; do
+            terraform state rm "$resource" || true
+          done
 
       - name: Terraform Plan to Snowflake Dev
         run: terraform plan -no-color -out=tfplan
