@@ -1,5 +1,15 @@
-CREATE OR ALTER TASK datalake_db.paypay_bank.task_paypay_bank_masters_refresh
+CREATE TASK IF NOT EXISTS datalake_db.paypay_bank.task_paypay_bank_masters_refresh
   WITH TAG (common_db.governance.object_managed_by = 'schemachange')
+AS
+EXECUTE IMMEDIATE $$
+BEGIN
+  -- TASKがSUSPENDしないように、基本的にはCREATE OR ALTERで作成する。
+  -- ただし、TAGについてはサポートされていないため、CREATE TASKで作成する。
+END
+$$
+;
+
+CREATE OR ALTER TASK datalake_db.paypay_bank.task_paypay_bank_masters_refresh
   TARGET_COMPLETION_INTERVAL = '1 MINUTES'
   SUSPEND_TASK_AFTER_NUM_FAILURES = 3
   SERVERLESS_TASK_MAX_STATEMENT_SIZE = 'XSMALL'
