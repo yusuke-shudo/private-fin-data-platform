@@ -1,5 +1,7 @@
 CREATE TASK IF NOT EXISTS datalake_db.paypay_bank.task_paypay_bank_masters_refresh
   WITH TAG (common_db.governance.object_managed_by = 'schemachange')
+  TARGET_COMPLETION_INTERVAL = '1 MINUTES'
+  SUSPEND_TASK_AFTER_NUM_FAILURES = 3
   SERVERLESS_TASK_MAX_STATEMENT_SIZE = 'XSMALL'
   WHEN SYSTEM$STREAM_HAS_DATA(
     'datalake_db.paypay_bank.stream_paypay_bank_masters_direct_dir'
