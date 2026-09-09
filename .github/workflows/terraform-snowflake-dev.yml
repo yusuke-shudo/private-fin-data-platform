@@ -62,7 +62,7 @@ jobs:
           done
 
       - name: Terraform Plan to Snowflake Dev1
-        run: terraform plan -input=false -no-color -out=tfplan -target=snowflake_storage_integration_aws.si_s3_direct_datalake
+        run: terraform plan -input=false -no-color -out=tfplan -target=snowflake_stage_external_s3.monex_securities_snowpipe
         env:
           TF_LOG:                               DEBUG
           TF_LOG_PATH:                          terraform.log
