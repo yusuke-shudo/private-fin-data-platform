@@ -1,10 +1,9 @@
 # AWS側 terraform/aws/platform/<env>/datalake.tf と命名規則を共有する
 locals {
-  datalake_bucket_name        = "${var.project_prefix}-${var.env}-datalake"
-  datalake_sf_role_arn        = "arn:aws:iam::${var.aws_account_id}:role/${local.datalake_bucket_name}-sf-role"
-  datalake_direct_sf_role_arn = "arn:aws:iam::${var.aws_account_id}:role/${local.datalake_bucket_name}-direct-sf-role"
-  datalake_sf_ap_arn          = "arn:aws:s3:ap-northeast-1:${var.aws_account_id}:accesspoint/${local.datalake_bucket_name}-sf-ap"
-  datalake_direct_s3_url      = "s3://${local.datalake_bucket_name}/"
+  datalake_bucket_name             = "${var.project_prefix}-${var.env}-datalake"
+  datalake_sf_accesspoint_role_arn = "arn:aws:iam::${var.aws_account_id}:role/${local.datalake_bucket_name}-sf-accesspoint-role"
+  datalake_sf_direct_role_arn      = "arn:aws:iam::${var.aws_account_id}:role/${local.datalake_bucket_name}-sf-direct-role"
+  datalake_direct_s3_url           = "s3://${local.datalake_bucket_name}/"
 }
 
 resource "time_sleep" "wait_for_aws_propagation" {
@@ -14,42 +13,40 @@ resource "time_sleep" "wait_for_aws_propagation" {
   create_duration = "30s"
 }
 
-resource "snowflake_storage_integration_aws" "s3_integration" {
-  name                 = "S3_DATA_LAKE_INTEGRATION"
-  comment              = "Storage Integration for S3 Data Lake via S3 Access Point | ${local.managed_comment}"
-  enabled              = true
-  storage_provider     = "S3"
-  storage_aws_role_arn = local.datalake_sf_role_arn
+resource "snowflake_storage_integration_aws" "si_s3_accesspoint_datalake" {
+  name                      = "SI_S3_ACCESSPOINT_DATALAKE"
+  comment                   = "Storage Integration for S3 Data Lake via S3 Access Point | ${local.managed_comment}"
+  enabled                   = true
+  storage_provider          = "S3"
+  storage_aws_role_arn      = local.datalake_sf_accesspoint_role_arn
   storage_allowed_locations = [
     var.aws_s3_ap_alias != "" ? "s3://${var.aws_s3_ap_alias}/" : "s3://dummy-bootstrap-accesspoint-bucket/"
   ]
   depends_on = [time_sleep.wait_for_aws_propagation]
 }
 
-resource "snowflake_storage_integration_aws" "datalake_direct" {
-  name                    = "S3_DATALAKE_DIRECT_INTEGRATION"
-  comment                 = "Storage Integration for S3 Datalake direct bucket access | ${local.managed_comment}"
-  enabled                 = true
-  storage_provider        = "S3"
-  storage_aws_role_arn    = local.datalake_direct_sf_role_arn
-  storage_aws_external_id = var.sf_external_id
+resource "snowflake_storage_integration_aws" "si_s3_direct_datalake" {
+  name                      = "SI_S3_DIRECT_DATALAKE"
+  comment                   = "Storage Integration for S3 Datalake direct bucket access (for event notifications) | ${local.managed_comment}"
+  enabled                   = true
+  storage_provider          = "S3"
+  storage_aws_role_arn      = local.datalake_sf_direct_role_arn
+  storage_aws_external_id   = var.sf_external_id
   storage_allowed_locations = [
-    "${local.datalake_direct_s3_url}paypay_bank/masters/",
-    "${local.datalake_direct_s3_url}orico_credit/masters/",
-    "${local.datalake_direct_s3_url}monex_securities/history/"
+    "${local.datalake_direct_s3_url}"
   ]
   depends_on = [time_sleep.wait_for_aws_propagation]
 }
 
 locals {
   integration_object_managed_by_targets = [
-    snowflake_storage_integration_aws.s3_integration.fully_qualified_name,
-    snowflake_storage_integration_aws.datalake_direct.fully_qualified_name,
+    snowflake_storage_integration_aws.si_s3_accesspoint_datalake.fully_qualified_name,
+    snowflake_storage_integration_aws.si_s3_direct_datalake.fully_qualified_name,
   ]
 }
 
 resource "time_sleep" "integration_output_gate" {
-  depends_on      = [snowflake_storage_integration_aws.s3_integration]
+  depends_on      = [snowflake_storage_integration_aws.si_s3_accesspoint_datalake]
   create_duration = "30s"
 }
 

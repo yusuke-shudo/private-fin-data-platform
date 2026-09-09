@@ -118,4 +118,3 @@ resource "snowflake_grant_privileges_to_account_role" "common_cicd_utils_usage" 
     schema_name = "${snowflake_database.common.name}.${snowflake_schema.utils.name}"
   }
 }
-

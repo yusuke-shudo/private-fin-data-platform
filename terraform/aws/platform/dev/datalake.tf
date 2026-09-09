@@ -3,7 +3,7 @@
 #
 # 命名規則
 #   バケット               : <project_prefix>-<env>-<用途>   例: yskshd-fin-data-dev-datalake
-#   Snowflake連携IAMロール : <バケット名>-sf-role
+#   Snowflake連携IAMロール : <バケット名>-sf-accesspoint-role / <バケット名>-sf-direct-role
 #   Snowflake連携アクセスポイント : <バケット名>-sf-ap
 # 用途は datalake / iceberg のように増える想定。用途ごとに .tf ファイルを分ける。
 # =========================================================================
@@ -11,11 +11,11 @@ locals {
   aws_region = "ap-northeast-1"
   account_id = data.aws_caller_identity.current.account_id
 
-  datalake_bucket_name         = "${var.project_prefix}-${var.env}-datalake"
-  datalake_sf_role_name        = "${local.datalake_bucket_name}-sf-role"
-  datalake_direct_sf_role_name = "${local.datalake_bucket_name}-direct-sf-role"
-  datalake_sf_ap_name          = "${local.datalake_bucket_name}-sf-ap"
-  datalake_sf_ap_arn           = "arn:aws:s3:${local.aws_region}:${local.account_id}:accesspoint/${local.datalake_sf_ap_name}"
+  datalake_bucket_name              = "${var.project_prefix}-${var.env}-datalake"
+  datalake_sf_ap_name               = "${local.datalake_bucket_name}-sf-ap"
+  datalake_sf_ap_arn                = "arn:aws:s3:${local.aws_region}:${local.account_id}:accesspoint/${local.datalake_sf_ap_name}"
+  datalake_sf_accesspoint_role_name = "${local.datalake_bucket_name}-sf-accesspoint-role"
+  datalake_sf_direct_role_name      = "${local.datalake_bucket_name}-sf-direct-role"
 }
 
 # =========================================================================
@@ -80,9 +80,9 @@ resource "aws_s3_bucket_notification" "datalake" {
 # =========================================================================
 # Snowflake連携用 IAMロール
 # =========================================================================
-resource "aws_iam_role" "datalake_sf" {
+resource "aws_iam_role" "datalake_sf_accesspoint" {
   provider = aws.resource_creation
-  name     = local.datalake_sf_role_name
+  name     = local.datalake_sf_accesspoint_role_name
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -105,21 +105,21 @@ resource "aws_iam_role" "datalake_sf" {
     ]
   })
   tags = {
-    Name        = local.datalake_sf_role_name
+    Name        = local.datalake_sf_accesspoint_role_name
     Environment = var.env
     ManagedBy   = "Terraform"
   }
 }
 
 # アクセスポイントポリシーがロールARNを解決できるようIAMの伝播を待つ
-resource "time_sleep" "datalake_sf_role_propagation" {
-  depends_on      = [aws_iam_role.datalake_sf]
+resource "time_sleep" "datalake_sf_accesspoint_role_propagation" {
+  depends_on      = [aws_iam_role.datalake_sf_accesspoint]
   create_duration = "30s"
 }
 
-resource "aws_iam_role" "datalake_direct_sf" {
+resource "aws_iam_role" "datalake_sf_direct" {
   provider = aws.resource_creation
-  name     = local.datalake_direct_sf_role_name
+  name     = local.datalake_sf_direct_role_name
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -142,16 +142,16 @@ resource "aws_iam_role" "datalake_direct_sf" {
     ]
   })
   tags = {
-    Name        = local.datalake_direct_sf_role_name
+    Name        = local.datalake_sf_direct_role_name
     Environment = var.env
     ManagedBy   = "Terraform"
   }
 }
 
-resource "aws_iam_role_policy" "datalake_direct_sf_read" {
+resource "aws_iam_role_policy" "datalake_sf_direct_readonly" {
   provider = aws.resource_creation
-  name     = "${local.datalake_direct_sf_role_name}-read"
-  role     = aws_iam_role.datalake_direct_sf.id
+  name     = "${local.datalake_sf_direct_role_name}-readonly"
+  role     = aws_iam_role.datalake_sf_direct.id
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -164,34 +164,21 @@ resource "aws_iam_role_policy" "datalake_direct_sf_read" {
         Resource = aws_s3_bucket.datalake.arn
       },
       {
-        Sid    = "AllowDatalakeDirectPrefixList"
+        Sid    = "AllowDatalakeListBucket"
         Effect = "Allow"
         Action = [
           "s3:ListBucket"
         ]
         Resource = aws_s3_bucket.datalake.arn
-        Condition = {
-          StringLike = {
-            "s3:prefix" = [
-              "paypay_bank/masters/*",
-              "orico_credit/masters/*",
-              "monex_securities/history/*"
-            ]
-          }
-        }
       },
       {
-        Sid    = "AllowDatalakeDirectPrefixRead"
+        Sid    = "AllowDatalakeObjectRead"
         Effect = "Allow"
         Action = [
           "s3:GetObject",
           "s3:GetObjectVersion"
         ]
-        Resource = [
-          "${aws_s3_bucket.datalake.arn}/paypay_bank/masters/*",
-          "${aws_s3_bucket.datalake.arn}/orico_credit/masters/*",
-          "${aws_s3_bucket.datalake.arn}/monex_securities/history/*"
-        ]
+        Resource = "${aws_s3_bucket.datalake.arn}/*"
       }
     ]
   })
@@ -200,26 +187,24 @@ resource "aws_iam_role_policy" "datalake_direct_sf_read" {
 # =========================================================================
 # 外部システム（Snowflake）専用のアクセスポイント
 # =========================================================================
-resource "aws_s3_access_point" "datalake_sf" {
+resource "aws_s3_access_point" "datalake_sf_accesspoint" {
   provider   = aws.resource_creation
   bucket     = aws_s3_bucket.datalake.id
   name       = local.datalake_sf_ap_name
-  depends_on = [time_sleep.datalake_sf_role_propagation]
+  depends_on = [time_sleep.datalake_sf_accesspoint_role_propagation]
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
-        Sid    = "AllowSnowflakeAccess"
+        Sid    = "AllowSnowflakeReadAccess"
         Effect = "Allow"
         Principal = {
-          AWS = aws_iam_role.datalake_sf.arn
+          AWS = aws_iam_role.datalake_sf_accesspoint.arn
         }
         Action = [
           "s3:ListBucket",
           "s3:GetObject",
-          "s3:GetObjectVersion",
-          "s3:PutObject",
-          "s3:DeleteObject"
+          "s3:GetObjectVersion"
         ]
         Resource = [
           local.datalake_sf_ap_arn,
@@ -239,7 +224,7 @@ resource "aws_s3_access_point" "datalake_sf" {
         Condition = {
           ArnNotEquals = {
             "aws:PrincipalArn" = [
-              aws_iam_role.datalake_sf.arn
+              aws_iam_role.datalake_sf_accesspoint.arn
             ]
           }
         }
@@ -268,14 +253,14 @@ resource "aws_s3_bucket_policy" "datalake" {
         ]
         Condition = {
           StringNotEquals = {
-            "s3:DataAccessPointArn" = aws_s3_access_point.datalake_sf.arn
+            "s3:DataAccessPointArn" = aws_s3_access_point.datalake_sf_accesspoint.arn
           }
           StringNotLike = {
             "aws:PrincipalArn" = [
               "arn:aws:iam::${local.account_id}:root",
               "arn:aws:iam::${local.account_id}:role/aws-reserved/sso.amazonaws.com/*/*",
               "arn:aws:iam::${local.account_id}:role/github-actions-resource-creation-role",
-              aws_iam_role.datalake_direct_sf.arn
+              aws_iam_role.datalake_sf_direct.arn
             ]
           }
         }
@@ -291,7 +276,7 @@ resource "aws_s3_bucket_policy" "datalake" {
         ]
         Condition = {
           StringEquals = {
-            "s3:DataAccessPointArn" = aws_s3_access_point.datalake_sf.arn
+            "s3:DataAccessPointArn" = aws_s3_access_point.datalake_sf_accesspoint.arn
           }
         }
       },
