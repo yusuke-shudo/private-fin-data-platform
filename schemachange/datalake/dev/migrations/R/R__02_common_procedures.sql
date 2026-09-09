@@ -421,6 +421,6 @@ END;
 $$
 ;
 
-ALTER PROCEDURE datalake_db.common.proc_load_raw_masters_from_stream(VARCHAR, VARCHAR, VARIANT)
+ALTER PROCEDURE datalake_db.common.proc_load_raw_masters_from_stream(VARCHAR, VARCHAR, VARCHAR, VARIANT)
   SET TAG common_db.governance.object_managed_by = 'schemachange'
 ;
