@@ -14,9 +14,15 @@ variable "sf_user_arn" {
   default     = ""
 }
 
-variable "sf_external_id" {
+variable "sf_external_id_accesspoint" {
   type        = string
-  description = "SnowflakeのStorage Integrationから発行される外部ID"
+  description = "SI_S3_ACCESSPOINT_DATALAKE から発行される外部ID"
+  default     = ""
+}
+
+variable "sf_external_id_direct" {
+  type        = string
+  description = "SI_S3_DIRECT_DATALAKE から発行される外部ID"
   default     = ""
 }
 

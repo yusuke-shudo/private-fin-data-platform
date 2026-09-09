@@ -94,10 +94,10 @@ resource "aws_iam_role" "datalake_sf_accesspoint" {
             AWS = var.sf_user_arn != "" ? var.sf_user_arn : "arn:aws:iam::${local.account_id}:root"
           }
         },
-        var.sf_external_id != "" ? {
+        var.sf_external_id_accesspoint != "" ? {
           Condition = {
             StringEquals = {
-              "sts:ExternalId" = var.sf_external_id
+              "sts:ExternalId" = var.sf_external_id_accesspoint
             }
           }
         } : {}
@@ -131,10 +131,10 @@ resource "aws_iam_role" "datalake_sf_direct" {
             AWS = var.sf_user_arn != "" ? var.sf_user_arn : "arn:aws:iam::${local.account_id}:root"
           }
         },
-        var.sf_external_id != "" ? {
+        var.sf_external_id_direct != "" ? {
           Condition = {
             StringEquals = {
-              "sts:ExternalId" = var.sf_external_id
+              "sts:ExternalId" = var.sf_external_id_direct
             }
           }
         } : {}
