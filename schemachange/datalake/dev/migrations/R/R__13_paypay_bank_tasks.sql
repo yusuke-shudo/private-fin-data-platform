@@ -1,4 +1,4 @@
-CREATE TASK IF NOT EXISTS datalake_db.paypay_bank.task_paypay_bank_masters_refresh
+CREATE OR ALTER TASK datalake_db.paypay_bank.task_paypay_bank_masters_refresh
   WITH TAG (common_db.governance.object_managed_by = 'schemachange')
   TARGET_COMPLETION_INTERVAL = '1 MINUTES'
   SUSPEND_TASK_AFTER_NUM_FAILURES = 3
