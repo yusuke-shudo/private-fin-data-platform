@@ -65,8 +65,11 @@ resource "aws_s3_bucket_notification" "datalake" {
 
   dynamic "queue" {
     for_each = var.snowflake_s3_event_queue_arn != "" ? {
-      paypay_bank_masters  = "paypay_bank/masters/"
-      orico_credit_masters = "orico_credit/masters/"
+      paypay_bank_masters  = "paypay_bank/stream_triggered/"
+      orico_credit_masters = "orico_credit/stream_triggered/"
+      orico_credit_masters = "sbi_securities/stream_triggered/"
+      orico_credit_masters = "monex_securities/stream_triggered/"
+      orico_credit_masters = "jpx_exchange/snowpipe/"
     } : {}
     content {
       id            = "directory-${replace(queue.value, "/", "-")}"
