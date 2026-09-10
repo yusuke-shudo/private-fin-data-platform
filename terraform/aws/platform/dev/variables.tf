@@ -26,8 +26,8 @@ variable "sf_external_id_direct" {
   default     = ""
 }
 
-variable "snowflake_s3_event_queue_arn" {
+variable "sf_sqs_arn" {
   type        = string
-  description = "SnowflakeのDirectory Table自動更新用SQSキューARN。DESC STAGEのdirectory_notification_channelから取得し、GitHub変数 AWS_SNOWFLAKE_S3_EVENT_QUEUE_ARN で注入する。未設定の間はS3通知を作成しない"
+  description = "SnowflakeのDirectory Table自動更新用SQSキューARN。DESC STAGEのdirectory_notification_channelから取得し、GitHub変数 SF_SQS_ARN で注入する。未設定の間はS3通知を作成しない"
   default     = ""
 }

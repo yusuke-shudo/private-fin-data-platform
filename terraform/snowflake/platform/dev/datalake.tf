@@ -105,13 +105,14 @@ resource "snowflake_schema" "jpx_exchange" {
   comment  = local.managed_comment
 }
 
-resource "snowflake_stage_external_s3" "jpx_exchange_snowpipe" {
-  name                = "STAGE_JPX_EXCHANGE_SNOWPIPE"
-  database            = snowflake_database.datalake.name
-  schema              = snowflake_schema.jpx_exchange.name
-  url                 = "${local.datalake_direct_s3_url}jpx_exchange/snowpipe/"
-  storage_integration = snowflake_storage_integration_aws.si_s3_direct_datalake.name
-  comment             = local.managed_comment
+resource "snowflake_stage_external_s3" "jpx_exchange_batch" {
+  name                 = "STAGE_JPX_EXCHANGE_BATCH"
+  database             = snowflake_database.datalake.name
+  schema               = snowflake_schema.jpx_exchange.name
+  url                  = "s3://${var.aws_s3_ap_alias}/jpx_exchange/batch/"
+  aws_access_point_arn = local.datalake_sf_ap_arn
+  storage_integration  = snowflake_storage_integration_aws.si_s3_accesspoint_datalake.name
+  comment              = local.managed_comment
   directory {
     enable            = true
     auto_refresh      = "true"
@@ -125,14 +126,13 @@ resource "snowflake_schema" "jpx_research" {
   comment  = local.managed_comment
 }
 
-resource "snowflake_stage_external_s3" "jpx_research_batch" {
-  name                 = "STAGE_JPX_RESEARCH_BATCH"
-  database             = snowflake_database.datalake.name
-  schema               = snowflake_schema.jpx_research.name
-  url                  = "s3://${var.aws_s3_ap_alias}/jpx_research/batch/"
-  aws_access_point_arn = local.datalake_sf_ap_arn
-  storage_integration  = snowflake_storage_integration_aws.si_s3_accesspoint_datalake.name
-  comment              = local.managed_comment
+resource "snowflake_stage_external_s3" "jpx_research_snowpipe" {
+  name                = "STAGE_JPX_RESEARCH_SNOWPIPE"
+  database            = snowflake_database.datalake.name
+  schema              = snowflake_schema.jpx_research.name
+  url                 = "${local.datalake_direct_s3_url}jpx_research/snowpipe/"
+  storage_integration = snowflake_storage_integration_aws.si_s3_direct_datalake.name
+  comment             = local.managed_comment
   directory {
     enable            = true
     auto_refresh      = "true"
@@ -159,8 +159,8 @@ locals {
     snowflake_stage_external_s3.orico_credit_stream_triggered.fully_qualified_name,
     snowflake_stage_external_s3.sbi_securities_stream_triggered.fully_qualified_name,
     snowflake_stage_external_s3.monex_securities_stream_triggered.fully_qualified_name,
-    snowflake_stage_external_s3.jpx_exchange_snowpipe.fully_qualified_name,
-    snowflake_stage_external_s3.jpx_research_batch.fully_qualified_name,
+    snowflake_stage_external_s3.jpx_research_snowpipe.fully_qualified_name,
+    snowflake_stage_external_s3.jpx_exchange_batch.fully_qualified_name,
   ]
 }
 

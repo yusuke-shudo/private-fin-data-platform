@@ -64,16 +64,16 @@ resource "aws_s3_bucket_notification" "datalake" {
   bucket   = aws_s3_bucket.datalake.id
 
   dynamic "queue" {
-    for_each = var.snowflake_s3_event_queue_arn != "" ? {
+    for_each = var.sf_sqs_arn != "" ? {
       paypay_bank_stream_triggered  = "paypay_bank/stream_triggered/"
       orico_credit_stream_triggered = "orico_credit/stream_triggered/"
       sbi_securities_stream_triggered = "sbi_securities/stream_triggered/"
       monex_securities_stream_triggered = "monex_securities/stream_triggered/"
-      jpx_exchange_snowpipe = "jpx_exchange/snowpipe/"
+      jpx_research_snowpipe = "jpx_research/snowpipe/"
     } : {}
     content {
       id            = "snowflake-${replace(queue.key, "_", "-")}"
-      queue_arn     = var.snowflake_s3_event_queue_arn
+      queue_arn     = var.sf_sqs_arn
       events        = ["s3:ObjectCreated:*", "s3:ObjectRemoved:*"]
       filter_prefix = queue.value
     }
