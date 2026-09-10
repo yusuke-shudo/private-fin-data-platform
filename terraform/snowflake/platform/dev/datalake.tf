@@ -112,6 +112,11 @@ resource "snowflake_stage_external_s3" "jpx_exchange_snowpipe" {
   url                 = "${local.datalake_direct_s3_url}jpx_exchange/snowpipe/"
   storage_integration = snowflake_storage_integration_aws.si_s3_direct_datalake.name
   comment             = local.managed_comment
+  directory {
+    enable            = true
+    auto_refresh      = "true"
+    refresh_on_create = "true"
+  }
 }
 
 resource "snowflake_schema" "jpx_research" {
@@ -128,6 +133,11 @@ resource "snowflake_stage_external_s3" "jpx_research_batch" {
   aws_access_point_arn = local.datalake_sf_ap_arn
   storage_integration  = snowflake_storage_integration_aws.si_s3_accesspoint_datalake.name
   comment              = local.managed_comment
+  directory {
+    enable            = true
+    auto_refresh      = "true"
+    refresh_on_create = "true"
+  }
 }
 
 locals {
