@@ -156,35 +156,35 @@ BEGIN
 
   CALL datalake_db.common.proc_load_raw_full_refresh(
     'datalake_db.sbi_securities.domestic_trade_history_raw',
-    'datalake_db.sbi_securities.stage_sbi_securities/batch/domestic_trade_history/',
+    'datalake_db.sbi_securities.stage_sbi_securities_stream_triggered/domestic_trade_history/',
     'datalake_db.common.ff_nodelimiter_sjis',
     '.*\\.csv'
   );
 
   CALL datalake_db.common.proc_load_raw_full_refresh(
     'datalake_db.sbi_securities.foreign_trade_history_raw',
-    'datalake_db.sbi_securities.stage_sbi_securities/batch/foreign_trade_history/',
+    'datalake_db.sbi_securities.stage_sbi_securities_stream_triggered/foreign_trade_history/',
     'datalake_db.common.ff_nodelimiter_sjis',
     '.*\\.csv'
   );
 
   CALL datalake_db.common.proc_load_raw_full_refresh(
     'datalake_db.sbi_securities.futures_options_trade_history_raw',
-    'datalake_db.sbi_securities.stage_sbi_securities/batch/futures_options_trade_history/',
+    'datalake_db.sbi_securities.stage_sbi_securities_stream_triggered/futures_options_trade_history/',
     'datalake_db.common.ff_nodelimiter_sjis',
     '.*\\.csv'
   );
 
   CALL datalake_db.common.proc_load_raw_full_refresh(
     'datalake_db.sbi_securities.tokutei_profit_loss_report_raw',
-    'datalake_db.sbi_securities.stage_sbi_securities/batch/tokutei_profit_loss_report/',
+    'datalake_db.sbi_securities.stage_sbi_securities_stream_triggered/tokutei_profit_loss_report/',
     'datalake_db.common.ff_nodelimiter_sjis',
     '.*\\.csv'
   );
 
   CALL datalake_db.common.proc_load_raw_full_refresh(
     'datalake_db.monex_securities.all_trade_and_cash_history_raw',
-    'datalake_db.monex_securities.stage_monex_securities/history/all_trade_and_cash_history/',
+    'datalake_db.monex_securities.stage_monex_securities_stream_triggered/all_trade_and_cash_history/',
     'datalake_db.common.ff_nodelimiter_sjis',
     '.*\\.csv'
   );
@@ -212,24 +212,7 @@ AS
 $$
 DECLARE
 
-  rs RESULTSET DEFAULT (
-    SELECT
-      relative_path,
-      last_modified
-    FROM
-      IDENTIFIER(:p_work_table_fqn)
-    WHERE
-      action = 'INSERT'
-    QUALIFY
-      ROW_NUMBER() OVER (
-        PARTITION BY SPLIT_PART(relative_path, '/', 1)
-        ORDER BY last_modified DESC
-      ) = 1
-    ORDER BY
-      last_modified
-  );
-  cur CURSOR FOR rs;
-
+  rs                   RESULTSET;
   v_relative_path      VARCHAR;
   v_last_modified      TIMESTAMP_TZ;
   dataname             VARCHAR;
@@ -250,7 +233,24 @@ BEGIN
     IDENTIFIER(:p_stream_fqn)
   ;
 
-  FOR row_variable IN cur DO
+  rs := (
+    SELECT
+      relative_path,
+      last_modified
+    FROM
+      IDENTIFIER(:p_work_table_fqn)
+    WHERE
+      action = 'INSERT'
+    QUALIFY
+      ROW_NUMBER() OVER (
+        PARTITION BY SPLIT_PART(relative_path, '/', 1)
+        ORDER BY last_modified DESC
+      ) = 1
+    ORDER BY
+      last_modified
+  );
+
+  FOR row_variable IN rs DO
 
     v_relative_path := row_variable.relative_path;
     v_last_modified := row_variable.last_modified;
