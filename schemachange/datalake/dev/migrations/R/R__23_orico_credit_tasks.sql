@@ -1,4 +1,4 @@
-CREATE TASK IF NOT EXISTS datalake_db.paypay_bank.task_load_raw_from_stream_paypay_bank
+CREATE TASK IF NOT EXISTS datalake_db.orico_credit.task_load_raw_from_stream_orico_credit
   WITH TAG (common_db.governance.object_managed_by = 'schemachange')
 AS
 EXECUTE IMMEDIATE $$
@@ -9,22 +9,22 @@ END
 $$
 ;
 
-CREATE OR ALTER TASK datalake_db.paypay_bank.task_load_raw_from_stream_paypay_bank
+CREATE OR ALTER TASK datalake_db.orico_credit.task_load_raw_from_stream_orico_credit
   TARGET_COMPLETION_INTERVAL = '1 MINUTES'
   SUSPEND_TASK_AFTER_NUM_FAILURES = 3
   SERVERLESS_TASK_MAX_STATEMENT_SIZE = 'XSMALL'
   WHEN SYSTEM$STREAM_HAS_DATA(
-    'datalake_db.paypay_bank.stream_on_stage_paypay_bank'
+    'datalake_db.orico_credit.stream_on_stage_orico_credit'
   )
 AS
 CALL datalake_db.common.proc_load_raw_from_stream(
-  'datalake_db.paypay_bank.stream_on_stage_paypay_bank',
-  'datalake_db.paypay_bank.work_from_stream_paypay_bank',
-  'datalake_db.paypay_bank.stage_paypay_bank_stream_triggered',
+  'datalake_db.orico_credit.stream_on_stage_orico_credit',
+  'datalake_db.orico_credit.work_from_stream_orico_credit',
+  'datalake_db.orico_credit.stage_orico_credit_stream_triggered',
   {
     'home_loan_schedule': {
-      'target_table_fqn': 'datalake_db.paypay_bank.home_loan_schedule_raw',
-      'file_format_fqn': 'datalake_db.common.ff_nodelimiter_sjis',
+      'target_table_fqn': 'datalake_db.orico_credit.home_loan_schedule_raw',
+      'file_format_fqn': 'datalake_db.common.ff_nodelimiter',
       'file_pattern': '.*\\.csv'
     }
   }
