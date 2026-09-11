@@ -48,17 +48,31 @@ jobs:
             -backend-config="encrypt=true"
 
       - name: Terraform Plan to AWS Dev
-        run: terraform plan -no-color -out=tfplan
+        run: terraform plan -input=false -no-color -out=tfplan
         env:
-          TF_VAR_env:            ${{ env.TARGET_ENV }}
-          TF_VAR_project_prefix: ${{ vars.PROJECT_PREFIX }}
-          TF_VAR_sf_user_arn:    ${{ vars.SF_USER_ARN }}
-          TF_VAR_sf_external_id: ${{ vars.SF_EXTERNAL_ID }}
+          TF_VAR_env:                        ${{ env.TARGET_ENV }}
+          TF_VAR_project_prefix:             ${{ vars.PROJECT_PREFIX }}
+          TF_VAR_sf_user_arn:                ${{ vars.SF_USER_ARN }}
+          TF_VAR_sf_external_id_accesspoint: ${{ vars.SF_EXTERNAL_ID_ACCESSPOINT }}
+          TF_VAR_sf_external_id_direct:      ${{ vars.SF_EXTERNAL_ID_DIRECT }}
+          TF_VAR_sf_sqs_arn:                 ${{ vars.SF_SQS_ARN }}
 
       - name: Terraform Apply to AWS Dev
-        run: terraform apply -no-color tfplan
+        run: terraform apply -input=false -no-color tfplan
         env:
-          TF_VAR_env:            ${{ env.TARGET_ENV }}
-          TF_VAR_project_prefix: ${{ vars.PROJECT_PREFIX }}
-          TF_VAR_sf_user_arn:    ${{ vars.SF_USER_ARN }}
-          TF_VAR_sf_external_id: ${{ vars.SF_EXTERNAL_ID }}
+          TF_VAR_env:                        ${{ env.TARGET_ENV }}
+          TF_VAR_project_prefix:             ${{ vars.PROJECT_PREFIX }}
+          TF_VAR_sf_user_arn:                ${{ vars.SF_USER_ARN }}
+          TF_VAR_sf_external_id_accesspoint: ${{ vars.SF_EXTERNAL_ID_ACCESSPOINT }}
+          TF_VAR_sf_external_id_direct:      ${{ vars.SF_EXTERNAL_ID_DIRECT }}
+          TF_VAR_sf_sqs_arn:                 ${{ vars.SF_SQS_ARN }}
+
+      - name: Upload Terraform debug logs (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-aws-dev-debug-logs
+          path: |
+            terraform.log
+            crash.log
+          if-no-files-found: ignore

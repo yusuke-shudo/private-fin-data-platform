@@ -19,9 +19,14 @@ provider "snowflake" {
   role                       = "cicd_infra_engineer_role"
   authenticator              = "WORKLOAD_IDENTITY"
   workload_identity_provider = "OIDC"
+
   preview_features_enabled = [
     "snowflake_stage_resource",
     "snowflake_storage_integration_aws_resource",
     "snowflake_stage_external_s3_resource"
+  ]
+
+  experimental_features_enabled = [
+    "TAG_ASSOCIATION_SAFE_DESTROY"
   ]
 }
