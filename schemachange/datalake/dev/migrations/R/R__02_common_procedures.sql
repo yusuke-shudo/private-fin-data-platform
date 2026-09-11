@@ -168,27 +168,6 @@ BEGIN
     '.*\\.csv'
   );
 
-  CALL datalake_db.common.proc_load_raw_full_refresh(
-    'datalake_db.sbi_securities.futures_options_trade_history_raw',
-    'datalake_db.sbi_securities.stage_sbi_securities_stream_triggered/futures_options_trade_history/',
-    'datalake_db.common.ff_nodelimiter_sjis',
-    '.*\\.csv'
-  );
-
-  CALL datalake_db.common.proc_load_raw_full_refresh(
-    'datalake_db.sbi_securities.tokutei_profit_loss_report_raw',
-    'datalake_db.sbi_securities.stage_sbi_securities_stream_triggered/tokutei_profit_loss_report/',
-    'datalake_db.common.ff_nodelimiter_sjis',
-    '.*\\.csv'
-  );
-
-  CALL datalake_db.common.proc_load_raw_full_refresh(
-    'datalake_db.monex_securities.all_trade_and_cash_history_raw',
-    'datalake_db.monex_securities.stage_monex_securities_stream_triggered/all_trade_and_cash_history/',
-    'datalake_db.common.ff_nodelimiter_sjis',
-    '.*\\.csv'
-  );
-
   RETURN 'SUCCESS';
 
 END;
@@ -273,7 +252,7 @@ BEGIN
       DELETE FROM
         IDENTIFIER(:p_work_table_fqn)
       WHERE
-        relative_path LIKE :dataname || '/%'
+        relative_path LIKE :dataname || '%'
       ;
 
     EXCEPTION
