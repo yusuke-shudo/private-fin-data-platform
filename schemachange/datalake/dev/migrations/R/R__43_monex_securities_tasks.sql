@@ -24,7 +24,7 @@ CALL datalake_db.common.proc_load_raw_from_stream(
   {
     'all_trade_and_cash_history': {
       'target_table_fqn': 'datalake_db.monex_securities.all_trade_and_cash_history_raw',
-      'file_format_fqn': 'datalake_db.common.ff_nodelimiter',
+      'file_format_fqn': 'datalake_db.common.ff_nodelimiter_sjis',
       'file_pattern': '.*\\.csv'
     }
   }

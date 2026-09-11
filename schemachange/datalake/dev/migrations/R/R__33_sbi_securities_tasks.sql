@@ -24,12 +24,12 @@ CALL datalake_db.common.proc_load_raw_from_stream(
   {
     'futures_options_trade_history': {
       'target_table_fqn': 'datalake_db.sbi_securities.futures_options_trade_history_raw',
-      'file_format_fqn': 'datalake_db.common.ff_nodelimiter',
+      'file_format_fqn': 'datalake_db.common.ff_nodelimiter_sjis',
       'file_pattern': '.*\\.csv'
     },
     'tokutei_profit_loss_report': {
       'target_table_fqn': 'datalake_db.sbi_securities.tokutei_profit_loss_report_raw',
-      'file_format_fqn': 'datalake_db.common.ff_nodelimiter',
+      'file_format_fqn': 'datalake_db.common.ff_nodelimiter_sjis',
       'file_pattern': '.*\\.csv'
     }
   }
