@@ -30,9 +30,3 @@ variable "managed_repo" {
   description = "Repository name for object lineage metadata"
   default     = "private-fin-data-platform"
 }
-
-variable "managed_ref" {
-  type        = string
-  description = "Source revision for object lineage metadata (commit, tag, or PR)"
-  default     = "unknown"
-}

@@ -96,13 +96,17 @@ DATALAKE_DB
 |- SCHEMACHANGE
 |- COMMON
 |- MONEX_SECURITIES
+|- ORICO_CREDIT
 |- PAYPAY_BANK
-`- SBI_SECURITIES
+|- SBI_SECURITIES
+|- JPX_EXCHANGE
+`- JPX_RESEARCH
 
 DATAWAREHOUSE_DB
 |- SCHEMACHANGE
 |- STAGING
-`- CORE
+|- CORE
+`- REFERENCE
 
 DATAMART_DB
 `- SCHEMACHANGE
@@ -115,10 +119,13 @@ DATAMART_DB
 - COMMON_DB.UTILS: 汎用的に再利用するUDF/関数を管理。
 - DATALAKE_DB: 取り込み直後の生データ層（Medallion Bronze 相当）。
 - DATALAKE_DB.COMMON: 取り込み処理向けの共通プロシージャ/ユーティリティを管理。
-- DATALAKE_DB.<source_schema>: 各ソーススキーマ（例: PAYPAY_BANK, SBI_SECURITIES）をソースシステム単位で分離。
+- DATALAKE_DB.<source_schema>: 各ソーススキーマ（例: PAYPAY_BANK, SBI_SECURITIES, ORICO_CREDIT）をソースシステム単位で分離。
+- DATALAKE_DB.JPX_EXCHANGE: 日本取引所グループの株式データ取り込み。
+- DATALAKE_DB.JPX_RESEARCH: 日本取引所グループのリサーチデータ取り込み。
 - DATAWAREHOUSE_DB: 分析しやすい形に整える層（Medallion Silver 相当）。
 - DATAWAREHOUSE_DB.STAGING: DATALAKE_DB 由来データの整形層。複数テーブル結合は行わない。
 - DATAWAREHOUSE_DB.CORE: 下流分析やAI活用向けの中核データを管理。
+- DATAWAREHOUSE_DB.REFERENCE: 参照データおよび静的ルックアップテーブルを管理。
 - DATAMART_DB: BI/提供先向けのサービング層。
 - DATAMART_DB.<consumer_schema>: 提供先単位でスキーマ分離する想定で、外部利用は原則参照専用。
 

@@ -45,7 +45,9 @@ Before starting platform-specific steps, read [bootstrap/README.md](../bootstrap
 1. Collect outputs and register intermediate variables:
    - `AWS_S3_AP_ALIAS`
    - `SF_USER_ARN`
-   - `SF_EXTERNAL_ID`
+   - `SF_EXTERNAL_ID_ACCESSPOINT`
+   - `SF_EXTERNAL_ID_DIRECT`
+   - `SF_SQS_ARN`
 
 ### 3.4 Second Terraform Pass
 
@@ -78,7 +80,7 @@ Treat first-time bring-up as complete when all items below are satisfied for the
 - Manual bootstrap steps are complete: AWS -> Snowflake -> GitHub.
 - Initial GitHub Environment variables are registered (`AWS_ACCOUNT_ID`, `PROJECT_PREFIX`, `SF_ORGANIZATION_NAME`, `SF_ACCOUNT_NAME`).
 - Terraform AWS and Terraform Snowflake workflows both completed the second run successfully.
-- Intermediate variables are registered (`AWS_S3_AP_ALIAS`, `SF_USER_ARN`, `SF_EXTERNAL_ID`).
+- Intermediate variables are registered (`AWS_S3_AP_ALIAS`, `SF_USER_ARN`, `SF_EXTERNAL_ID_ACCESSPOINT`, `SF_EXTERNAL_ID_DIRECT`, `SF_SQS_ARN`).
 - schemachange workflow completed after Terraform integration resources became ready.
 
 ## 5. Developer Workbench Operation (EC2 + dbt)
