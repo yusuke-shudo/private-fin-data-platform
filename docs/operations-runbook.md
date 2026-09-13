@@ -42,12 +42,18 @@ Before starting platform-specific steps, read [bootstrap/README.md](../bootstrap
 
 ### 3.3 Intermediate Variables
 
-1. Collect outputs and register intermediate variables:
-   - `AWS_S3_AP_ALIAS`
-   - `SF_USER_ARN`
-   - `SF_EXTERNAL_ID_ACCESSPOINT`
-   - `SF_EXTERNAL_ID_DIRECT`
-   - `SF_SQS_ARN`
+1. Collect outputs from Terraform workflows and register as GitHub Environment variables:
+   - `AWS_S3_AP_ALIAS` (from Terraform AWS outputs)
+   - `SF_USER_ARN` (from Terraform Snowflake outputs)
+   - `SF_EXTERNAL_ID_ACCESSPOINT` (from Terraform Snowflake outputs)
+   - `SF_EXTERNAL_ID_DIRECT` (from Terraform Snowflake outputs)
+
+2. Obtain `SF_SQS_ARN` manually from Snowflake:
+   - Log in to Snowflake with any role that has access to the datalake database (for example, `SYSADMIN`, `cicd_infra_engineer_role`, or equivalent)
+   - Run: `DESCRIBE STAGE datalake_db.paypay_bank.stage_paypay_bank_stream_triggered;`
+   - Find the row with `DIRECTORY_NOTIFICATION_CHANNEL` and note its value (e.g., `arn:aws:sqs:...`)
+   - Register this as `SF_SQS_ARN` in the GitHub Environment
+   - Note: This SQS ARN is account-unique and shared across all stages in the account.
 
 ### 3.4 Second Terraform Pass
 
@@ -80,7 +86,7 @@ Treat first-time bring-up as complete when all items below are satisfied for the
 - Manual bootstrap steps are complete: AWS -> Snowflake -> GitHub.
 - Initial GitHub Environment variables are registered (`AWS_ACCOUNT_ID`, `PROJECT_PREFIX`, `SF_ORGANIZATION_NAME`, `SF_ACCOUNT_NAME`).
 - Terraform AWS and Terraform Snowflake workflows both completed the second run successfully.
-- Intermediate variables are registered (`AWS_S3_AP_ALIAS`, `SF_USER_ARN`, `SF_EXTERNAL_ID_ACCESSPOINT`, `SF_EXTERNAL_ID_DIRECT`, `SF_SQS_ARN`).
+- Intermediate variables are registered (`AWS_S3_AP_ALIAS`, `SF_USER_ARN`, `SF_EXTERNAL_ID_ACCESSPOINT`, `SF_EXTERNAL_ID_DIRECT`, `SF_SQS_ARN`). Note: `SF_SQS_ARN` is obtained manually via `DESCRIBE STAGE` command in Snowflake.
 - schemachange workflow completed after Terraform integration resources became ready.
 
 ## 5. Developer Workbench Operation (EC2 + dbt)

@@ -42,12 +42,18 @@
 
 ### 3.3 中間変数登録
 
-1. Outputsを確認し、中間変数を登録する。
-   - `AWS_S3_AP_ALIAS`
-   - `SF_USER_ARN`
-   - `SF_EXTERNAL_ID_ACCESSPOINT`
-   - `SF_EXTERNAL_ID_DIRECT`
-   - `SF_SQS_ARN`
+1. Terraform ワークフローが出力した値を確認し、GitHub Environment 変数として登録する。
+   - `AWS_S3_AP_ALIAS`（Terraform AWS outputs 上から）
+   - `SF_USER_ARN`（Terraform Snowflake outputs 上から）
+   - `SF_EXTERNAL_ID_ACCESSPOINT`（Terraform Snowflake outputs 上から）
+   - `SF_EXTERNAL_ID_DIRECT`（Terraform Snowflake outputs 上から）
+
+2. `SF_SQS_ARN` を Snowflake から手動で取得して登録する。
+   - Snowflake を、datalake データベース以上のアクセス権を持つロール（例: `SYSADMIN`、`cicd_infra_engineer_role`、またはそれ以上）でログイン。
+   - 次の SQL を実行: `DESCRIBE STAGE datalake_db.paypay_bank.stage_paypay_bank_stream_triggered;`
+   - `DIRECTORY_NOTIFICATION_CHANNEL` という項目の値（`arn:aws:sqs:...` の形式）を採简。
+   - この値を GitHub Environment 変数、`SF_SQS_ARN` として登録。
+   - 注記: この SQS ARN は Snowflake アカウントで一意であり、すべての Stage で統一です。
 
 ### 3.4 Terraform 2回目
 
@@ -80,7 +86,7 @@
 - 手動Bootstrap（AWS -> Snowflake -> GitHub）が完了している。
 - GitHub Environment の初期変数（`AWS_ACCOUNT_ID`, `PROJECT_PREFIX`, `SF_ORGANIZATION_NAME`, `SF_ACCOUNT_NAME`）が登録済みである。
 - Terraform AWS と Terraform Snowflake のワークフローが、2回目の実行まで成功している。
-- 中間変数（`AWS_S3_AP_ALIAS`, `SF_USER_ARN`, `SF_EXTERNAL_ID_ACCESSPOINT`, `SF_EXTERNAL_ID_DIRECT`, `SF_SQS_ARN`）が登録済みである。
+- 中間変数（`AWS_S3_AP_ALIAS`, `SF_USER_ARN`, `SF_EXTERNAL_ID_ACCESSPOINT`, `SF_EXTERNAL_ID_DIRECT`, `SF_SQS_ARN`）が登録済みである。注記: `SF_SQS_ARN` は Snowflake で「`DESCRIBE STAGE`」コマンドを実行して手動取得します。
 - Terraform 側の連携リソース作成完了後に、schemachange ワークフローが完了している。
 
 ## 5. 開発用 Workbench 運用ルール（EC2 + dbt）
