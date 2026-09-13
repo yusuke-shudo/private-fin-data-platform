@@ -45,7 +45,9 @@
 1. Outputsを確認し、中間変数を登録する。
    - `AWS_S3_AP_ALIAS`
    - `SF_USER_ARN`
-   - `SF_EXTERNAL_ID`
+   - `SF_EXTERNAL_ID_ACCESSPOINT`
+   - `SF_EXTERNAL_ID_DIRECT`
+   - `SF_SQS_ARN`
 
 ### 3.4 Terraform 2回目
 
@@ -78,7 +80,7 @@
 - 手動Bootstrap（AWS -> Snowflake -> GitHub）が完了している。
 - GitHub Environment の初期変数（`AWS_ACCOUNT_ID`, `PROJECT_PREFIX`, `SF_ORGANIZATION_NAME`, `SF_ACCOUNT_NAME`）が登録済みである。
 - Terraform AWS と Terraform Snowflake のワークフローが、2回目の実行まで成功している。
-- 中間変数（`AWS_S3_AP_ALIAS`, `SF_USER_ARN`, `SF_EXTERNAL_ID`）が登録済みである。
+- 中間変数（`AWS_S3_AP_ALIAS`, `SF_USER_ARN`, `SF_EXTERNAL_ID_ACCESSPOINT`, `SF_EXTERNAL_ID_DIRECT`, `SF_SQS_ARN`）が登録済みである。
 - Terraform 側の連携リソース作成完了後に、schemachange ワークフローが完了している。
 
 ## 5. 開発用 Workbench 運用ルール（EC2 + dbt）

@@ -108,23 +108,84 @@ WITH TAG (common_db.governance.object_managed_by = 'schemachange')
 ;
 ```
 
-## Directory Stage Streams
+## Directory Stage Streams and Work Tables
 
-Directory tableの変更を追跡するstream。streamはoffsetを持つstatefulなオブジェクトのため、
-`R__`ではなくversioned migrationで作成する。
+Directory table の変更を追跡する stream。stream は offset を持つ stateful なオブジェクトのため、
+`R__` ではなく versioned migration で作成する。
+また、stream から change data を読み取るための work テーブル（TRANSIENT TABLE）も同時に作成される。
 
-### paypay_bank.stream_paypay_bank_masters_direct_dir
+### paypay_bank.stream_on_stage_paypay_bank
 ```sql
-CREATE STREAM datalake_db.paypay_bank.stream_paypay_bank_masters_direct_dir
+CREATE STREAM datalake_db.paypay_bank.stream_on_stage_paypay_bank
   WITH TAG (common_db.governance.object_managed_by = 'schemachange')
-  ON STAGE datalake_db.paypay_bank.stage_paypay_bank_masters_direct_dir
+  ON STAGE datalake_db.paypay_bank.stage_paypay_bank_stream_triggered
 ;
 ```
 
-### orico_credit.stream_orico_credit_masters_direct_dir
+### paypay_bank.work_from_stream_paypay_bank
 ```sql
-CREATE STREAM datalake_db.orico_credit.stream_orico_credit_masters_direct_dir
+CREATE TRANSIENT TABLE datalake_db.paypay_bank.work_from_stream_paypay_bank (
+  relative_path  VARCHAR,
+  action         VARCHAR,
+  last_modified  TIMESTAMP_TZ
+)
+WITH TAG (common_db.governance.object_managed_by = 'schemachange')
+;
+```
+
+### orico_credit.stream_on_stage_orico_credit
+```sql
+CREATE STREAM datalake_db.orico_credit.stream_on_stage_orico_credit
   WITH TAG (common_db.governance.object_managed_by = 'schemachange')
-  ON STAGE datalake_db.orico_credit.stage_orico_credit_masters_direct_dir
+  ON STAGE datalake_db.orico_credit.stage_orico_credit_stream_triggered
+;
+```
+
+### orico_credit.work_from_stream_orico_credit
+```sql
+CREATE TRANSIENT TABLE datalake_db.orico_credit.work_from_stream_orico_credit (
+  relative_path  VARCHAR,
+  action         VARCHAR,
+  last_modified  TIMESTAMP_TZ
+)
+WITH TAG (common_db.governance.object_managed_by = 'schemachange')
+;
+```
+
+### sbi_securities.stream_on_stage_sbi_securities
+```sql
+CREATE STREAM datalake_db.sbi_securities.stream_on_stage_sbi_securities
+  WITH TAG (common_db.governance.object_managed_by = 'schemachange')
+  ON STAGE datalake_db.sbi_securities.stage_sbi_securities_stream_triggered
+;
+```
+
+### sbi_securities.work_from_stream_sbi_securities
+```sql
+CREATE TRANSIENT TABLE datalake_db.sbi_securities.work_from_stream_sbi_securities (
+  relative_path  VARCHAR,
+  action         VARCHAR,
+  last_modified  TIMESTAMP_TZ
+)
+WITH TAG (common_db.governance.object_managed_by = 'schemachange')
+;
+```
+
+### monex_securities.stream_on_stage_monex_securities
+```sql
+CREATE STREAM datalake_db.monex_securities.stream_on_stage_monex_securities
+  WITH TAG (common_db.governance.object_managed_by = 'schemachange')
+  ON STAGE datalake_db.monex_securities.stage_monex_securities_stream_triggered
+;
+```
+
+### monex_securities.work_from_stream_monex_securities
+```sql
+CREATE TRANSIENT TABLE datalake_db.monex_securities.work_from_stream_monex_securities (
+  relative_path  VARCHAR,
+  action         VARCHAR,
+  last_modified  TIMESTAMP_TZ
+)
+WITH TAG (common_db.governance.object_managed_by = 'schemachange')
 ;
 ```

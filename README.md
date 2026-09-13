@@ -96,13 +96,17 @@ DATALAKE_DB
 |- SCHEMACHANGE
 |- COMMON
 |- MONEX_SECURITIES
+|- ORICO_CREDIT
 |- PAYPAY_BANK
-`- SBI_SECURITIES
+|- SBI_SECURITIES
+|- JPX_EXCHANGE
+`- JPX_RESEARCH
 
 DATAWAREHOUSE_DB
 |- SCHEMACHANGE
 |- STAGING
-`- CORE
+|- CORE
+`- REFERENCE
 
 DATAMART_DB
 `- SCHEMACHANGE
@@ -115,10 +119,13 @@ Role notes (concise):
 - COMMON_DB.UTILS: Reusable utility UDFs/functions.
 - DATALAKE_DB: Raw ingestion layer (Medallion Bronze).
 - DATALAKE_DB.COMMON: Shared procedures/utilities for ingestion.
-- DATALAKE_DB.<source_schema>: Source schemas (for example, PAYPAY_BANK, SBI_SECURITIES) are split by source system.
+- DATALAKE_DB.<source_schema>: Source schemas (for example, PAYPAY_BANK, SBI_SECURITIES, ORICO_CREDIT) are split by source system.
+- DATALAKE_DB.JPX_EXCHANGE: Japan Exchange Group equity data ingestion.
+- DATALAKE_DB.JPX_RESEARCH: Japan Exchange Group research data ingestion.
 - DATAWAREHOUSE_DB: Refined layer for analysis-ready modeling (Medallion Silver).
 - DATAWAREHOUSE_DB.STAGING: Table-level reshaping from DATALAKE_DB without multi-table joins.
 - DATAWAREHOUSE_DB.CORE: Cross-domain core datasets for downstream analytics and AI use.
+- DATAWAREHOUSE_DB.REFERENCE: Reference data and static lookup tables.
 - DATAMART_DB: Consumer-facing serving layer for BI/tools.
 - DATAMART_DB.<consumer_schema>: Consumer-specific schemas are expected to be separated by destination, with read-only access for external consumers.
 
