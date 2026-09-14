@@ -18,10 +18,8 @@ CREATE OR ALTER TASK "DATAWAREHOUSE_DB"."COMMON"."task_dbt_build_on_paypay_home_
   SUSPEND_TASK_AFTER_NUM_FAILURES = 3
   WHEN SYSTEM$STREAM_HAS_DATA('DATAWAREHOUSE_DB.COMMON.stream_for_dbt_build_paypay_home_loan')
 AS
-  EXECUTE DBT BUILD JOB ON DBT PROJECT 'private_fin_data_platform_dev'
-  (
-    COMMAND = 'dbt build --target cicd_dev -s +stg_paypay_bank__home_loan_schedule'
-  )
+  EXECUTE DBT PROJECT 'private_fin_data_platform_dev'
+  ARGS = 'build --target cicd_dev -s +stg_paypay_bank__home_loan_schedule'
 ;
 
 CREATE TASK IF NOT EXISTS "DATAWAREHOUSE_DB"."COMMON"."task_dbt_build_on_orico_home_reform_raw"
@@ -40,8 +38,6 @@ CREATE OR ALTER TASK "DATAWAREHOUSE_DB"."COMMON"."task_dbt_build_on_orico_home_r
   SUSPEND_TASK_AFTER_NUM_FAILURES = 3
   WHEN SYSTEM$STREAM_HAS_DATA('DATAWAREHOUSE_DB.COMMON.stream_for_dbt_build_orico_home_reform')
 AS
-  EXECUTE DBT BUILD JOB ON DBT PROJECT 'private_fin_data_platform_dev'
-  (
-    COMMAND = 'dbt build --target cicd_dev -s +stg_orico_credit__home_reform_loan_schedule'
-  )
+  EXECUTE DBT PROJECT 'private_fin_data_platform_dev'
+  ARGS = 'build --target cicd_dev -s +stg_orico_credit__home_reform_loan_schedule'
 ;

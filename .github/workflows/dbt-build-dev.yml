@@ -113,9 +113,8 @@ jobs:
 
       - name: Upload dbt artifacts to Snowflake stage
         run: |
-          snow stage copy ./dbt \
-            @COMMON_DB.UTILS.DBT_PROJECTS_STAGE/dbt_dev/ \
-            --overwrite
+          snow dbt copy ./dbt \
+            @COMMON_DB.UTILS.DBT_PROJECTS_STAGE/dbt_dev/
         env:
           SNOWFLAKE_TOKEN: ${{ env.SNOWFLAKE_TOKEN }}
 
