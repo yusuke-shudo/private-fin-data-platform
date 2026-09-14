@@ -1,0 +1,12 @@
+private_fin_data_platform:
+  target: default
+  outputs:
+    default:
+      type: snowflake
+      account: ""
+      user: ""
+      role: dbt_engineer_role
+      warehouse: cicd_data_wh
+      database: DATAWAREHOUSE_DB
+      schema: COMMON
+      threads: 4
