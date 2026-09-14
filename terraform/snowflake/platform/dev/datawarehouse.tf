@@ -9,6 +9,12 @@ resource "snowflake_schema" "datawarehouse_schemachange" {
   comment  = "Schema for schemachange migration metadata | ${local.managed_comment}"
 }
 
+resource "snowflake_schema" "datawarehouse_common" {
+  name     = "COMMON"
+  database = snowflake_database.datawarehouse.name
+  comment  = "Schema for shared datawarehouse utilities and task orchestration | ${local.managed_comment}"
+}
+
 resource "snowflake_schema" "datawarehouse_staging" {
   name                = "STAGING"
   database            = snowflake_database.datawarehouse.name
@@ -34,6 +40,7 @@ locals {
   datawarehouse_database_managed_by_targets = [snowflake_database.datawarehouse.fully_qualified_name]
   datawarehouse_schema_managed_by_targets = [
     snowflake_schema.datawarehouse_schemachange.fully_qualified_name,
+    snowflake_schema.datawarehouse_common.fully_qualified_name,
     snowflake_schema.datawarehouse_staging.fully_qualified_name,
     snowflake_schema.datawarehouse_reference.fully_qualified_name,
     snowflake_schema.datawarehouse_core.fully_qualified_name,
@@ -141,6 +148,31 @@ resource "snowflake_grant_privileges_to_account_role" "datawarehouse_reference_c
   privileges        = ["CREATE DYNAMIC TABLE"]
   on_schema {
     schema_name = "${snowflake_database.datawarehouse.name}.${snowflake_schema.datawarehouse_reference.name}"
+  }
+}
+
+# COMMON schema (task orchestration)
+resource "snowflake_grant_privileges_to_account_role" "datawarehouse_common_usage" {
+  account_role_name = "CICD_DATA_ENGINEER_ROLE"
+  privileges        = ["USAGE"]
+  on_schema {
+    schema_name = "${snowflake_database.datawarehouse.name}.${snowflake_schema.datawarehouse_common.name}"
+  }
+}
+
+resource "snowflake_grant_privileges_to_account_role" "datawarehouse_common_create_stream" {
+  account_role_name = "CICD_DATA_ENGINEER_ROLE"
+  privileges        = ["CREATE STREAM"]
+  on_schema {
+    schema_name = "${snowflake_database.datawarehouse.name}.${snowflake_schema.datawarehouse_common.name}"
+  }
+}
+
+resource "snowflake_grant_privileges_to_account_role" "datawarehouse_common_create_task" {
+  account_role_name = "CICD_DATA_ENGINEER_ROLE"
+  privileges        = ["CREATE TASK"]
+  on_schema {
+    schema_name = "${snowflake_database.datawarehouse.name}.${snowflake_schema.datawarehouse_common.name}"
   }
 }
 
