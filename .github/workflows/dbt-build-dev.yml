@@ -13,7 +13,7 @@ env:
   TARGET_ENV: "dev"
   PYTHON_VERSION: "3.12"
   DBT_VERSION: "1.12.0"
-  DBT_PROJECT_NAME: "private_fin_data_platform_dev"
+  DBT_PROJECT_NAME: "private_fin_data_platform"
 
 permissions:
   id-token: write
@@ -114,13 +114,15 @@ jobs:
       - name: Upload dbt artifacts to Snowflake stage
         run: |
           snow dbt copy ./dbt \
-            @COMMON_DB.UTILS.DBT_PROJECTS_STAGE/dbt_dev/
+            @COMMON_DB.UTILS.DBT_PROJECTS_STAGE/dbt/ \
+            --recursive \
+            --overwrite
         env:
           SNOWFLAKE_TOKEN: ${{ env.SNOWFLAKE_TOKEN }}
 
       - name: Create DBT PROJECT on Snowflake
         run: |
-          snow sql -q "CREATE OR REPLACE DBT PROJECT \"DATAWAREHOUSE_DB\".\"STAGING\".\"${{ env.DBT_PROJECT_NAME }}\" FROM '@COMMON_DB.UTILS.DBT_PROJECTS_STAGE/dbt_dev/';"
+          snow sql -q "CREATE OR REPLACE DBT PROJECT \"DATAWAREHOUSE_DB\".\"STAGING\".\"${{ env.DBT_PROJECT_NAME }}\" FROM '@COMMON_DB.UTILS.DBT_PROJECTS_STAGE/dbt/';"
         env:
           SNOWFLAKE_TOKEN: ${{ env.SNOWFLAKE_TOKEN }}
 
@@ -135,7 +137,7 @@ jobs:
             comment += `- Name: ${{ env.DBT_PROJECT_NAME }}\n`;
             comment += `- Database: DATAWAREHOUSE_DB\n`;
             comment += `- Schema: STAGING\n`;
-            comment += `- Source: @COMMON_DB.UTILS.DBT_PROJECTS_STAGE/dbt_dev/\n`;
+            comment += `- Source: @COMMON_DB.UTILS.DBT_PROJECTS_STAGE/dbt/\n`;
             
             github.rest.issues.createComment({
               issue_number: context.issue.number,
