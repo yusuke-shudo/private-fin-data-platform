@@ -12,7 +12,7 @@ on:
 env:
   TARGET_ENV: "dev"
   PYTHON_VERSION: "3.12"
-  DBT_VERSION: "1.12.0"
+  DBT_VERSION: "1.11.11"
   DBT_PROJECT_NAME: "private_fin_data_platform"
 
 permissions:
@@ -81,7 +81,7 @@ jobs:
       - name: Upload dbt artifacts to Snowflake stage
         run: |
           snow dbt copy ./dbt \
-            @COMMON_DB.UTILS.DBT_PROJECTS_STAGE/dbt/ \
+            @common_db.utils.dbt_projects_stage/dbt/ \
             --recursive \
             --overwrite
         env:
@@ -89,19 +89,19 @@ jobs:
 
       - name: Create test DBT PROJECT on Snowflake
         run: |
-          snow sql -q "CREATE OR REPLACE DBT PROJECT \"DATAWAREHOUSE_DB\".\"COMMON\".\"private_fin_data_platform_test\" FROM '@COMMON_DB.UTILS.DBT_PROJECTS_STAGE/dbt/' DBT_VERSION = '1.12.0';"
+          snow sql -q "CREATE OR REPLACE DBT PROJECT datawarehouse_db.common.${{ env.DBT_PROJECT_NAME }}_test  FROM '@common_db.utils.dbt_projects_stage/dbt/' DBT_VERSION = '${{ env.DBT_VERSION }}';"
         env:
           SNOWFLAKE_TOKEN: ${{ env.SNOWFLAKE_TOKEN }}
 
       - name: Run dbt tests on test PROJECT
         run: |
-          snow sql -q "EXECUTE DBT PROJECT \"DATAWAREHOUSE_DB\".\"COMMON\".\"private_fin_data_platform_test\" ARGS = 'test';"
+          snow sql -q "EXECUTE DBT PROJECT datawarehouse_db.common.${{ env.DBT_PROJECT_NAME }}_test ARGS = 'test';"
         env:
           SNOWFLAKE_TOKEN: ${{ env.SNOWFLAKE_TOKEN }}
 
       - name: Create production DBT PROJECT on Snowflake
         run: |
-          snow sql -q "CREATE OR REPLACE DBT PROJECT \"DATAWAREHOUSE_DB\".\"COMMON\".\"${{ env.DBT_PROJECT_NAME }}\" FROM '@COMMON_DB.UTILS.DBT_PROJECTS_STAGE/dbt/' VERSION = '1.12.0';"
+          snow sql -q "CREATE OR REPLACE DBT PROJECT datawarehouse_db.common.${{ env.DBT_PROJECT_NAME }} FROM '@common_db.utils.dbt_projects_stage/dbt/' DBT_VERSION = '${{ env.DBT_VERSION }}';"
         env:
           SNOWFLAKE_TOKEN: ${{ env.SNOWFLAKE_TOKEN }}
 
@@ -114,9 +114,9 @@ jobs:
             comment += `**Status:** ✅ Completed\n\n`;
             comment += `**DBT PROJECT Details:**\n`;
             comment += `- Name: ${{ env.DBT_PROJECT_NAME }}\n`;
-            comment += `- Database: DATAWAREHOUSE_DB\n`;
-            comment += `- Schema: COMMON\n`;
-            comment += `- Source: @COMMON_DB.UTILS.DBT_PROJECTS_STAGE/dbt/\n`;
+            comment += `- Database: datawarehouse_db\n`;
+            comment += `- Schema: common\n`;
+            comment += `- Source: @common_db.utils.dbt_projects_stage/dbt/\n`;
             
             github.rest.issues.createComment({
               issue_number: context.issue.number,
