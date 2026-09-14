@@ -36,6 +36,17 @@ resource "snowflake_schema" "utils" {
   comment  = "Shared utility functions | ${local.managed_comment}"
 }
 
+# ==============================================================================
+# Internal Stage for dbt project artifacts (UTILS schema)
+# ==============================================================================
+
+resource "snowflake_stage" "dbt_projects_stage" {
+  name     = "DBT_PROJECTS_STAGE"
+  database = snowflake_database.common.name
+  schema   = snowflake_schema.utils.name
+  comment  = "Internal stage for dbt project artifacts | ${local.managed_comment}"
+}
+
 locals {
   common_database_managed_by_targets = [snowflake_database.common.fully_qualified_name]
 
@@ -116,5 +127,15 @@ resource "snowflake_grant_privileges_to_account_role" "common_cicd_utils_usage" 
   privileges        = ["USAGE"]
   on_schema {
     schema_name = "${snowflake_database.common.name}.${snowflake_schema.utils.name}"
+  }
+}
+
+# UTILS stage (dbt project artifacts)
+resource "snowflake_grant_privileges_to_account_role" "common_cicd_dbt_projects_stage_read_write" {
+  account_role_name = "CICD_DATA_ENGINEER_ROLE"
+  privileges        = ["READ", "WRITE"]
+  on_schema_object {
+    object_type = "STAGE"
+    object_name = snowflake_stage.dbt_projects_stage.fully_qualified_name
   }
 }
