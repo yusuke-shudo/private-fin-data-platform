@@ -323,11 +323,3 @@ resource "snowflake_grant_privileges_to_account_role" "datawarehouse_dbt_enginee
     schema_name = "${snowflake_database.datawarehouse.name}.${snowflake_schema.datawarehouse_common.name}"
   }
 }
-
-resource "snowflake_grant_privileges_to_account_role" "datawarehouse_dbt_engineer_common_execute_task" {
-  account_role_name = snowflake_account_role.dbt_engineer.name
-  privileges        = ["EXECUTE TASK"]
-  on_schema {
-    schema_name = "${snowflake_database.datawarehouse.name}.${snowflake_schema.datawarehouse_common.name}"
-  }
-}
