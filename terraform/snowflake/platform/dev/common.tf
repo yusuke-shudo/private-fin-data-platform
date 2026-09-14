@@ -136,7 +136,7 @@ resource "snowflake_grant_privileges_to_account_role" "common_cicd_dbt_projects_
   privileges        = ["READ", "WRITE"]
   on_schema_object {
     object_type = "STAGE"
-    object_name = snowflake_stage.dbt_projects_stage.fully_qualified_name
+    object_name = snowflake_stage_internal.dbt_projects_stage.fully_qualified_name
   }
 }
 

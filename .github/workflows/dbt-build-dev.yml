@@ -89,7 +89,7 @@ jobs:
 
       - name: Create test DBT PROJECT on Snowflake
         run: |
-          snow sql -q "CREATE OR REPLACE DBT PROJECT \"DATAWAREHOUSE_DB\".\"COMMON\".\"private_fin_data_platform_test\" FROM '@COMMON_DB.UTILS.DBT_PROJECTS_STAGE/dbt/' VERSION = '1.12.0';"
+          snow sql -q "CREATE OR REPLACE DBT PROJECT \"DATAWAREHOUSE_DB\".\"COMMON\".\"private_fin_data_platform_test\" FROM '@COMMON_DB.UTILS.DBT_PROJECTS_STAGE/dbt/' DBT_VERSION = '1.12.0';"
         env:
           SNOWFLAKE_TOKEN: ${{ env.SNOWFLAKE_TOKEN }}
 
