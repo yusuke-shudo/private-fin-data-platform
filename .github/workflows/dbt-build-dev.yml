@@ -24,7 +24,7 @@ jobs:
   dbt_parse_and_deploy:
     name: dbt Parse & Deploy DBT PROJECT (Dev)
     runs-on: ubuntu-latest
-    environment: dev-data
+    environment: dev-infra
 
     steps:
       - name: Checkout Code
@@ -100,9 +100,9 @@ jobs:
 
           [connections.default]
           account = "${{ format('{0}-{1}', vars.SF_ORGANIZATION_NAME, vars.SF_ACCOUNT_NAME) }}"
-          user = "cicd_data_engineer_user"
-          role = "cicd_data_engineer_role"
-          warehouse = "cicd_data_wh"
+          user = "cicd_infra_engineer_user"
+          role = "cicd_infra_engineer_role"
+          warehouse = "cicd_infra_wh"
           authenticator = "WORKLOAD_IDENTITY"
           workload_identity_provider = "OIDC"
           token = "$SNOWFLAKE_TOKEN"
