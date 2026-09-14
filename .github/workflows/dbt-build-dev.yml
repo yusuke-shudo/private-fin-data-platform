@@ -89,19 +89,19 @@ jobs:
 
       - name: Create test DBT PROJECT on Snowflake
         run: |
-          snow sql -q "CREATE OR REPLACE DBT PROJECT \"DATAWAREHOUSE_DB\".\"STAGING\".\"private_fin_data_platform_test\" FROM '@COMMON_DB.UTILS.DBT_PROJECTS_STAGE/dbt/';"
+          snow sql -q "CREATE OR REPLACE DBT PROJECT \"DATAWAREHOUSE_DB\".\"COMMON\".\"private_fin_data_platform_test\" FROM '@COMMON_DB.UTILS.DBT_PROJECTS_STAGE/dbt/' VERSION = '1.12.0';"
         env:
           SNOWFLAKE_TOKEN: ${{ env.SNOWFLAKE_TOKEN }}
 
       - name: Run dbt tests on test PROJECT
         run: |
-          snow sql -q "EXECUTE DBT PROJECT \"DATAWAREHOUSE_DB\".\"STAGING\".\"private_fin_data_platform_test\" ARGS = 'test';"
+          snow sql -q "EXECUTE DBT PROJECT \"DATAWAREHOUSE_DB\".\"COMMON\".\"private_fin_data_platform_test\" ARGS = 'test';"
         env:
           SNOWFLAKE_TOKEN: ${{ env.SNOWFLAKE_TOKEN }}
 
       - name: Create production DBT PROJECT on Snowflake
         run: |
-          snow sql -q "CREATE OR REPLACE DBT PROJECT \"DATAWAREHOUSE_DB\".\"STAGING\".\"${{ env.DBT_PROJECT_NAME }}\" FROM '@COMMON_DB.UTILS.DBT_PROJECTS_STAGE/dbt/';"
+          snow sql -q "CREATE OR REPLACE DBT PROJECT \"DATAWAREHOUSE_DB\".\"COMMON\".\"${{ env.DBT_PROJECT_NAME }}\" FROM '@COMMON_DB.UTILS.DBT_PROJECTS_STAGE/dbt/' VERSION = '1.12.0';"
         env:
           SNOWFLAKE_TOKEN: ${{ env.SNOWFLAKE_TOKEN }}
 
@@ -115,7 +115,7 @@ jobs:
             comment += `**DBT PROJECT Details:**\n`;
             comment += `- Name: ${{ env.DBT_PROJECT_NAME }}\n`;
             comment += `- Database: DATAWAREHOUSE_DB\n`;
-            comment += `- Schema: STAGING\n`;
+            comment += `- Schema: COMMON\n`;
             comment += `- Source: @COMMON_DB.UTILS.DBT_PROJECTS_STAGE/dbt/\n`;
             
             github.rest.issues.createComment({

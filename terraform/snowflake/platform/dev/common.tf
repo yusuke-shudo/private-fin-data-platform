@@ -40,7 +40,7 @@ resource "snowflake_schema" "utils" {
 # Internal Stage for dbt project artifacts (UTILS schema)
 # ==============================================================================
 
-resource "snowflake_stage" "dbt_projects_stage" {
+resource "snowflake_stage_internal" "dbt_projects_stage" {
   name     = "DBT_PROJECTS_STAGE"
   database = snowflake_database.common.name
   schema   = snowflake_schema.utils.name
@@ -146,7 +146,7 @@ resource "snowflake_grant_privileges_to_account_role" "common_cicd_dbt_projects_
 
 # DATABASE USAGE
 resource "snowflake_grant_privileges_to_account_role" "common_dbt_engineer_database" {
-  account_role_name = snowflake_role.dbt_engineer.name
+  account_role_name = snowflake_account_role.dbt_engineer.name
   privileges        = ["USAGE"]
   on_account_object {
     object_type = "DATABASE"
@@ -156,7 +156,7 @@ resource "snowflake_grant_privileges_to_account_role" "common_dbt_engineer_datab
 
 # GOVERNANCE schema (tags)
 resource "snowflake_grant_privileges_to_account_role" "common_dbt_engineer_governance_usage" {
-  account_role_name = snowflake_role.dbt_engineer.name
+  account_role_name = snowflake_account_role.dbt_engineer.name
   privileges        = ["USAGE"]
   on_schema {
     schema_name = "${snowflake_database.common.name}.${snowflake_schema.governance.name}"
@@ -165,7 +165,7 @@ resource "snowflake_grant_privileges_to_account_role" "common_dbt_engineer_gover
 
 # Tag APPLY privileges
 resource "snowflake_grant_privileges_to_account_role" "common_dbt_engineer_object_managed_by_tag_apply" {
-  account_role_name = snowflake_role.dbt_engineer.name
+  account_role_name = snowflake_account_role.dbt_engineer.name
   privileges        = ["APPLY"]
   on_schema_object {
     object_type = "TAG"
@@ -175,7 +175,7 @@ resource "snowflake_grant_privileges_to_account_role" "common_dbt_engineer_objec
 
 # UTILS schema (DBT PROJECT)
 resource "snowflake_grant_privileges_to_account_role" "common_dbt_engineer_utils_usage" {
-  account_role_name = snowflake_role.dbt_engineer.name
+  account_role_name = snowflake_account_role.dbt_engineer.name
   privileges        = ["USAGE"]
   on_schema {
     schema_name = "${snowflake_database.common.name}.${snowflake_schema.utils.name}"
@@ -183,7 +183,7 @@ resource "snowflake_grant_privileges_to_account_role" "common_dbt_engineer_utils
 }
 
 resource "snowflake_grant_privileges_to_account_role" "common_dbt_engineer_utils_create_dbt_project" {
-  account_role_name = snowflake_role.dbt_engineer.name
+  account_role_name = snowflake_account_role.dbt_engineer.name
   privileges        = ["CREATE DBT PROJECT"]
   on_schema {
     schema_name = "${snowflake_database.common.name}.${snowflake_schema.utils.name}"
