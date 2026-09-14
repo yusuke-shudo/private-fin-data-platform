@@ -36,6 +36,17 @@ resource "snowflake_schema" "utils" {
   comment  = "Shared utility functions | ${local.managed_comment}"
 }
 
+# ==============================================================================
+# Internal Stage for dbt project artifacts (UTILS schema)
+# ==============================================================================
+
+resource "snowflake_stage_internal" "dbt_projects_stage" {
+  name     = "DBT_PROJECTS_STAGE"
+  database = snowflake_database.common.name
+  schema   = snowflake_schema.utils.name
+  comment  = "Internal stage for dbt project artifacts | ${local.managed_comment}"
+}
+
 locals {
   common_database_managed_by_targets = [snowflake_database.common.fully_qualified_name]
 
@@ -114,6 +125,66 @@ resource "snowflake_grant_privileges_to_account_role" "common_cicd_object_manage
 resource "snowflake_grant_privileges_to_account_role" "common_cicd_utils_usage" {
   account_role_name = "CICD_DATA_ENGINEER_ROLE"
   privileges        = ["USAGE"]
+  on_schema {
+    schema_name = "${snowflake_database.common.name}.${snowflake_schema.utils.name}"
+  }
+}
+
+# UTILS stage (dbt project artifacts)
+resource "snowflake_grant_privileges_to_account_role" "common_cicd_dbt_projects_stage_read_write" {
+  account_role_name = "CICD_DATA_ENGINEER_ROLE"
+  privileges        = ["READ", "WRITE"]
+  on_schema_object {
+    object_type = "STAGE"
+    object_name = snowflake_stage_internal.dbt_projects_stage.fully_qualified_name
+  }
+}
+
+# ==============================================================================
+# Grants for dbt_engineer_role (dbt execution)
+# ==============================================================================
+
+# DATABASE USAGE
+resource "snowflake_grant_privileges_to_account_role" "common_dbt_engineer_database" {
+  account_role_name = snowflake_account_role.dbt_engineer.name
+  privileges        = ["USAGE"]
+  on_account_object {
+    object_type = "DATABASE"
+    object_name = snowflake_database.common.name
+  }
+}
+
+# GOVERNANCE schema (tags)
+resource "snowflake_grant_privileges_to_account_role" "common_dbt_engineer_governance_usage" {
+  account_role_name = snowflake_account_role.dbt_engineer.name
+  privileges        = ["USAGE"]
+  on_schema {
+    schema_name = "${snowflake_database.common.name}.${snowflake_schema.governance.name}"
+  }
+}
+
+# Tag APPLY privileges
+resource "snowflake_grant_privileges_to_account_role" "common_dbt_engineer_object_managed_by_tag_apply" {
+  account_role_name = snowflake_account_role.dbt_engineer.name
+  privileges        = ["APPLY"]
+  on_schema_object {
+    object_type = "TAG"
+    object_name = snowflake_tag.object_managed_by.fully_qualified_name
+  }
+}
+
+# UTILS schema (DBT PROJECT)
+resource "snowflake_grant_privileges_to_account_role" "common_dbt_engineer_utils_usage" {
+  account_role_name = snowflake_account_role.dbt_engineer.name
+  privileges        = ["USAGE"]
+  on_schema {
+    schema_name = "${snowflake_database.common.name}.${snowflake_schema.utils.name}"
+  }
+}
+
+resource "snowflake_grant_privileges_to_account_role" "common_dbt_engineer_utils_create_dbt_project" {
+  account_role_name = snowflake_account_role.dbt_engineer.name
+  privileges        = ["CREATE DBT PROJECT"]
   on_schema {
     schema_name = "${snowflake_database.common.name}.${snowflake_schema.utils.name}"
   }
