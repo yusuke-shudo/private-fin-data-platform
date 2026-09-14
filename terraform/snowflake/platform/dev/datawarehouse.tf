@@ -208,3 +208,126 @@ resource "snowflake_grant_privileges_to_account_role" "datawarehouse_core_create
     schema_name = "${snowflake_database.datawarehouse.name}.${snowflake_schema.datawarehouse_core.name}"
   }
 }
+
+# ==============================================================================
+# Grants for dbt_engineer_role (dbt execution)
+# ==============================================================================
+
+# DATABASE USAGE
+resource "snowflake_grant_privileges_to_account_role" "datawarehouse_dbt_engineer_database" {
+  account_role_name = snowflake_role.dbt_engineer.name
+  privileges        = ["USAGE"]
+  on_account_object {
+    object_type = "DATABASE"
+    object_name = snowflake_database.datawarehouse.name
+  }
+}
+
+# DATABASE CREATE SCHEMA (for dbt-created schemas)
+resource "snowflake_grant_privileges_to_account_role" "datawarehouse_dbt_engineer_create_schema" {
+  account_role_name = snowflake_role.dbt_engineer.name
+  privileges        = ["CREATE SCHEMA"]
+  on_account_object {
+    object_type = "DATABASE"
+    object_name = snowflake_database.datawarehouse.name
+  }
+}
+
+# STAGING schema
+resource "snowflake_grant_privileges_to_account_role" "datawarehouse_dbt_engineer_staging_usage" {
+  account_role_name = snowflake_role.dbt_engineer.name
+  privileges        = ["USAGE"]
+  on_schema {
+    schema_name = "${snowflake_database.datawarehouse.name}.${snowflake_schema.datawarehouse_staging.name}"
+  }
+}
+
+resource "snowflake_grant_privileges_to_account_role" "datawarehouse_dbt_engineer_staging_create_table" {
+  account_role_name = snowflake_role.dbt_engineer.name
+  privileges        = ["CREATE TABLE"]
+  on_schema {
+    schema_name = "${snowflake_database.datawarehouse.name}.${snowflake_schema.datawarehouse_staging.name}"
+  }
+}
+
+resource "snowflake_grant_privileges_to_account_role" "datawarehouse_dbt_engineer_staging_create_view" {
+  account_role_name = snowflake_role.dbt_engineer.name
+  privileges        = ["CREATE VIEW"]
+  on_schema {
+    schema_name = "${snowflake_database.datawarehouse.name}.${snowflake_schema.datawarehouse_staging.name}"
+  }
+}
+
+resource "snowflake_grant_privileges_to_account_role" "datawarehouse_dbt_engineer_staging_create_dynamic_table" {
+  account_role_name = snowflake_role.dbt_engineer.name
+  privileges        = ["CREATE DYNAMIC TABLE"]
+  on_schema {
+    schema_name = "${snowflake_database.datawarehouse.name}.${snowflake_schema.datawarehouse_staging.name}"
+  }
+}
+
+# REFERENCE schema
+resource "snowflake_grant_privileges_to_account_role" "datawarehouse_dbt_engineer_reference_usage" {
+  account_role_name = snowflake_role.dbt_engineer.name
+  privileges        = ["USAGE"]
+  on_schema {
+    schema_name = "${snowflake_database.datawarehouse.name}.${snowflake_schema.datawarehouse_reference.name}"
+  }
+}
+
+resource "snowflake_grant_privileges_to_account_role" "datawarehouse_dbt_engineer_reference_create_table" {
+  account_role_name = snowflake_role.dbt_engineer.name
+  privileges        = ["CREATE TABLE"]
+  on_schema {
+    schema_name = "${snowflake_database.datawarehouse.name}.${snowflake_schema.datawarehouse_reference.name}"
+  }
+}
+
+resource "snowflake_grant_privileges_to_account_role" "datawarehouse_dbt_engineer_reference_create_view" {
+  account_role_name = snowflake_role.dbt_engineer.name
+  privileges        = ["CREATE VIEW"]
+  on_schema {
+    schema_name = "${snowflake_database.datawarehouse.name}.${snowflake_schema.datawarehouse_reference.name}"
+  }
+}
+
+# CORE schema
+resource "snowflake_grant_privileges_to_account_role" "datawarehouse_dbt_engineer_core_usage" {
+  account_role_name = snowflake_role.dbt_engineer.name
+  privileges        = ["USAGE"]
+  on_schema {
+    schema_name = "${snowflake_database.datawarehouse.name}.${snowflake_schema.datawarehouse_core.name}"
+  }
+}
+
+resource "snowflake_grant_privileges_to_account_role" "datawarehouse_dbt_engineer_core_create_table" {
+  account_role_name = snowflake_role.dbt_engineer.name
+  privileges        = ["CREATE TABLE"]
+  on_schema {
+    schema_name = "${snowflake_database.datawarehouse.name}.${snowflake_schema.datawarehouse_core.name}"
+  }
+}
+
+resource "snowflake_grant_privileges_to_account_role" "datawarehouse_dbt_engineer_core_create_view" {
+  account_role_name = snowflake_role.dbt_engineer.name
+  privileges        = ["CREATE VIEW"]
+  on_schema {
+    schema_name = "${snowflake_database.datawarehouse.name}.${snowflake_schema.datawarehouse_core.name}"
+  }
+}
+
+resource "snowflake_grant_privileges_to_account_role" "datawarehouse_dbt_engineer_common_usage" {
+  account_role_name = snowflake_role.dbt_engineer.name
+  privileges        = ["USAGE"]
+  on_schema {
+    schema_name = "${snowflake_database.datawarehouse.name}.${snowflake_schema.datawarehouse_common.name}"
+  }
+}
+
+resource "snowflake_grant_privileges_to_account_role" "datawarehouse_dbt_engineer_common_execute_task" {
+  account_role_name = snowflake_role.dbt_engineer.name
+  privileges        = ["EXECUTE TASK"]
+  on_schema {
+    schema_name = "${snowflake_database.datawarehouse.name}.${snowflake_schema.datawarehouse_common.name}"
+  }
+}
