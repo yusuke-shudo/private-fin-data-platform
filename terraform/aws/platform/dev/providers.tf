@@ -13,14 +13,16 @@ terraform {
 }
 
 provider "aws" {
-  region = "ap-northeast-1"
+  alias  = "token_fetcher"
+  region = var.aws_region
 }
 
-data "aws_caller_identity" "current" {}
+data "aws_caller_identity" "current" {
+  provider = aws.token_fetcher
+}
 
 provider "aws" {
-  alias  = "resource_creation"
-  region = "ap-northeast-1"
+  region = var.aws_region
   assume_role {
     role_arn     = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/github-actions-resource-creation-role"
     session_name = "TerraformDeployment"
