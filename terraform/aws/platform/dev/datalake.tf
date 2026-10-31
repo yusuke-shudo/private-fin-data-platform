@@ -8,7 +8,7 @@
 # 用途は datalake / iceberg のように増える想定。用途ごとに .tf ファイルを分ける。
 # =========================================================================
 locals {
-  aws_region = "ap-northeast-1"
+  aws_region = var.aws_region
   account_id = data.aws_caller_identity.current.account_id
 
   datalake_bucket_name              = "${var.project_prefix}-${var.env}-datalake"
@@ -22,7 +22,6 @@ locals {
 # バケット本体と基本設定
 # =========================================================================
 resource "aws_s3_bucket" "datalake" {
-  provider      = aws.resource_creation
   bucket        = local.datalake_bucket_name
   force_destroy = false
   tags = {
@@ -33,7 +32,6 @@ resource "aws_s3_bucket" "datalake" {
 }
 
 resource "aws_s3_bucket_public_access_block" "datalake" {
-  provider                = aws.resource_creation
   bucket                  = aws_s3_bucket.datalake.id
   block_public_acls       = true
   block_public_policy     = true
@@ -42,7 +40,6 @@ resource "aws_s3_bucket_public_access_block" "datalake" {
 }
 
 resource "aws_s3_bucket_server_side_encryption_configuration" "datalake" {
-  provider = aws.resource_creation
   bucket   = aws_s3_bucket.datalake.id
   rule {
     apply_server_side_encryption_by_default {
@@ -52,7 +49,6 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "datalake" {
 }
 
 resource "aws_s3_bucket_versioning" "datalake" {
-  provider = aws.resource_creation
   bucket   = aws_s3_bucket.datalake.id
   versioning_configuration {
     status = "Enabled"
@@ -60,7 +56,6 @@ resource "aws_s3_bucket_versioning" "datalake" {
 }
 
 resource "aws_s3_bucket_notification" "datalake" {
-  provider = aws.resource_creation
   bucket   = aws_s3_bucket.datalake.id
 
   dynamic "queue" {
@@ -84,7 +79,6 @@ resource "aws_s3_bucket_notification" "datalake" {
 # Snowflake連携用 IAMロール
 # =========================================================================
 resource "aws_iam_role" "datalake_sf_accesspoint" {
-  provider = aws.resource_creation
   name     = local.datalake_sf_accesspoint_role_name
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -121,7 +115,6 @@ resource "time_sleep" "datalake_sf_accesspoint_role_propagation" {
 }
 
 resource "aws_iam_role" "datalake_sf_direct" {
-  provider = aws.resource_creation
   name     = local.datalake_sf_direct_role_name
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -152,7 +145,6 @@ resource "aws_iam_role" "datalake_sf_direct" {
 }
 
 resource "aws_iam_role_policy" "datalake_sf_direct_readonly" {
-  provider = aws.resource_creation
   name     = "${local.datalake_sf_direct_role_name}-readonly"
   role     = aws_iam_role.datalake_sf_direct.id
   policy = jsonencode({
@@ -191,7 +183,6 @@ resource "aws_iam_role_policy" "datalake_sf_direct_readonly" {
 # 外部システム（Snowflake）専用のアクセスポイント
 # =========================================================================
 resource "aws_s3_access_point" "datalake_sf_accesspoint" {
-  provider   = aws.resource_creation
   bucket     = aws_s3_bucket.datalake.id
   name       = local.datalake_sf_ap_name
   depends_on = [time_sleep.datalake_sf_accesspoint_role_propagation]
@@ -240,7 +231,6 @@ resource "aws_s3_access_point" "datalake_sf_accesspoint" {
 # バケットポリシー
 # =========================================================================
 resource "aws_s3_bucket_policy" "datalake" {
-  provider = aws.resource_creation
   bucket   = aws_s3_bucket.datalake.id
   policy = jsonencode({
     Version = "2012-10-17"

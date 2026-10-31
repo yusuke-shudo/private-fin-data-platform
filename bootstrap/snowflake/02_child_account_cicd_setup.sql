@@ -53,8 +53,8 @@ GRANT CREATE WAREHOUSE ON ACCOUNT TO ROLE cicd_infra_engineer_role;
 GRANT CREATE INTEGRATION ON ACCOUNT TO ROLE cicd_infra_engineer_role;
 GRANT CREATE DATABASE ON ACCOUNT TO ROLE cicd_infra_engineer_role;
 GRANT MANAGE GRANTS ON ACCOUNT TO ROLE cicd_infra_engineer_role;
-GRANT EXECUTE TASK ON ACCOUNT TO ROLE cicd_infra_engineer_role;
-GRANT EXECUTE MANAGED TASK ON ACCOUNT TO ROLE cicd_infra_engineer_role;
+GRANT EXECUTE TASK ON ACCOUNT TO ROLE cicd_infra_engineer_role WITH GRANT OPTION;
+GRANT EXECUTE MANAGED TASK ON ACCOUNT TO ROLE cicd_infra_engineer_role WITH GRANT OPTION;
 
 -- NOTE:
 -- dbt-related data-side object privileges for cicd_data_engineer_role are
