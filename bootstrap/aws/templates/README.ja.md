@@ -19,6 +19,8 @@
 - 制御アクセス用 S3 Access Point
 - 制限付きアクセスと TLS 1.2+ を強制する S3 バケットポリシー / Access Point ポリシー
 
+このtemplateは初回bootstrap用です。IAMリソースはアカウント共通で作成され、state bucketとAccess PointはStack instanceのリージョンに作成されます。
+
 主要パラメータ:
 - `Environment`: `dev` または `prd`
 - `GitHubOwner`: GitHub 組織名またはユーザー名
@@ -28,6 +30,28 @@
 主要Outputs:
 - `GitHubActionsRoleArn`
 - `GitHubActionsResourceCreationRoleArn`
+- `S3BucketName`
+- `S3AccessPointArn`
+
+### fin-data-tfstate-regional.yaml
+
+目的:
+- 既存のアカウント共通IAMロールを使い、追加リージョンにTerraform state backendを作成する。
+
+主な作成リソース:
+- Account Regional namespaceのTerraform state用S3バケット。AWSがaccount ID・リージョン・`-an`を末尾に付与します。
+- 既存の`github-actions-tfstate-access-role`と`github-actions-resource-creation-role`に許可を与えるS3 Access Point
+- Access Point経由のアクセス、TLS 1.2+、パブリックアクセス遮断を強制するポリシー
+
+IAM OIDC ProviderやIAMロールは作成しません。bucketとAccess PointはStack instanceを配置したリージョンに作成されます。
+
+主要パラメータ:
+- `Environment`: `dev` または `prd`
+- `ProjectPrefix`: S3名称のグローバル重複を避けるためのプレフィックス
+- `GitHubActionsTfstateAccessRoleName`: 利用する既存IAMロール名
+- `GitHubActionsResourceCreationRoleName`: Access Point経由で利用する既存リソース作成ロール名
+
+主要Outputs:
 - `S3BucketName`
 - `S3AccessPointArn`
 
